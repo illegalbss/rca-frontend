@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/shared.css">
+  <link rel="stylesheet" href="assets/css/pages/gallery.css">
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-left">
+      <span class="top-bar-item">📍 20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</span>
+      <span class="top-bar-item">📞 <a href="tel:08036721390">08036 721390</a> / <a href="tel:09080061094">09080 061094</a></span>
+    </div>
+    <div class="top-bar-right">
+      <a href="mailto:info@royalcrystalacademy.edu.ng">✉ info@royalcrystalacademy.edu.ng</a>
+    </div>
+  </div>
+</div>
+
+<!-- NAVIGATION -->
+<header class="site-header" id="siteHeader">
+  <div class="navbar-wrap">
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+        <div class="logo-text">
+          <span class="logo-name">Royal Crystal Academy</span>
+          <span class="logo-tagline">Excellence in Education</span>
+        </div>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="admissions.html">Admissions</a></li>
+        <li><a href="news-events.html">News &amp; Events</a></li>
+        <li><a href="gallery.html" class="active">Gallery</a></li>
+        <li><a href="ict-department.html">ICT</a></li>
+        <li><a href="academic-calendar.html">Calendar</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="parent-login.html" class="btn btn-secondary btn-sm">Parent Login</a>
+        <a href="admin/login.html" class="btn btn-outline-light btn-sm">Staff Portal</a>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Mobile Drawer -->
+<div class="nav-drawer-overlay" id="navOverlay"></div>
+<div class="nav-drawer" id="navDrawer">
+  <button class="nav-drawer-close" id="navDrawerClose">✕</button>
+  <a href="index.html" class="logo">
+    <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+    <div class="logo-text"><span class="logo-name">Royal Crystal Academy</span></div>
+  </a>
+  <nav class="nav-drawer-links">
+    <a href="index.html">Home</a>
+    <a href="about.html">About Us</a>
+    <a href="admissions.html">Admissions</a>
+    <a href="news-events.html">News &amp; Events</a>
+    <a href="gallery.html" class="active">Gallery</a>
+    <a href="ict-department.html">ICT Department</a>
+    <a href="academic-calendar.html">Calendar</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+  <div class="nav-drawer-actions">
+    <a href="parent-login.html" class="btn btn-secondary">Parent Login</a>
+    <a href="admin/login.html" class="btn btn-outline">Staff Portal</a>
+  </div>
+</div>
+
+<!-- PAGE BANNER -->
+<section class="page-banner" style="background-image:url('assets/images/about-main.jpg');background-size:cover;background-position:center center;background-repeat:no-repeat">
+  <div class="page-banner-content container">
+    <span class="section-label" style="background:rgba(201,150,12,0.2);color:var(--color-secondary-light);margin-bottom:1rem;display:inline-block">Our Memories</span>
+    <h1>School Gallery</h1>
+    <p style="color:rgba(255,255,255,0.8);margin-top:0.5rem">Moments, milestones and memories from life at Royal Crystal Academy</p>
+    <nav class="breadcrumb" style="margin-top:1rem">
+      <a href="index.html">Home</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Gallery</span>
+    </nav>
+  </div>
+</section>
+
+<!-- ============================================================
+     FILTER TABS
+     ============================================================ -->
+<div class="gallery-tabs-wrap">
+  <div class="container">
+    <div class="gallery-tabs">
+      <button class="gallery-tab active" data-filter="all">
+        <span class="tab-icon">🏫</span> All Photos
+      </button>
+      <button class="gallery-tab" data-filter="cultural">
+        <span class="tab-icon">🎭</span> Cultural Day
+      </button>
+      <button class="gallery-tab" data-filter="sports">
+        <span class="tab-icon">🏆</span> Inter-House Sports
+      </button>
+      <button class="gallery-tab" data-filter="graduation">
+        <span class="tab-icon">🎓</span> Graduation
+      </button>
+      <button class="gallery-tab" data-filter="pupils">
+        <span class="tab-icon">👦</span> Our Pupils
+      </button>
+      <button class="gallery-tab" data-filter="events">
+        <span class="tab-icon">🏅</span> Achievements
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CULTURAL DAY SECTION
+     ============================================================ -->
+<section class="gallery-section section" id="sec-cultural">
+  <div class="container">
+    <div class="gallery-section-header reveal">
+      <div class="gallery-section-title">
+        <span class="gallery-section-icon">🎭</span>
+        <div>
+          <h2>Cultural Day</h2>
+          <p>Celebrating our rich Igbo heritage and Nigerian culture</p>
+        </div>
+      </div>
+      <span class="gallery-count">14 Photos</span>
+    </div>
+
+    <div class="gallery-masonry" data-category="cultural">
+      <div class="gal-item gal-wide reveal" data-cat="cultural">
+        <img src="assets/images/about-main.jpg" alt="School building — Cultural Day" loading="lazy">
+        <div class="gal-overlay"><span>School Campus — Cultural Day</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="cultural">
+        <img src="assets/images/about-accent.jpg" alt="Teacher with pupils in cultural attire" loading="lazy">
+        <div class="gal-overlay"><span>Teacher &amp; Pupils</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="cultural">
+        <img src="assets/images/gallery-8.jpg" alt="Boys in red cultural attire" loading="lazy">
+        <div class="gal-overlay"><span>Boys in Traditional Attire</span></div>
+      </div>
+      <div class="gal-item reveal" data-cat="cultural">
+        <img src="assets/images/gallery-2.jpg" alt="Cultural day group" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Day Group</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="cultural">
+        <img src="assets/images/gallery-6.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Celebration</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="cultural">
+        <img src="assets/images/gallery-7.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Day</span></div>
+      </div>
+      <div class="gal-item reveal" data-cat="cultural">
+        <img src="assets/images/gallery-9.jpg" alt="Cultural celebration" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Celebration</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="cultural">
+        <img src="assets/images/gallery-10.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Day</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="cultural">
+        <img src="assets/images/gallery-11.jpg" alt="Cultural day event" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Day Event</span></div>
+      </div>
+      <div class="gal-item reveal" data-cat="cultural">
+        <img src="assets/images/gallery-12.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Day</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="cultural">
+        <img src="assets/images/gallery-13.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Attire</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="cultural">
+        <img src="assets/images/gallery-14.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Day</span></div>
+      </div>
+      <div class="gal-item reveal" data-cat="cultural">
+        <img src="assets/images/gallery-15.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Celebration</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="cultural">
+        <img src="assets/images/gallery-16.jpg" alt="Cultural day" loading="lazy">
+        <div class="gal-overlay"><span>Cultural Day</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     INTER-HOUSE SPORTS SECTION
+     ============================================================ -->
+<section class="gallery-section section bg-off-white" id="sec-sports">
+  <div class="container">
+    <div class="gallery-section-header reveal">
+      <div class="gallery-section-title">
+        <span class="gallery-section-icon">🏆</span>
+        <div>
+          <h2>Inter-House Sports</h2>
+          <p>Athletic excellence and healthy competition among our pupils</p>
+        </div>
+      </div>
+      <span class="gallery-count">5 Photos</span>
+    </div>
+
+    <div class="gallery-masonry" data-category="sports">
+      <div class="gal-item gal-wide reveal" data-cat="sports">
+        <img src="assets/images/gallery-17.jpg" alt="Inter-house sports day" loading="lazy">
+        <div class="gal-overlay"><span>Inter-House Sports Day</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="sports">
+        <img src="assets/images/gallery-3.jpg" alt="Sports event" loading="lazy">
+        <div class="gal-overlay"><span>Sports Competition</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="sports">
+        <img src="assets/images/gallery-18.jpg" alt="White team sports day" loading="lazy">
+        <div class="gal-overlay"><span>Sports Day — White Team</span></div>
+      </div>
+      <div class="gal-item reveal" data-cat="sports">
+        <img src="assets/images/news-3.jpg" alt="Inter-house sports" loading="lazy">
+        <div class="gal-overlay"><span>Inter-House Sports</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="sports">
+        <img src="assets/images/gallery-19.jpg" alt="Sports event" loading="lazy">
+        <div class="gal-overlay"><span>Sports Day Events</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     GRADUATION SECTION
+     ============================================================ -->
+<section class="gallery-section section" id="sec-graduation">
+  <div class="container">
+    <div class="gallery-section-header reveal">
+      <div class="gallery-section-title">
+        <span class="gallery-section-icon">🎓</span>
+        <div>
+          <h2>Graduation Ceremony</h2>
+          <p>Celebrating our Nursery 3 graduates — proud moments for families</p>
+        </div>
+      </div>
+      <span class="gallery-count">3 Photos</span>
+    </div>
+
+    <div class="gallery-masonry" data-category="graduation">
+      <div class="gal-item gal-wide reveal" data-cat="graduation">
+        <img src="assets/images/why-us.jpg" alt="Graduation day" loading="lazy">
+        <div class="gal-overlay"><span>Graduation Day — All Graduates</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="graduation">
+        <img src="assets/images/gallery-4.jpg" alt="Nursery 3 graduation" loading="lazy">
+        <div class="gal-overlay"><span>Nursery 3 Graduation Group</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="graduation">
+        <img src="assets/images/news-2.jpg" alt="Graduation ceremony" loading="lazy">
+        <div class="gal-overlay"><span>Graduation Ceremony</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     OUR PUPILS SECTION
+     ============================================================ -->
+<section class="gallery-section section bg-off-white" id="sec-pupils">
+  <div class="container">
+    <div class="gallery-section-header reveal">
+      <div class="gallery-section-title">
+        <span class="gallery-section-icon">👦</span>
+        <div>
+          <h2>Our Pupils</h2>
+          <p>The bright faces of Royal Crystal Academy in their school uniform</p>
+        </div>
+      </div>
+      <span class="gallery-count">6 Photos</span>
+    </div>
+
+    <div class="gallery-masonry" data-category="pupils">
+      <div class="gal-item reveal" data-cat="pupils">
+        <img src="assets/images/staircase.jpg" alt="RCA pupils on staircase" loading="lazy">
+        <div class="gal-overlay"><span>Pupils on School Staircase</span></div>
+      </div>
+      <div class="gal-item gal-wide reveal reveal-delay-1" data-cat="pupils">
+        <img src="assets/images/group-reading.jpg" alt="Pupils reading together" loading="lazy">
+        <div class="gal-overlay"><span>Group Reading Session</span></div>
+      </div>
+      <div class="gal-item gal-wide reveal reveal-delay-2" data-cat="pupils">
+        <img src="assets/images/table-reading.jpg" alt="Pupils studying at table" loading="lazy">
+        <div class="gal-overlay"><span>Pupils Studying Together</span></div>
+      </div>
+      <div class="gal-item reveal" data-cat="pupils">
+        <img src="assets/images/hero-1.jpg" alt="RCA pupils in uniform" loading="lazy">
+        <div class="gal-overlay"><span>Pupils in School Uniform</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="pupils">
+        <img src="assets/images/hero-2.jpg" alt="RCA pupils" loading="lazy">
+        <div class="gal-overlay"><span>Royal Crystal Academy Pupils</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="pupils">
+        <img src="assets/images/hero-3.jpg" alt="Pupils reading" loading="lazy">
+        <div class="gal-overlay"><span>Pupils Reading Together</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ACHIEVEMENTS SECTION
+     ============================================================ -->
+<section class="gallery-section section" id="sec-events">
+  <div class="container">
+    <div class="gallery-section-header reveal">
+      <div class="gallery-section-title">
+        <span class="gallery-section-icon">🏅</span>
+        <div>
+          <h2>Achievements &amp; Events</h2>
+          <p>Competitions, awards and special occasions at Royal Crystal Academy</p>
+        </div>
+      </div>
+      <span class="gallery-count">4 Photos</span>
+    </div>
+
+    <div class="gallery-masonry" data-category="events">
+      <div class="gal-item gal-wide reveal" data-cat="events">
+        <img src="assets/images/ict-lab.jpg" alt="Pupils in ICT Laboratory" loading="lazy">
+        <div class="gal-overlay"><span>ICT Laboratory — Pupils Using Laptops</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="events">
+        <img src="assets/images/news-1.jpg" alt="Spelling Bee award" loading="lazy">
+        <div class="gal-overlay"><span>Spelling Bee Competition Award</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-1" data-cat="events">
+        <img src="assets/images/gallery-1.jpg" alt="School event" loading="lazy">
+        <div class="gal-overlay"><span>School Event</span></div>
+      </div>
+      <div class="gal-item reveal reveal-delay-2" data-cat="events">
+        <img src="assets/images/gallery-5.jpg" alt="School activity" loading="lazy">
+        <div class="gal-overlay"><span>School Activity</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+  <button class="lightbox-prev" id="lightboxPrev">&#8249;</button>
+  <button class="lightbox-next" id="lightboxNext">&#8250;</button>
+  <div class="lightbox-img-wrap">
+    <img src="" alt="" id="lightboxImg">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+</div>
+<div class="lightbox-overlay" id="lightboxOverlay"></div>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+          <div class="logo-text">
+            <span class="logo-name">Royal Crystal Academy</span>
+            <span class="logo-tagline" style="color:var(--color-secondary)">Excellence in Education</span>
+          </div>
+        </a>
+        <p>Nurturing curious minds and building strong foundations for life, with a modern ICT lab for the leaders of tomorrow.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Twitter">t</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="WhatsApp">w</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About Us</a>
+          <a href="admissions.html">Admissions</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact Us</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Academics</h4>
+        <nav class="footer-links">
+          <a href="ict-department.html">ICT Department</a>
+          <a href="academic-calendar.html">Academic Calendar</a>
+          <a href="news-events.html">News &amp; Events</a>
+          <a href="admin/login.html">Staff Portal</a>
+          <a href="admin/parent-portal.html">Parent Portal</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Contact Info</h4>
+        <div class="footer-contact-item"><span class="icon">📍</span><span>20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</span></div>
+        <div class="footer-contact-item"><span class="icon">📞</span><a href="tel:08036721390">+234 08036 721390</a></div>
+        <div class="footer-contact-item"><span class="icon">✉</span><a href="mailto:info@royalcrystalacademy.edu.ng">info@royalcrystalacademy.edu.ng</a></div>
+        <div class="footer-contact-item"><span class="icon">🕐</span><span>Mon – Fri: 7:30 AM – 3:30 PM | Sat: Office Hours Only</span></div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Royal Crystal Academy. All rights reserved.</p>
+      <p>20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</p>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="assets/js/main.js"></script>
+<script src="assets/js/gallery.js"></script>
+</body>
+</html>

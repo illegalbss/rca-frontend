@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promotion Records | Greenfield Primary School</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/promotion.css">
+</head>
+<body>
+
+  <div class="admin-shell">
+
+    <!-- ============ SIDEBAR (identical on every admin page) ============ -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <img src="../assets/images/logo.svg" alt="Greenfield Primary School logo">
+        <span>Greenfield Primary</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="sidebar-section-label">Main</p>
+        <a href="dashboard.html" class="sidebar-link" data-roles="all">
+          <i class="icon">&#9632;</i> Dashboard
+        </a>
+
+        <p class="sidebar-section-label">Administration</p>
+        <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant">
+          <i class="icon">&#9675;</i> Students
+        </a>
+        <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Teachers
+        </a>
+        <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Classes
+        </a>
+        <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Attendance
+        </a>
+        <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Discipline
+        </a>
+        <a href="promotion.html" class="sidebar-link active" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Promotion
+        </a>
+
+        <p class="sidebar-section-label">Results</p>
+        <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Score Entry
+        </a>
+        <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher">
+          <i class="icon">&#9675;</i> Class Review
+        </a>
+        <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Approvals
+        </a>
+        <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Report Cards
+        </a>
+
+        <p class="sidebar-section-label">Finance</p>
+        <a href="#" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant">
+          <i class="icon">&#9675;</i> Fees &amp; Payments <span class="badge-soon">Soon</span>
+        </a>
+
+        <p class="sidebar-section-label">ICT</p>
+        <a href="#" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> ICT Lab <span class="badge-soon">Soon</span>
+        </a>
+        <p class="sidebar-section-label">System</p>
+        <a href="user-management.html" class="sidebar-link" data-roles="ict_admin">
+          <i class="icon">&#9675;</i> User Management
+        </a>
+        <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin">
+          <i class="icon">&#9675;</i> Activity Logs
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../index.html" class="sidebar-link">
+          <i class="icon">&#8592;</i> Back to website
+        </a>
+        <a href="login.html" class="sidebar-link logout-link" id="logoutBtn">
+          <i class="icon">&#10006;</i> Log out
+        </a>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============ MAIN AREA ============ -->
+    <div class="admin-content">
+
+      <header class="admin-topbar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+        <h1 class="topbar-title">Promotion Records</h1>
+        <div class="topbar-user">
+          <span class="user-role-badge" id="userRoleBadge">Guest</span>
+          <div class="user-avatar" id="userAvatar">?</div>
+        </div>
+      </header>
+
+      <main class="admin-main">
+
+        <!-- Placeholder data notice -->
+        <div class="data-notice">
+          <strong>Phase 1 note:</strong> Average scores shown below are
+          generated placeholders, since Result Management hasn't been built
+          yet. Once it exists, these will be replaced by real computed
+          averages — the promotion logic itself won't need to change.
+        </div>
+
+        <!-- Class + session toolbar -->
+        <div class="promotion-toolbar">
+          <div class="form-group">
+            <label for="sourceClassSelect">Promoting from</label>
+            <select id="sourceClassSelect" class="form-control"></select>
+          </div>
+          <div class="promotion-arrow">
+            <span id="promotionArrowText">&rarr; promotes into &hellip;</span>
+          </div>
+          <span class="session-pill">2025/2026 Session</span>
+        </div>
+
+        <!-- Live summary cards -->
+        <div class="grid grid-3 promotion-summary" id="promotionSummary"></div>
+
+        <!-- Bulk actions -->
+        <div class="bulk-actions">
+          <div class="search-wrap">
+            <span class="search-icon">&#9906;</span>
+            <input type="search" id="promotionSearch" class="form-control search-input" placeholder="Search this class...">
+          </div>
+          <button class="btn btn-outline" id="applyThresholdBtn">Apply Suggested to All</button>
+        </div>
+
+        <!-- Pupil review table -->
+        <div class="card">
+          <div class="table-scroll">
+            <table class="data-table promotion-table" id="promotionTable">
+              <thead>
+                <tr>
+                  <th class="col-avatar"></th>
+                  <th>Pupil</th>
+                  <th>Average Score</th>
+                  <th>Suggested</th>
+                  <th>Decision</th>
+                </tr>
+              </thead>
+              <tbody id="promotionTableBody"></tbody>
+            </table>
+          </div>
+          <p class="no-results" id="noPromotionResults" style="display:none;">No pupils match your search.</p>
+        </div>
+
+        <!-- Confirm bar -->
+        <div class="confirm-bar">
+          <span id="confirmBarStatus" class="confirm-status">Review decisions, then apply when ready.</span>
+          <button class="btn btn-primary" id="applyPromotionsBtn">Confirm &amp; Apply Promotion Decisions</button>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRMATION MODAL ============ -->
+  <div class="modal-overlay" id="confirmModalOverlay">
+    <div class="modal-card">
+      <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+      <h3 id="confirmModalTitle">Confirm Promotion Decisions</h3>
+      <div id="confirmModalBody"></div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="cancelApplyBtn">Cancel</button>
+        <button class="btn btn-primary" id="confirmApplyBtn">Yes, Apply Decisions</button>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    SCRIPT LOAD ORDER:
+    1. sample-students.js   - creates window.SAMPLE_STUDENTS + window.SCHOOL_CLASSES
+    2. sample-promotion.js  - creates window.SAMPLE_PROMOTION_SCORES (needs SAMPLE_STUDENTS)
+    3. dashboard-shell.js   - sidebar/topbar (shared)
+    4. promotion.js         - this page's own logic
+  -->
+  <script src="../assets/js/admin/sample-students.js"></script>
+  <script src="../assets/js/admin/sample-promotion.js"></script>
+  <script src="../assets/js/admin/sample-teachers.js"></script>
+  <script src="../assets/js/admin/sample-users.js"></script>
+  <script src="../assets/js/admin/dashboard-shell.js"></script>
+  <script src="../assets/js/admin/promotion.js"></script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Calendar — Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/shared.css">
+  <link rel="stylesheet" href="assets/css/pages/calendar.css">
+</head>
+<body>
+
+<!-- ============================================================
+     TOP BAR
+     ============================================================ -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-left">
+      <span class="top-bar-item">📍 20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</span>
+      <span class="top-bar-item">📞 <a href="tel:08036721390">08036 721390</a> / <a href="tel:09080061094">09080 061094</a></span>
+    </div>
+    <div class="top-bar-right">
+      <a href="mailto:info@royalcrystalacademy.edu.ng">✉ info@royalcrystalacademy.edu.ng</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<header class="site-header" id="siteHeader">
+  <div class="navbar-wrap">
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+        <div class="logo-text">
+          <span class="logo-name">Royal Crystal Academy</span>
+          <span class="logo-tagline">Excellence in Education</span>
+        </div>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="admissions.html">Admissions</a></li>
+        <li><a href="news-events.html">News &amp; Events</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="ict-department.html">ICT</a></li>
+        <li><a href="academic-calendar.html">Calendar</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="parent-login.html" class="btn btn-secondary btn-sm">Parent Login</a>
+        <a href="admin/login.html" class="btn btn-outline-light btn-sm">Staff Portal</a>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Mobile Drawer -->
+<div class="nav-drawer-overlay" id="navOverlay"></div>
+<div class="nav-drawer" id="navDrawer">
+  <button class="nav-drawer-close" id="navDrawerClose">✕</button>
+  <a href="index.html" class="logo">
+    <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+    <div class="logo-text"><span class="logo-name">Royal Crystal Academy</span></div>
+  </a>
+  <nav class="nav-drawer-links">
+    <a href="index.html">Home</a>
+    <a href="about.html">About Us</a>
+    <a href="admissions.html">Admissions</a>
+    <a href="news-events.html">News &amp; Events</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="ict-department.html">ICT Department</a>
+    <a href="academic-calendar.html">Calendar</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+  <div class="nav-drawer-actions">
+    <a href="parent-login.html" class="btn btn-secondary">Parent Login</a>
+    <a href="admin/login.html" class="btn btn-outline">Staff Portal</a>
+  </div>
+</div>
+
+<section class="page-banner" style="background-image:url('assets/images/why-us.jpg');background-size:cover;background-position:center top;background-repeat:no-repeat">
+  <div class="page-banner-content container">
+    <span class="section-label" style="background:rgba(201,150,12,0.2);color:var(--color-secondary-light);margin-bottom:1rem;display:inline-block">Academic Calendar</span>
+    <h1>Academic Calendar</h1>
+    <p style="color:rgba(255,255,255,0.8);margin-top:0.5rem">Stay up to date with all important dates and events for the 2025/2026 session.</p>
+    <nav class="breadcrumb" style="margin-top:1rem">
+      <a href="index.html">Home</a>
+      <span class="breadcrumb-sep">›</span>
+      <span>Academic Calendar</span>
+    </nav>
+  </div>
+</section>
+
+  <!-- TERM OVERVIEW CARDS -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Academic Session 2025/2026</h2>
+      <div class="grid grid-3">
+        <div class="card term-card term-done">
+          <span class="term-status">Completed</span>
+          <h3>First Term</h3>
+          <p class="term-dates">September 8, 2025 — December 12, 2025</p>
+          <p class="term-weeks">14 weeks of instruction</p>
+        </div>
+        <div class="card term-card term-active">
+          <span class="term-status">In Progress</span>
+          <h3>Second Term</h3>
+          <p class="term-dates">January 12, 2026 — April 3, 2026</p>
+          <p class="term-weeks">12 weeks of instruction</p>
+        </div>
+        <div class="card term-card term-upcoming">
+          <span class="term-status">Upcoming</span>
+          <h3>Third Term</h3>
+          <p class="term-dates">September 15, 2026 — December 11, 2026</p>
+          <p class="term-weeks">13 weeks of instruction</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- KEY DATES TIMELINE -->
+  <section class="section calendar-timeline-section">
+    <div class="container">
+      <h2 class="section-title">Key Dates &amp; Events</h2>
+
+      <div class="timeline">
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-done"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">September 8, 2025</span>
+            <h4>First Term Resumption</h4>
+            <p>All pupils resume for the first term of the 2025/2026 academic session.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-done"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">December 12, 2025</span>
+            <h4>First Term Ends — Mid-Term Break Begins</h4>
+            <p>Pupils proceed on holiday. Report cards issued to parents at end-of-term assembly.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-active"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">January 12, 2026</span>
+            <h4>Second Term Resumption</h4>
+            <p>Pupils return for the second term. School fees for the term are due on resumption day.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-active"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">February 16 — 20, 2026</span>
+            <h4>Mid-Term Test Week</h4>
+            <p>Continuous assessment tests for all classes, Pre-Nursery to Basic 6.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-active"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">July 12, 2026</span>
+            <h4>Parent-Teacher Conference</h4>
+            <p>All parents are invited to discuss their child's academic progress with class teachers.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-upcoming"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">April 3, 2026</span>
+            <h4>Second Term Ends</h4>
+            <p>Examinations conclude. Report cards distributed before the long holiday begins.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-upcoming"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">September 15, 2026</span>
+            <h4>Third Term Resumption</h4>
+            <p>Pupils resume for the final term of the academic session.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot dot-upcoming"></div>
+          <div class="card timeline-content">
+            <span class="timeline-date">December 11, 2026</span>
+            <h4>Third Term Ends — Prize Giving Day</h4>
+            <p>Academic session concludes with the annual Prize Giving Day ceremony and long holiday begins.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- PUBLIC HOLIDAYS TABLE -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Public Holidays (No School)</h2>
+      <div class="card">
+        <table class="holiday-table">
+          <thead>
+            <tr><th>Date</th><th>Holiday</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>October 1, 2025</td><td>Independence Day</td></tr>
+            <tr><td>December 25 - 26, 2025</td><td>Christmas / Boxing Day</td></tr>
+            <tr><td>January 1, 2026</td><td>New Year's Day</td></tr>
+            <tr><td>March 30 - 31, 2026</td><td>Eid el-Fitr</td></tr>
+            <tr><td>May 1, 2026</td><td>Workers' Day</td></tr>
+            <tr><td>June 12, 2026</td><td>Democracy Day</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD CALENDAR CTA -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2>Want a Printable Copy?</h2>
+      <p>Download the full academic calendar to keep at home or print for your records.</p>
+      <a href="#" class="btn btn-primary">Download Calendar (PDF)</a>
+    </div>
+  </section>
+
+
+  <!-- UNIFORM DAYS SECTION -->
+  <section class="section" style="background:var(--color-white);padding-block:var(--space-3xl)">
+    <div class="container">
+      <div class="section-header text-center reveal">
+        <span class="section-label">Dress Code</span>
+        <h2 class="section-title">Uniform <span style="color:var(--color-secondary)">Days</span></h2>
+        <p class="section-subtitle">What to wear each day of the week at Royal Crystal Academy</p>
+      </div>
+
+      <div class="grid grid-3" style="margin-top:2.5rem;gap:1.5rem">
+
+        <div class="card reveal" style="padding:24px;border-top:4px solid var(--color-primary)">
+          <div style="font-size:2rem;margin-bottom:12px">👔</div>
+          <h3 style="color:var(--color-primary);margin-bottom:8px">Monday &amp; Wednesday</h3>
+          <p style="font-size:0.9rem;font-weight:700;color:#374151;margin-bottom:6px">School Uniform Day</p>
+          <ul style="list-style:none;font-size:0.85rem;color:#4b5563;line-height:2">
+            <li>✅ Full school uniform</li>
+            <li>✅ Black cover shoes</li>
+            <li>✅ Black stockings/socks</li>
+          </ul>
+        </div>
+
+        <div class="card reveal reveal-delay-1" style="padding:24px;border-top:4px solid #0ea5e9">
+          <div style="font-size:2rem;margin-bottom:12px">🏃</div>
+          <h3 style="color:#0369a1;margin-bottom:8px">Tuesday &amp; Thursday</h3>
+          <p style="font-size:0.9rem;font-weight:700;color:#374151;margin-bottom:6px">Sportswear Day</p>
+          <ul style="list-style:none;font-size:0.85rem;color:#4b5563;line-height:2">
+            <li>✅ School sportswear</li>
+            <li>✅ White canvas shoes</li>
+            <li>✅ White socks</li>
+          </ul>
+        </div>
+
+        <div class="card reveal reveal-delay-2" style="padding:24px;border-top:4px solid var(--color-secondary)">
+          <div style="font-size:2rem;margin-bottom:12px">🎽</div>
+          <h3 style="color:var(--color-secondary-dark);margin-bottom:8px">Friday</h3>
+          <p style="font-size:0.9rem;font-weight:700;color:#374151;margin-bottom:6px">Friday Wear</p>
+          <ul style="list-style:none;font-size:0.85rem;color:#4b5563;line-height:2">
+            <li>✅ Black jeans</li>
+            <li>✅ RCA white branded top</li>
+            <li>✅ White canvas shoes</li>
+            <li>✅ White stockings/socks</li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Inter-House Sports Wear -->
+      <div class="card reveal" style="margin-top:1.5rem;padding:24px 28px;background:linear-gradient(135deg,var(--color-primary-dark),var(--color-primary));color:white;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div style="font-size:2.5rem">🏆</div>
+        <div>
+          <h3 style="color:white;margin-bottom:4px">1st &amp; Last Tuesday of Every Month</h3>
+          <p style="color:rgba(255,255,255,0.9);font-size:0.9rem;margin-bottom:4px"><strong>Inter-House Sports Wear Day</strong></p>
+          <p style="color:rgba(255,255,255,0.75);font-size:0.85rem">Pupils wear their inter-house sports uniform with <strong>white canvas shoes</strong> and <strong>white socks</strong>.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+
+      <!-- Brand -->
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+          <div class="logo-text">
+            <span class="logo-name">Royal Crystal Academy</span>
+            <span class="logo-tagline" style="color:var(--color-secondary)">Excellence in Education</span>
+          </div>
+        </a>
+        <p>Nurturing curious minds and building strong foundations for life, with a modern ICT lab for the leaders of tomorrow.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Twitter">t</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="WhatsApp">w</a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About Us</a>
+          <a href="admissions.html">Admissions</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact Us</a>
+        </nav>
+      </div>
+
+      <!-- Academics -->
+      <div class="footer-col">
+        <h4>Academics</h4>
+        <nav class="footer-links">
+          <a href="ict-department.html">ICT Department</a>
+          <a href="academic-calendar.html">Calendar</a>
+          <a href="news-events.html">News &amp; Events</a>
+          <a href="admin/login.html">Staff Portal</a>
+          <a href="admin/parent-portal.html">Parent Portal</a>
+        </nav>
+      </div>
+
+      <!-- Contact -->
+            <div class="footer-col">
+        <h4>Contact Info</h4>
+        <div class="footer-contact-item"><span class="icon">📍</span><span>20/21 Amaigbo Lane, Uwani,<br>Enugu State, Nigeria<br>P.O. Box 3573, Enugu</span></div>
+        <div class="footer-contact-item"><span class="icon">📞</span><div><a href="tel:08036721390">08036 721390</a><br><a href="tel:09080061094">09080 061094</a></div></div>
+        <div class="footer-contact-item"><span class="icon">✉</span><a href="mailto:info@royalcrystalacademy.edu.ng">info@royalcrystalacademy.edu.ng</a></div>
+        <div class="footer-contact-item"><span class="icon">🕐</span><span>Mon–Fri: 7:30 AM – 3:30 PM<br>Saturday: Office Hours Only</span></div>
+      </div>
+    </div>
+
+    <!-- Mobile 3-column links grid (hidden on desktop, shown on mobile only) -->
+    <div class="footer-links-mobile-grid">
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About Us</a>
+          <a href="admissions.html">Admissions</a>
+          <a href="contact.html">Contact</a>
+          <a href="academic-calendar.html">Calendar</a>
+          <a href="news-events.html">Events</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <nav class="footer-links">
+          <a href="gallery.html">Gallery</a>
+          <a href="ict-department.html">ICT</a>
+          <a href="admin/login.html">Staff Portal</a>
+          <a href="admin/parent-portal.html">Parent Portal</a>
+          <a href="admissions.html">Apply Now</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Levels</h4>
+        <nav class="footer-links">
+          <a href="admissions.html">Pre-Nursery</a>
+          <a href="admissions.html">Nursery</a>
+          <a href="admissions.html">Basic 1–2</a>
+          <a href="admissions.html">Basic 3–6</a>
+          <a href="ict-department.html">ICT Club</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Gallery Strip (shown on mobile only) -->
+    <div class="footer-gallery-strip">
+      <a href="gallery.html"><img src="assets/images/hero-1.jpg" alt="RCA pupils" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-4.jpg" alt="Graduation" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-8.jpg" alt="Cultural day" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-17.jpg" alt="Sports day" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/staircase.jpg" alt="RCA pupils" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/group-reading.jpg" alt="Group reading" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/why-us.jpg" alt="Graduation" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/ict-lab.jpg" alt="ICT lab" loading="lazy"></a>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 Royal Crystal Academy. All rights reserved.</p>
+      <p>20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</p>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

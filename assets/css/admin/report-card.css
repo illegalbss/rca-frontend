@@ -1,0 +1,502 @@
+/* ============================================
+   REPORT CARD PAGE STYLES
+   ============================================ */
+
+/* --- Picker Toolbar --- */
+.picker-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.picker-toolbar .form-group {
+  margin-bottom: 0;
+  min-width: 180px;
+}
+
+.pupil-picker-group {
+  min-width: 240px;
+  flex: 1;
+}
+
+.picker-toolbar label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+}
+
+.print-btn {
+  white-space: nowrap;
+}
+
+/* ============================================
+   THE REPORT CARD ITSELF
+   ============================================
+   Styled to look like an actual printable document -
+   white background, defined borders, letter-style proportions -
+   even though it's sitting inside our dashboard shell on screen.
+*/
+.report-card-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.report-card {
+  background: #fff;
+  color: #1a1a1a;
+  width: 100%;
+  max-width: 760px;
+  padding: 2.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.rc-header {
+  text-align: center;
+  border-bottom: 3px solid var(--color-primary);
+  padding-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.rc-header img {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--space-sm);
+}
+
+.rc-school-name {
+  font-family: var(--font-heading);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.rc-school-meta {
+  font-size: var(--fs-sm);
+  color: #555;
+}
+
+.rc-title {
+  display: inline-block;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  padding: 0.25rem 1rem;
+  border-radius: 999px;
+  margin-top: var(--space-sm);
+}
+
+/* --- Pupil Info Grid --- */
+.rc-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-sm) var(--space-lg);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid #ddd;
+}
+
+.rc-info-item {
+  font-size: var(--fs-sm);
+}
+
+.rc-info-label {
+  display: block;
+  color: #777;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rc-info-value {
+  font-weight: 600;
+}
+
+/* --- Subjects Table --- */
+.rc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-lg);
+  font-size: var(--fs-sm);
+}
+
+.rc-table th {
+  background: var(--color-bg);
+  text-align: center;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.rc-table th.rc-subject-col {
+  text-align: left;
+}
+
+.rc-table td {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.rc-table td.rc-subject-cell {
+  text-align: left;
+  font-weight: 600;
+}
+
+.rc-grade-cell {
+  font-weight: 700;
+}
+
+.rc-grade-cell.A { color: #0f6e56; }
+.rc-grade-cell.B { color: #185fa5; }
+.rc-grade-cell.C { color: #ba7517; }
+.rc-grade-cell.D { color: #ba7517; }
+.rc-grade-cell.E { color: #a3522d; }
+.rc-grade-cell.F { color: #a32d2d; }
+
+.rc-table tfoot td {
+  font-weight: 700;
+  background: var(--color-bg);
+}
+
+/* --- Summary Row --- */
+.rc-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.rc-summary-box {
+  text-align: center;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+}
+
+.rc-summary-num {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.rc-summary-label {
+  font-size: 0.75rem;
+  color: #777;
+}
+
+/* --- Remarks + Signatures --- */
+.rc-remarks {
+  margin-bottom: var(--space-xl);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+
+.rc-remarks-label {
+  font-weight: 700;
+  display: block;
+  margin-bottom: var(--space-xs);
+}
+
+/* --- Grade Legend --- */
+.rc-grade-legend {
+  margin-bottom: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 1px dashed #ddd;
+}
+
+.rc-grade-legend .legend-item {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #555;
+  margin-right: var(--space-md);
+  margin-top: var(--space-xs);
+}
+
+.rc-grade-legend .legend-item strong {
+  color: var(--color-primary);
+}
+
+.rc-signatures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-xl);
+}
+
+.rc-signature-line {
+  border-top: 1px solid #999;
+  padding-top: var(--space-xs);
+  text-align: center;
+  font-size: 0.75rem;
+  color: #777;
+}
+
+/* --- Behavior Ratings Section (on-screen) --- */
+.rc-behavior-section {
+  margin-bottom: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid #ddd;
+}
+
+.rc-behavior-title {
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #555;
+}
+
+.rc-behavior-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 24px;
+}
+
+.rc-behavior-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.8rem;
+}
+
+.rc-behavior-label {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.rc-behavior-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.rc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid #bbb;
+  background: transparent;
+}
+
+.rc-dot.filled {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.rc-behavior-text {
+  min-width: 70px;
+  font-size: 0.7rem;
+  color: #777;
+}
+
+/* ============================================
+   PRINT STYLES — compact single A4 page
+   ============================================
+   Hides sidebar/toolbar and compresses spacing so
+   19 subjects + 13 behavior traits + signatures all
+   fit on a single A4 sheet without scaling.
+*/
+@media print {
+  /* Hide everything that isn't the report card itself */
+  .admin-sidebar,
+  .no-print {
+    display: none !important;
+  }
+
+  .admin-shell {
+    display: block;
+  }
+
+  .admin-main {
+    padding: 0;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  /* Page setup: A4, tight margins */
+  @page {
+    size: A4 portrait;
+    margin: 0.8cm;
+  }
+
+  /* Report card container */
+  .report-card {
+    box-shadow: none;
+    border: none;
+    max-width: 100%;
+    padding: 0.5cm;
+    font-size: 10px;
+  }
+
+  /* Header */
+  .rc-header {
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  }
+
+  .rc-header img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .rc-school-name {
+    font-size: 13px;
+  }
+
+  .rc-school-meta {
+    font-size: 9px;
+  }
+
+  .rc-title {
+    font-size: 8px;
+    padding: 2px 8px;
+    margin-top: 3px;
+  }
+
+  /* Pupil info grid */
+  .rc-info-grid {
+    gap: 3px 12px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+  }
+
+  .rc-info-item {
+    font-size: 9px;
+  }
+
+  /* Subjects table */
+  .rc-table {
+    font-size: 9px;
+    margin-bottom: 6px;
+  }
+
+  .rc-table th,
+  .rc-table td {
+    padding: 2px 4px;
+  }
+
+  .rc-table th {
+    font-size: 8px;
+  }
+
+  /* Summary boxes */
+  .rc-summary-grid {
+    gap: 4px;
+    margin-bottom: 5px;
+  }
+
+  .rc-summary-box {
+    padding: 3px 6px;
+  }
+
+  .rc-summary-num {
+    font-size: 12px;
+  }
+
+  .rc-summary-label {
+    font-size: 8px;
+  }
+
+  /* Remarks */
+  .rc-remarks {
+    font-size: 9px;
+    margin-bottom: 5px;
+  }
+
+  .rc-remarks-label {
+    font-size: 8px;
+  }
+
+  /* Behavior section */
+  .rc-behavior-section {
+    margin-bottom: 5px;
+    padding-top: 4px;
+  }
+
+  .rc-behavior-title {
+    font-size: 8px;
+    margin-bottom: 3px;
+  }
+
+  .rc-behavior-grid {
+    gap: 1px 16px;
+  }
+
+  .rc-behavior-row {
+    padding: 1px 0;
+    font-size: 8px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .rc-behavior-label {
+    font-size: 8px;
+  }
+
+  .rc-dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  .rc-behavior-text {
+    font-size: 7px;
+    min-width: 50px;
+  }
+
+  /* Grade legend */
+  .rc-grade-legend {
+    padding-top: 4px;
+    margin-bottom: 5px;
+  }
+
+  .rc-grade-legend .legend-item {
+    font-size: 7.5px;
+    margin-right: 6px;
+  }
+
+  /* Signatures */
+  .rc-signatures {
+    margin-top: 6px;
+    gap: 8px;
+  }
+
+  .rc-signature-line {
+    font-size: 8px;
+    padding-top: 3px;
+  }
+
+  /* Avoid page breaks inside key sections */
+  .rc-table,
+  .rc-behavior-section,
+  .rc-signatures {
+    page-break-inside: avoid;
+  }
+}
+
+@media (max-width: 700px) {
+  .picker-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .report-card {
+    padding: 1.5rem;
+  }
+  .rc-behavior-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,346 @@
+/* ============================================
+   DISCIPLINE RECORDS PAGE STYLES
+   ============================================ */
+
+.discipline-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.discipline-intro {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.total-pill {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ============================================
+   CLASS CARDS (picker view)
+   ============================================
+   Concept: the card's left border color signals severity at a
+   glance - gray for zero incidents, amber for some minor/moderate
+   activity, red for any major incident present. This lets a Head
+   Teacher scan 11 cards and immediately spot which classes need
+   attention, without opening each one.
+*/
+.discipline-class-grid {
+  margin-bottom: var(--space-md);
+}
+
+.discipline-card {
+  cursor: pointer;
+  transition: var(--transition);
+  border-left: 4px solid var(--color-border);
+}
+
+.discipline-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.discipline-card.level-none  { border-left-color: var(--color-border); }
+.discipline-card.level-low   { border-left-color: var(--color-warning); }
+.discipline-card.level-high  { border-left-color: var(--color-danger); }
+
+.discipline-card-name {
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.discipline-card-count {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.discipline-card-breakdown {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.severity-chip {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+
+.severity-chip.minor    { background: rgba(244, 162, 97, 0.15); color: #8a5a1f; }
+.severity-chip.moderate { background: rgba(244, 162, 97, 0.25); color: #6b3f0f; }
+.severity-chip.major    { background: rgba(230, 57, 70, 0.15); color: var(--color-danger); }
+
+/* ============================================
+   CLASS DETAIL VIEW
+   ============================================ */
+.back-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  padding: var(--space-sm) 0;
+  margin-bottom: var(--space-md);
+  min-height: 44px;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.class-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.class-detail-count {
+  color: var(--color-text-muted);
+}
+
+/* --- Severity filter pills --- */
+.severity-filter {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.severity-filter-btn {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  min-height: 40px;
+}
+
+.severity-filter-btn:hover {
+  border-color: var(--color-primary);
+}
+
+.severity-filter-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+/* ============================================
+   INCIDENT TABLE
+   ============================================ */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.incident-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.incident-table th {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.incident-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+  vertical-align: top;
+}
+
+.incident-table tr:last-child td {
+  border-bottom: none;
+}
+
+.col-avatar {
+  width: 44px;
+}
+
+.row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.severity-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.severity-badge.minor    { background: rgba(244, 162, 97, 0.15); color: #8a5a1f; }
+.severity-badge.moderate { background: rgba(244, 162, 97, 0.3);  color: #6b3f0f; }
+.severity-badge.major    { background: rgba(230, 57, 70, 0.15); color: var(--color-danger); }
+
+.notified-yes {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.notified-no {
+  color: var(--color-text-muted);
+}
+
+.no-results {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl) 0;
+}
+
+/* ============================================
+   LOG INCIDENT MODAL
+   ============================================ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.modal-card h3 {
+  margin-bottom: var(--space-lg);
+  padding-right: var(--space-xl);
+}
+
+.form-group {
+  margin-bottom: var(--space-md);
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.form-group .required {
+  color: var(--color-danger);
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 44px;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 86, 49, 0.15);
+}
+
+textarea.form-control {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-row {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .form-row.two-cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-weight: 400 !important;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+}
+
+/* On small screens, stack the toolbar */
+@media (max-width: 600px) {
+  .discipline-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

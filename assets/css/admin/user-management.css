@@ -1,0 +1,516 @@
+/* ============================================
+   USER MANAGEMENT — user-management.css
+   Royal Crystal Academy
+   ============================================ */
+
+/* ---- Toolbar ---- */
+.um-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.um-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.um-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 0.9rem;
+  pointer-events: none;
+}
+
+.um-search-wrap .form-control {
+  padding-left: 36px;
+}
+
+.um-filter-select {
+  min-width: 160px;
+}
+
+.um-total-pill {
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ---- Stat cards row ---- */
+.um-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.um-stat {
+  background: #fff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  border-left: 4px solid transparent;
+}
+
+.um-stat.s-ict    { border-left-color: #7c3aed; }
+.um-stat.s-head   { border-left-color: #1d4ed8; }
+.um-stat.s-teacher{ border-left-color: #16a34a; }
+.um-stat.s-parent { border-left-color: #f59e0b; }
+.um-stat.s-total  { border-left-color: #6b7280; }
+
+.um-stat-num {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+.um-stat-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* ---- Main table card ---- */
+.um-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.um-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.um-card-title {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ---- Table ---- */
+.um-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.um-table th {
+  background: #f8fafc;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.um-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.um-table tr:last-child td { border-bottom: none; }
+.um-table tr:hover td { background: #f9fafb; }
+
+/* ---- User cell ---- */
+.um-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.um-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #6366f1);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.um-user-name  { font-weight: 600; color: #111827; margin-bottom: 1px; }
+.um-user-email { font-size: 0.72rem; color: #6b7280; }
+
+/* ---- Role badges ---- */
+.um-role-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.role-ict_admin     { background: #ede9fe; color: #5b21b6; }
+.role-head_teacher  { background: #dbeafe; color: #1e40af; }
+.role-class_teacher { background: #d1fae5; color: #065f46; }
+.role-subject_teacher{ background: #e0f2fe; color: #0369a1; }
+.role-accountant    { background: #fef3c7; color: #92400e; }
+.role-parent        { background: #f3f4f6; color: #374151; }
+
+/* ---- Status badges ---- */
+.um-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.um-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.um-status.active       { background: #d1fae5; color: #065f46; }
+.um-status.active::before { background: #10b981; }
+.um-status.deactivated  { background: #fee2e2; color: #991b1b; }
+.um-status.deactivated::before { background: #ef4444; }
+.um-status.suspended    { background: #fef3c7; color: #92400e; }
+.um-status.suspended::before { background: #f59e0b; }
+
+/* ---- Action buttons ---- */
+.um-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.um-action-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.um-btn-view   { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+.um-btn-edit   { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+.um-btn-deact  { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.um-btn-react  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+.um-btn-reset  { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+
+.um-action-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+/* ---- MODAL OVERLAY ---- */
+.um-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.um-modal-overlay.open { display: flex; }
+
+.um-modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.um-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+  border-radius: 16px 16px 0 0;
+}
+
+.um-modal-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.um-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: background 0.15s;
+}
+
+.um-modal-close:hover { background: #e5e7eb; color: #111827; }
+
+.um-modal-body {
+  padding: 20px 24px;
+}
+
+.um-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 16px 24px 20px;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* ---- Form inside modal ---- */
+.um-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.um-form-grid .um-full { grid-column: 1 / -1; }
+
+.um-form-group { display: flex; flex-direction: column; gap: 5px; }
+
+.um-form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.um-form-input,
+.um-form-select {
+  padding: 9px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: #111827;
+  transition: border-color 0.15s;
+  background: #fff;
+}
+
+.um-form-input:focus,
+.um-form-select:focus {
+  outline: none;
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(29,78,216,0.1);
+}
+
+.um-form-input[readonly] {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: default;
+}
+
+.um-form-hint {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.um-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  font-size: 0.82rem;
+}
+
+.um-checkbox-row:has(input:checked) {
+  border-color: #1d4ed8;
+  background: #eff6ff;
+}
+
+/* ---- Detail panel (view user) ---- */
+.um-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.um-detail-item {}
+.um-detail-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  margin-bottom: 3px;
+}
+
+.um-detail-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.um-detail-value.email {
+  font-size: 0.78rem;
+  color: #1d4ed8;
+}
+
+/* ---- Alert/feedback messages ---- */
+.um-alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.um-alert.success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+.um-alert.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+.um-alert.info    { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+
+/* ---- Password reset panel ---- */
+.um-new-password {
+  background: #f0fdf4;
+  border: 1.5px solid #6ee7b7;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.um-new-password-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #065f46;
+  margin-bottom: 6px;
+}
+
+.um-new-password-val {
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+
+/* ---- Credentials section ---- */
+.um-cred-section {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+  margin-top: 24px;
+}
+
+.um-cred-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.um-cred-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #111827;
+}
+
+.um-cred-sub {
+  font-size: 0.72rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.credentials-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.credentials-table th {
+  background: #f8fafc;
+  padding: 9px 14px;
+  text-align: left;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.credentials-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.credentials-table tr:last-child td { border-bottom: none; }
+.credentials-table tr:hover td { background: #f9fafb; }
+
+/* ---- No results ---- */
+.um-no-results {
+  text-align: center;
+  padding: 48px 24px;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .um-stats { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  .um-stats { grid-template-columns: 1fr 1fr; }
+  .um-toolbar { flex-direction: column; align-items: stretch; }
+  .um-form-grid { grid-template-columns: 1fr; }
+  .um-detail-grid { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .um-toolbar, .um-stats, .um-card,
+  .admin-sidebar, .admin-topbar, .um-actions { display: none !important; }
+  .um-cred-section { display: block !important; }
+  .admin-content { margin-left: 0 !important; }
+}

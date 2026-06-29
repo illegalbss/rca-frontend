@@ -1,0 +1,245 @@
+/* ============================================
+   CLASSES PAGE STYLES
+   ============================================ */
+
+.classes-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.classes-intro {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.total-pill {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.section-group-label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: var(--space-lg) 0 var(--space-sm);
+}
+
+.section-group-label:first-of-type {
+  margin-top: 0;
+}
+
+/* ============================================
+   CLASS GRID CARDS
+   ============================================ */
+.class-mgmt-grid {
+  margin-bottom: var(--space-md);
+}
+
+.class-mgmt-card {
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.class-mgmt-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.class-mgmt-card-name {
+  font-weight: 700;
+  font-size: var(--fs-base);
+}
+
+.class-mgmt-card-count {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.class-mgmt-card-teacher {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--fs-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.mini-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.no-teacher-text {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: var(--fs-sm);
+}
+
+/* ============================================
+   CLASS DETAIL VIEW
+   ============================================ */
+.back-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  padding: var(--space-sm) 0;
+  margin-bottom: var(--space-md);
+  min-height: 44px;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.class-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.class-detail-subtitle {
+  color: var(--color-text-muted);
+}
+
+.class-detail-grid {
+  margin-bottom: var(--space-lg);
+}
+
+.detail-card {
+  margin-bottom: var(--space-lg);
+}
+
+.detail-card h3 {
+  margin-bottom: var(--space-md);
+}
+
+/* --- Class Teacher info block (inside detail-card) --- */
+.teacher-info-block {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.teacher-info-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.teacher-info-name {
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+
+.teacher-info-meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Class Statistics list --- */
+.class-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.class-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+}
+
+.class-stat-row:last-child {
+  border-bottom: none;
+}
+
+.class-stat-row .stat-label {
+  color: var(--color-text-muted);
+}
+
+.class-stat-row .stat-value {
+  font-weight: 600;
+}
+
+/* --- Subjects chips --- */
+.subjects-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.subject-chip {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.85rem;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+/* --- Other staff list (specialists teaching this class) --- */
+.other-staff-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.other-staff-row:last-child {
+  border-bottom: none;
+}
+
+.other-staff-name {
+  font-weight: 500;
+  font-size: var(--fs-sm);
+}
+
+.other-staff-subject {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.empty-state-text {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  font-style: italic;
+}

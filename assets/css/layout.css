@@ -1,0 +1,36 @@
+/* ============================================
+   LAYOUT — layout.css
+   Page structure and body spacing
+   ============================================ */
+
+/* Push content below fixed header */
+body:not(.admin-body):not(.login-body) {
+  padding-top: 0; /* hero handles this with own spacing */
+}
+
+/* Inner pages need top padding for fixed nav */
+.page-banner,
+.inner-page-content {
+  margin-top: 0;
+}
+
+/* Smooth anchor scrolling offset */
+:target {
+  scroll-margin-top: calc(var(--nav-height) + 20px);
+}
+
+/* Main content wrapper */
+main { min-height: 60vh; }
+
+/* ---- Flex layout helpers ---- */
+.flex-wrap { flex-wrap: wrap; }
+.flex-1    { flex: 1; }
+.shrink-0  { flex-shrink: 0; }
+
+/* ---- Margin helpers ---- */
+.mt-auto { margin-top: auto; }
+.mb-0    { margin-bottom: 0; }
+
+/* ---- Position helpers ---- */
+.relative { position: relative; }
+.overflow-hidden { overflow: hidden; }

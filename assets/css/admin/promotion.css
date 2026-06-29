@@ -1,0 +1,309 @@
+/* ============================================
+   PROMOTION RECORDS PAGE STYLES
+   ============================================ */
+
+.data-notice {
+  background: rgba(244, 180, 0, 0.1);
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+}
+
+/* --- Toolbar --- */
+.promotion-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.promotion-toolbar .form-group {
+  margin-bottom: 0;
+  min-width: 200px;
+}
+
+.promotion-toolbar label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+}
+
+.promotion-arrow {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  padding-bottom: 0.7rem;
+}
+
+.session-pill {
+  background: rgba(30, 86, 49, 0.1);
+  color: var(--color-primary);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  margin-bottom: 0.2rem;
+}
+
+/* --- Summary Cards --- */
+.promotion-summary {
+  margin-bottom: var(--space-lg);
+}
+
+.summary-card-promo {
+  text-align: center;
+  padding: var(--space-lg);
+}
+
+.summary-card-promo .num {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+}
+
+.summary-card-promo .label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.summary-card-promo.promote .num { color: var(--color-success); }
+.summary-card-promo.repeat .num  { color: var(--color-danger); }
+.summary-card-promo.graduate .num { color: var(--color-info); }
+
+/* --- Bulk Actions --- */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  padding-left: 2.5rem;
+}
+
+/* --- Promotion Table --- */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.promotion-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.promotion-table th {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.promotion-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+  vertical-align: middle;
+}
+
+.promotion-table tr:last-child td {
+  border-bottom: none;
+}
+
+.col-avatar { width: 44px; }
+
+.row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-value {
+  font-weight: 700;
+}
+
+.score-value.below-threshold { color: var(--color-danger); }
+.score-value.above-threshold { color: var(--color-success); }
+
+.decision-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.decision-badge.promote  { background: rgba(42, 157, 143, 0.15); color: var(--color-success); }
+.decision-badge.repeat   { background: rgba(230, 57, 70, 0.15); color: var(--color-danger); }
+.decision-badge.graduate { background: rgba(59, 130, 246, 0.15); color: var(--color-info); }
+
+.decision-select {
+  width: auto;
+  min-height: 36px;
+  padding: 0.3rem 0.6rem;
+  font-size: var(--fs-sm);
+}
+
+.decision-select.overridden {
+  border-color: var(--color-secondary);
+  background: rgba(244, 180, 0, 0.08);
+}
+
+.no-results {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl) 0;
+}
+
+/* --- Confirm Bar --- */
+.confirm-bar {
+  position: sticky;
+  bottom: 0;
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-md) var(--space-lg);
+  margin: var(--space-lg) calc(-1 * var(--space-lg)) calc(-1 * var(--space-lg));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.confirm-status {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.confirm-status.applied {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+/* ============================================
+   CONFIRMATION MODAL
+   ============================================ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  max-width: 460px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.modal-card h3 {
+  margin-bottom: var(--space-md);
+  padding-right: var(--space-xl);
+}
+
+#confirmModalBody {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin-bottom: var(--space-lg);
+}
+
+#confirmModalBody ul {
+  margin-top: var(--space-sm);
+  padding-left: var(--space-lg);
+  list-style: disc;
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.modal-actions .btn {
+  flex: 1;
+}
+
+/* On small screens, stack the toolbar and bulk actions */
+@media (max-width: 700px) {
+  .promotion-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .confirm-bar {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+}

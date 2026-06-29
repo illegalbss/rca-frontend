@@ -1,0 +1,31 @@
+/* dashboard.css — role-specific content styles only.
+   Shell/layout/cards are in dashboard-shell.css */
+
+.welcome-banner {
+  background: linear-gradient(135deg, #1d4ed8 0%, #4338ca 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.welcome-banner h2 { color: #fff; font-size: 1.1rem; margin-bottom: 4px; }
+.welcome-banner p  { color: rgba(255,255,255,0.8); font-size: 0.82rem; }
+
+.welcome-emoji { font-size: 2.5rem; }
+
+/* Donut SVG chart */
+.donut-ring { fill: none; stroke-width: 20; }
+.donut-bg   { stroke: #e5e7eb; }
+
+/* Line sparkline via SVG */
+.sparkline-card { padding: 14px 18px; }
+.sparkline-card h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 10px; color: #374151; }
+
+/* Role-specific colour accents */
+[data-role-view="head_teacher"] .dash-card-header { border-left: 3px solid #1d4ed8; }
+[data-role-view="ict_admin"]    .dash-card-header { border-left: 3px solid #7c3aed; }
+[data-role-view="teacher"]      .dash-card-header { border-left: 3px solid #16a34a; }

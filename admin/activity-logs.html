@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Logs | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/communications.css">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+        <span>Royal Crystal Academy</span>
+      </div>
+
+      <!-- User profile block — populated by dashboard-shell.js -->
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar-profile-info">
+          <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+          <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+          <div class="sidebar-online-dot">Online</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <p class="sidebar-section-label">Main</p>
+        <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">&#9632;</i> Dashboard</a>
+        <p class="sidebar-section-label">Results</p>
+        <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Score Entry</a>
+        <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">&#9675;</i> Class Review</a>
+        <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Approvals</a>
+        <p class="sidebar-section-label">Finance</p>
+        <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
+        <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Record Payment</a>
+        <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9675;</i> Receipts</a>
+        <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
+        <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+        <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">&#9675;</i> User Management</a>
+        <a href="activity-logs.html" class="sidebar-link active" data-roles="ict_admin"><i class="icon">&#9675;</i> Activity Logs</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="../index.html" class="sidebar-link"><i class="icon">&#8592;</i> Back to website</a>
+        <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">&#10006;</i> Log out</a>
+      </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div class="admin-content">
+      <header class="admin-topbar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+        <h1 class="topbar-title">Activity Logs</h1>
+        <span class="topbar-session">Academic Session: 2025/2026</span>
+        <button class="topbar-bell" title="Notifications">
+          &#128276;
+          <span class="topbar-bell-badge">4</span>
+        </button>
+        <div class="topbar-user">
+          <span class="user-role-badge" id="userRoleBadge">Guest</span>
+          <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+        </div>
+      </header>
+          <main class="admin-main">
+
+      <div class="comm-stats" id="logStats"></div>
+
+      <div class="comm-toolbar">
+        <div class="comm-search-wrap">
+          <span class="comm-search-icon">🔍</span>
+          <input type="search" id="logSearch" class="form-control" placeholder="Search user, action or target…">
+        </div>
+        <select id="logCategory" class="form-control" style="min-width:150px">
+          <option value="all">All Categories</option>
+          <option value="login">Login Events</option>
+          <option value="scores">Score Entry</option>
+          <option value="approvals">Approvals</option>
+          <option value="payments">Payments</option>
+          <option value="users">User Management</option>
+          <option value="results">Results / Published</option>
+          <option value="review">Class Review</option>
+          <option value="system">System</option>
+        </select>
+        <select id="logRoleFilter" class="form-control" style="min-width:160px">
+          <option value="all">All Roles</option>
+          <option value="ict_admin">ICT Administrator</option>
+          <option value="head_teacher">Head Teacher</option>
+          <option value="class_teacher">Form Teacher</option>
+          <option value="subject_teacher">Subject Teacher</option>
+          <option value="accountant">Accountant</option>
+        </select>
+        <span class="um-total-pill" id="logTotal">Loading…</span>
+        <button class="btn btn-outline" onclick="window.print()" style="font-size:0.82rem;white-space:nowrap">🖨 Export</button>
+      </div>
+
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);overflow:hidden">
+        <div style="padding:12px 18px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--font-heading);font-weight:700;font-size:0.875rem;color:#111827">System Activity Log</span>
+          <span style="font-size:0.72rem;color:#6b7280">Auto-refreshes every 30 seconds</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="log-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Details</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody id="logTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+    </div>
+  </div>
+
+  <script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+  <script src="../assets/js/admin/sample-teachers.js"></script>
+  <script src="../assets/js/admin/sample-users.js"></script>
+  <script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+  <script src="../assets/js/admin/activity-logs.js"></script>
+</body>
+</html>

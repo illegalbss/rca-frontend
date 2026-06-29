@@ -1,0 +1,362 @@
+/* ============================================
+   CLASS REVIEW PAGE STYLES
+   ============================================ */
+
+/* --- Toolbar --- */
+.score-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+.score-toolbar .form-group {
+  margin-bottom: 0;
+  min-width: 160px;
+}
+.score-toolbar label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Approval Banner (shared style used here and in score-entry.css) --- */
+.approval-banner {
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+.approval-banner.tone-gray   { border-color: var(--color-text-muted); }
+.approval-banner.tone-blue   { border-color: var(--color-info); background: rgba(59,130,246,0.08); }
+.approval-banner.tone-amber  { border-color: var(--color-warning); background: rgba(244,162,97,0.1); }
+.approval-banner.tone-teal   { border-color: var(--color-success); background: rgba(42,157,143,0.08); }
+.approval-banner.tone-success { border-color: var(--color-success); background: rgba(42,157,143,0.12); }
+.approval-banner.tone-danger { border-color: var(--color-danger); background: rgba(230,57,70,0.08); }
+
+/* --- Two-column review layout --- */
+.review-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .review-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Pupil List --- */
+.pupil-list-card h3 {
+  margin-bottom: var(--space-md);
+}
+
+.pupil-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.pupil-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+
+.pupil-list-item:hover {
+  background: var(--color-bg);
+}
+
+.pupil-list-item.active {
+  background: rgba(30, 86, 49, 0.08);
+  border-left: 3px solid var(--color-primary);
+}
+
+.pupil-list-item.reviewed {
+  opacity: 0.75;
+}
+
+.pupil-list-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pupil-list-name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.pupil-list-meta {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.reviewed-tick {
+  position: absolute;
+  right: var(--space-sm);
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+/* --- Review Panel --- */
+.review-panel-card {
+  min-height: 400px;
+}
+
+.review-empty-state {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.review-panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.review-pupil-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--fs-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.review-pupil-meta {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* --- Academic Mini Summary --- */
+.academic-mini-summary {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.mini-summary-stat {
+  text-align: center;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-lg);
+}
+
+.mini-num {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.mini-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.subject-details {
+  margin-bottom: var(--space-lg);
+}
+
+.subject-details summary {
+  font-size: var(--fs-sm);
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: var(--space-xs) 0;
+  font-weight: 600;
+}
+
+.mini-subject-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  margin-top: var(--space-sm);
+}
+
+.mini-subject-table th, .mini-subject-table td {
+  padding: 0.35rem var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mini-subject-table th {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.rc-grade-cell.A { color: #0f6e56; font-weight: 700; }
+.rc-grade-cell.B { color: #185fa5; font-weight: 700; }
+.rc-grade-cell.C { color: #ba7517; font-weight: 700; }
+.rc-grade-cell.D { color: #ba7517; font-weight: 700; }
+.rc-grade-cell.E { color: #993c1d; font-weight: 700; }
+.rc-grade-cell.F { color: #a32d2d; font-weight: 700; }
+
+/* ============================================
+   13-TRAIT RATING CIRCLES
+   ============================================ */
+.traits-section {
+  margin-bottom: var(--space-lg);
+}
+
+.traits-section h4 {
+  margin-bottom: var(--space-sm);
+}
+
+.ratings-scale-legend {
+  display: flex;
+  gap: var(--space-lg);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.traits-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.trait-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.trait-row:last-child {
+  border-bottom: none;
+}
+
+.trait-label {
+  min-width: 200px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.trait-circles {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* The rating circles - each number 1-5 */
+.rating-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.rating-circle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.rating-circle.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.trait-value-label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  min-width: 80px;
+}
+
+/* --- Comment section --- */
+.comment-section {
+  margin-bottom: var(--space-lg);
+}
+
+.comment-section h4 {
+  margin-bottom: var(--space-sm);
+}
+
+.comment-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  resize: vertical;
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+}
+
+.comment-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(30, 86, 49, 0.15);
+}
+
+.save-pupil-btn {
+  width: 100%;
+}
+
+/* --- Bottom submit bar --- */
+.submit-class-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.review-progress {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  flex: 1;
+}
+
+.save-status {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.save-status.saved   { color: var(--color-success); font-weight: 600; }
+.save-status.unsaved { color: var(--color-secondary-dark); font-weight: 600; }

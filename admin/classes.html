@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classes | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/classes.css">
+</head>
+<body>
+
+  <div class="admin-shell">
+
+    <!-- ============ SIDEBAR (identical on every admin page) ============ -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+        <span>Royal Crystal Academy</span>
+      </div>
+
+      <!-- User profile block — populated by dashboard-shell.js -->
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar-profile-info">
+          <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+          <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+          <div class="sidebar-online-dot">Online</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="sidebar-section-label">Main</p>
+        <a href="dashboard.html" class="sidebar-link" data-roles="all">
+          <i class="icon">&#9632;</i> Dashboard
+        </a>
+
+        <p class="sidebar-section-label">Administration</p>
+        <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant">
+          <i class="icon">&#9675;</i> Students
+        </a>
+        <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Teachers
+        </a>
+        <a href="classes.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Classes
+        </a>
+        <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Attendance
+        </a>
+        <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Discipline
+        </a>
+
+        <p class="sidebar-section-label">Results</p>
+        <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Score Entry
+        </a>
+        <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher">
+          <i class="icon">&#9675;</i> Class Review
+        </a>
+        <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Approvals
+        </a>
+        <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Report Cards
+        </a>
+
+        <p class="sidebar-section-label">Finance</p>
+        <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
+        <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Record Payment</a>
+        <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9675;</i> Receipts</a>
+        <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
+
+        <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+        <a href="user-management.html" class="sidebar-link" data-roles="ict_admin">
+          <i class="icon">&#9675;</i> User Management
+        </a>
+        <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin">
+          <i class="icon">&#9675;</i> Activity Logs
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../index.html" class="sidebar-link">
+          <i class="icon">&#8592;</i> Back to website
+        </a>
+        <a href="login.html" class="sidebar-link logout-link" id="logoutBtn">
+          <i class="icon">&#10006;</i> Log out
+        </a>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============ MAIN AREA ============ -->
+    <div class="admin-content">
+
+      <header class="admin-topbar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+        <h1 class="topbar-title" id="topbarTitle">Classes</h1>
+        <span class="topbar-session">Academic Session: 2025/2026</span>
+        <button class="topbar-bell" title="Notifications">
+          &#128276;
+          <span class="topbar-bell-badge">4</span>
+        </button>
+        <div class="topbar-user">
+          <span class="user-role-badge" id="userRoleBadge">Guest</span>
+          <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+        </div>
+      </header>
+
+      <main class="admin-main">
+
+        <!-- ============================================
+             VIEW 1: CLASS GRID (shown by default)
+             ============================================ -->
+        <section id="classGridView">
+
+          <div class="classes-toolbar">
+            <p class="classes-intro">An overview of every class level, its assigned teacher, and pupil count.</p>
+            <span class="total-pill" id="totalClassesPill">11 classes</span>
+          </div>
+
+          <p class="section-group-label">Pre-Nursery &amp; Nursery</p>
+          <div class="grid grid-4 class-mgmt-grid" id="nurseryClassGrid"></div>
+
+          <p class="section-group-label">Primary (Basic 1 - 6)</p>
+          <div class="grid grid-4 class-mgmt-grid" id="primaryClassGrid"></div>
+
+        </section>
+
+        <!-- ============================================
+             VIEW 2: CLASS DETAIL (hidden until a class is clicked)
+             ============================================ -->
+        <section id="classDetailView" style="display:none;">
+
+          <button class="back-link" id="backToClassGrid">&larr; Back to all classes</button>
+
+          <div class="class-detail-header">
+            <div>
+              <h2 id="classDetailTitle">Class Name</h2>
+              <p id="classDetailSubtitle" class="class-detail-subtitle">0 pupils</p>
+            </div>
+            <a href="students.html" class="btn btn-outline" id="viewPupilsBtn">View Pupils</a>
+          </div>
+
+          <div class="grid grid-2 class-detail-grid">
+
+            <!-- Class Teacher card -->
+            <div class="card detail-card">
+              <h3>Class Teacher</h3>
+              <div id="classTeacherInfo"></div>
+            </div>
+
+            <!-- Quick stats card -->
+            <div class="card detail-card">
+              <h3>Class Statistics</h3>
+              <div class="class-stats-list" id="classStatsList"></div>
+            </div>
+
+          </div>
+
+          <!-- Subjects offered -->
+          <div class="card detail-card subjects-card">
+            <h3>Subjects Offered</h3>
+            <div class="subjects-chips" id="classSubjectsList"></div>
+          </div>
+
+          <!-- Other staff teaching this class (specialists) -->
+          <div class="card detail-card">
+            <h3>Other Staff Teaching This Class</h3>
+            <div id="otherStaffList"></div>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!--
+    SCRIPT LOAD ORDER:
+    1. sample-students.js - creates window.SCHOOL_CLASSES + window.SAMPLE_STUDENTS
+    2. sample-teachers.js - creates window.SAMPLE_TEACHERS (uses SCHOOL_CLASSES internally)
+    3. dashboard-shell.js - sidebar/topbar (shared)
+    4. classes.js - this page's own logic, COMBINES data from both sample files above
+  -->
+  <script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+  <script src="../assets/js/admin/sample-teachers.js"></script>
+  <script src="../assets/js/admin/sample-users.js"></script>
+  <script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+  <script src="../assets/js/admin/classes.js"></script>
+
+  <script>
+  // Restrict class view for form/subject teachers
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = window.CURRENT_USER;
+    if (!user) return;
+    const roles = user.roles || [user.role];
+    const isFullAccess = roles.includes('ict_admin') || roles.includes('head_teacher') || roles.includes('proprietor');
+    if (isFullAccess) return;
+
+    // Teachers — hide classes not assigned to them
+    const linked = (user.linked_classes || []).map(c => c.trim().toLowerCase());
+    if (linked.length === 0) return;
+
+    // Wait for class cards to render then filter
+    setTimeout(() => {
+      document.querySelectorAll('[data-class-name]').forEach(card => {
+        const cn = card.getAttribute('data-class-name')?.trim().toLowerCase();
+        if (cn && !linked.includes(cn)) {
+          card.style.display = 'none';
+        }
+      });
+      document.querySelectorAll('.class-card-name').forEach(el => {
+        const cn = el.textContent?.trim().toLowerCase();
+        const card = el.closest('[class*="card"]');
+        if (card && cn && !linked.some(l => cn.includes(l) || l.includes(cn))) {
+          card.style.display = 'none';
+        }
+      });
+    }, 500);
+  });
+  </script>
+</body>
+</html>

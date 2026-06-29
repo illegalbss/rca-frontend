@@ -1,0 +1,263 @@
+/* ============================================
+   SCORE ENTRY PAGE STYLES
+   ============================================ */
+
+.data-notice {
+  background: rgba(244, 180, 0, 0.1);
+  border: 1px solid var(--color-secondary);
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+}
+
+/* --- Approval Workflow Banner --- */
+.approval-banner {
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-lg);
+  line-height: 1.5;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.approval-banner.tone-gray   { border-color: var(--color-text-muted); }
+.approval-banner.tone-blue   { border-color: var(--color-info); background: rgba(59, 130, 246, 0.08); }
+.approval-banner.tone-amber  { border-color: var(--color-warning); background: rgba(244, 162, 97, 0.1); }
+.approval-banner.tone-teal   { border-color: var(--color-success); background: rgba(42, 157, 143, 0.08); }
+.approval-banner.tone-success { border-color: var(--color-success); background: rgba(42, 157, 143, 0.12); }
+.approval-banner.tone-danger { border-color: var(--color-danger); background: rgba(230, 57, 70, 0.08); }
+
+/* --- Toolbar --- */
+.score-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.score-toolbar .form-group {
+  margin-bottom: 0;
+  min-width: 180px;
+}
+
+.score-toolbar label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Summary Cards --- */
+.score-summary {
+  margin-bottom: var(--space-lg);
+}
+
+.score-summary .card {
+  text-align: center;
+  padding: var(--space-lg);
+}
+
+.score-summary .num {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+.score-summary .label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.score-summary .num.grade-a { color: var(--color-success); }
+.score-summary .num.grade-f { color: var(--color-danger); }
+
+/* --- Bulk Actions / Save Bar --- */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  padding-left: 2.5rem;
+}
+
+.save-status {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.save-status.unsaved {
+  color: var(--color-secondary-dark);
+  font-weight: 600;
+}
+
+.save-status.saved {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+/* ============================================
+   SCORE ENTRY TABLE
+   ============================================ */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.score-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+}
+
+.score-table th {
+  text-align: center;
+  padding: var(--space-sm) var(--space-xs);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-border);
+  line-height: 1.3;
+}
+
+.score-table .col-max {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.score-table .col-name {
+  text-align: left;
+}
+
+.score-table td {
+  padding: var(--space-xs);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.score-table tr:last-child td {
+  border-bottom: none;
+}
+
+.score-table .pupil-name-cell {
+  text-align: left;
+  white-space: nowrap;
+}
+
+.col-avatar { width: 40px; }
+
+.row-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+/* Inline editable score inputs */
+.score-input {
+  width: 48px;
+  padding: 0.35rem;
+  text-align: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  min-height: 36px;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(30, 86, 49, 0.15);
+}
+
+/* Visual flag for a score outside its valid range */
+.score-input.invalid {
+  border-color: var(--color-danger);
+  background: rgba(230, 57, 70, 0.06);
+}
+
+.exam-input {
+  width: 56px;
+}
+
+/* Computed (read-only) columns */
+.ca-total-col, .final-col {
+  background: var(--color-bg);
+  font-weight: 700;
+}
+
+.computed-value {
+  font-weight: 700;
+}
+
+.computed-value.below-pass { color: var(--color-danger); }
+.computed-value.above-pass { color: var(--color-success); }
+
+.grade-pill {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+}
+
+.grade-pill.A { background: rgba(42, 157, 143, 0.15); color: var(--color-success); }
+.grade-pill.B { background: rgba(59, 130, 246, 0.15); color: var(--color-info); }
+.grade-pill.C { background: rgba(244, 162, 97, 0.2); color: var(--color-secondary-dark); }
+.grade-pill.D { background: rgba(244, 162, 97, 0.15); color: var(--color-warning); }
+.grade-pill.E { background: rgba(230, 57, 70, 0.1); color: #b8492f; }
+.grade-pill.F { background: rgba(230, 57, 70, 0.15); color: var(--color-danger); }
+
+.no-results {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl) 0;
+}
+
+@media (max-width: 700px) {
+  .score-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

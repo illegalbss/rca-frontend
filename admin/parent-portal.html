@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Portal | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/parent-portal.css">
+</head>
+<body>
+
+<div class="pp-shell">
+
+  <!-- ========== SIDEBAR ========== -->
+  <aside class="pp-sidebar" id="ppSidebar">
+    <div class="pp-sidebar-logo">
+      <img src="../assets/images/logo.svg" alt="Royal Crystal">
+      <span>Royal Crystal Academy</span>
+    </div>
+
+    <nav class="pp-nav">
+      <a class="pp-nav-link active" data-page="dashboard" onclick="showPage('dashboard',this)">
+        <span class="pp-nav-icon">&#9632;</span> Dashboard
+      </a>
+      <a class="pp-nav-link" data-page="children" onclick="showPage('children',this)">
+        <span class="pp-nav-icon">&#128106;</span> My Children
+      </a>
+      <a class="pp-nav-link" data-page="payments" onclick="showPage('payments',this)">
+        <span class="pp-nav-icon">&#128179;</span> Payments
+      </a>
+      <a class="pp-nav-link" data-page="results" onclick="showPage('results',this)">
+        <span class="pp-nav-icon">&#128220;</span> Results
+      </a>
+      <a class="pp-nav-link" data-page="attendance" onclick="showPage('attendance',this)">
+        <span class="pp-nav-icon">&#128197;</span> Attendance
+      </a>
+      <a class="pp-nav-link" data-page="newsletter" onclick="showPage('newsletter',this)">
+        <span class="pp-nav-icon">&#128240;</span> Newsletter
+      </a>
+      <a class="pp-nav-link" data-page="announcements" onclick="showPage('announcements',this)">
+        <span class="pp-nav-icon">&#128227;</span> Announcements
+      </a>
+    </nav>
+
+    <div class="pp-sidebar-footer">
+      <a class="pp-nav-link" data-page="profile" onclick="showPage('profile',this)">
+        <span class="pp-nav-icon">&#128100;</span> Profile
+      </a>
+      <a class="pp-nav-link" href="login.html" id="ppLogout">
+        <span class="pp-nav-icon">&#10006;</span> Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- Mobile overlay -->
+  <div class="pp-overlay" id="ppOverlay"></div>
+
+  <!-- ========== CONTENT ========== -->
+  <div class="pp-content">
+
+    <!-- Topbar -->
+    <header class="pp-topbar">
+      <div class="pp-topbar-left">
+        <button class="pp-menu-toggle" id="ppMenuToggle">&#9776;</button>
+        <span class="pp-topbar-title" id="ppPageTitle">Dashboard</span>
+      </div>
+      <div class="pp-topbar-right">
+        <button class="pp-notif-btn" title="Notifications">
+          &#128276;<span class="pp-notif-dot"></span>
+        </button>
+        <div class="pp-user-chip">
+          <div class="pp-user-avatar" id="ppAvatar">?</div>
+          <span class="pp-user-name" id="ppUserName">Loading...</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="pp-main">
+
+      <!-- ===== DASHBOARD PAGE ===== -->
+      <section class="pp-page active" id="page-dashboard">
+        <div class="pp-welcome">
+          <h2>Welcome back, <span id="dashWelcomeName">Parent</span>! 👋</h2>
+          <p>Here's an overview of your children's activity at Royal Crystal Academy.</p>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="pp-stats" id="dashStats"></div>
+
+        <!-- Two-column: Announcements + Events -->
+        <div class="pp-dash-grid">
+          <div class="pp-card">
+            <div class="pp-card-header">
+              <span class="pp-card-title">Recent Announcements</span>
+              <button class="pp-card-link" onclick="showPage('announcements', document.querySelector('[data-page=announcements]'))">View All</button>
+            </div>
+            <div class="pp-card-body" id="dashAnnouncements"></div>
+          </div>
+          <div class="pp-card">
+            <div class="pp-card-header">
+              <span class="pp-card-title">Upcoming Events</span>
+              <button class="pp-card-link" onclick="showPage('announcements', document.querySelector('[data-page=announcements]'))">View Calendar</button>
+            </div>
+            <div class="pp-card-body" id="dashEvents"></div>
+          </div>
+        </div>
+
+        <!-- My Children cards + Quick Links -->
+        <div style="display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start">
+          <div>
+            <div style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#1a3a5c;margin-bottom:12px">My Children</div>
+            <div class="pp-children-row" id="dashChildCards"></div>
+          </div>
+          <div class="pp-card" style="min-width:180px;padding:0">
+            <div class="pp-card-header"><span class="pp-card-title">Quick Links</span></div>
+            <div class="pp-card-body">
+              <div class="pp-quick-links">
+                <button class="pp-quick-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">&#128179; Make a Payment</button>
+                <button class="pp-quick-link" onclick="showPage('results', document.querySelector('[data-page=results]'))">&#128220; View Results</button>
+                <button class="pp-quick-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">&#129534; Download Receipts</button>
+                <button class="pp-quick-link" onclick="showPage('profile', document.querySelector('[data-page=profile]'))">&#9999; Update Profile</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== MY CHILDREN PAGE ===== -->
+      <section class="pp-page" id="page-children">
+        <div class="pp-welcome">
+          <h2>My Children</h2>
+          <p>All enrolled children linked to your account.</p>
+        </div>
+        <div class="pp-children-list" id="childrenList"></div>
+      </section>
+
+      <!-- ===== PAYMENTS PAGE ===== -->
+      <section class="pp-page" id="page-payments">
+        <div class="pp-welcome">
+          <h2>Payments</h2>
+          <p>View your fee balances and payment history.</p>
+        </div>
+
+        <!-- Child selector if multiple children -->
+        <div id="payChildSelector" style="margin-bottom:16px;display:none">
+          <div style="font-size:0.8rem;font-weight:600;color:#64748b;margin-bottom:6px">Viewing payments for:</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap" id="payChildTabs"></div>
+        </div>
+
+        <div class="pp-payment-summary" id="paySummaryCards"></div>
+
+        <div class="pp-payment-actions">
+          <button class="btn btn-primary" id="makePaymentBtn">&#128179; Make a Payment (Demo)</button>
+          <button class="btn btn-outline" onclick="window.print()">&#128424; Download Statement</button>
+        </div>
+
+        <!-- Payment history -->
+        <div class="pp-table-card">
+          <div class="pp-table-card-header">Payment History</div>
+          <div style="overflow-x:auto">
+            <table class="pp-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th>Status</th>
+                  <th>Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="payHistoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== RESULTS PAGE ===== -->
+      <section class="pp-page" id="page-results">
+        <div class="pp-welcome">
+          <h2>Academic Results</h2>
+          <p>View your child's term results. Payment is required before results are accessible.</p>
+        </div>
+
+        <!-- Child selector -->
+        <div id="resultChildSelector" style="margin-bottom:12px;display:none">
+          <div style="display:flex;gap:8px;flex-wrap:wrap" id="resultChildTabs"></div>
+        </div>
+
+        <!-- Term selector -->
+        <div class="pp-term-selector">
+          <label>Term:</label>
+          <select id="resultTermSelect" class="form-control" style="width:auto">
+            <option value="term1">First Term 2025/2026</option>
+            <option value="term2" selected>Second Term 2025/2026</option>
+            <option value="term3">Third Term 2025/2026</option>
+          </select>
+        </div>
+
+        <div id="resultContent"></div>
+      </section>
+
+      <!-- ===== ATTENDANCE PAGE ===== -->
+      <section class="pp-page" id="page-attendance">
+        <div class="pp-welcome">
+          <h2>Attendance</h2>
+          <p>Your child's attendance record for Second Term 2025/2026.</p>
+        </div>
+        <div id="attendanceContent"></div>
+      </section>
+
+      <!-- ===== NEWSLETTER PAGE ===== -->
+      <section class="pp-page" id="page-newsletter">
+        <div class="pp-welcome">
+          <h2>Newsletter</h2>
+          <p>School newsletters and updates from Royal Crystal Academy.</p>
+        </div>
+        <div class="pp-newsletter-grid" id="newsletterGrid"></div>
+      </section>
+
+      <!-- ===== ANNOUNCEMENTS PAGE ===== -->
+      <section class="pp-page" id="page-announcements">
+        <div class="pp-welcome">
+          <h2>Announcements</h2>
+          <p>Important school announcements and upcoming events.</p>
+        </div>
+        <div id="announcementsContent"></div>
+      </section>
+
+      <!-- ===== PROFILE PAGE ===== -->
+      <section class="pp-page" id="page-profile">
+        <div class="pp-welcome">
+          <h2>My Profile</h2>
+          <p>Your account information linked to Royal Crystal Academy.</p>
+        </div>
+        <div class="pp-table-card">
+          <div class="pp-table-card-header">Account Details</div>
+          <div class="pp-card-body" id="profileContent" style="padding:18px"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+<script src="../assets/js/admin/parent-manager.js"></script>
+<script src="../assets/js/admin/subjects-and-grading.js"></script>
+<script src="../assets/js/admin/sample-results.js"></script>
+<script src="../assets/js/admin/behavior-ratings.js"></script>
+<script src="../assets/js/admin/result-approvals.js"></script>
+<script src="../assets/js/admin/announcements.js"></script>
+<script src="../assets/js/admin/school-calendar.js"></script>
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/finance-data.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/parent-portal.js"></script>
+</body>
+</html>

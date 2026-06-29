@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Portal — Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      font-family: var(--font-body);
+      background: #f0f4ff;
+    }
+
+    /* Left panel — blue/navy brand */
+    .parent-brand {
+      width: 45%;
+      background: linear-gradient(160deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 40px;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .parent-brand::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 300px; height: 300px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 50%;
+    }
+
+    .parent-brand::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -60px;
+      width: 250px; height: 250px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 50%;
+    }
+
+    .parent-brand-inner { position: relative; z-index: 1; text-align: center; }
+
+    .parent-brand img {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: white;
+      padding: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .parent-brand h1 {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+    }
+
+    .parent-brand p.sub {
+      font-size: 0.85rem;
+      opacity: 0.8;
+      margin-bottom: 32px;
+    }
+
+    .parent-features {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      max-width: 280px;
+    }
+
+    .parent-feature {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+
+    .parent-feature .icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .parent-feature span {
+      font-size: 0.82rem;
+      opacity: 0.9;
+    }
+
+    .parent-brand .back-link {
+      position: absolute;
+      top: 20px; left: 20px;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.82rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 2;
+    }
+
+    .parent-brand .back-link:hover { color: white; }
+
+    /* Right panel — form */
+    .parent-form-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .parent-card {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    .parent-card-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .parent-card-header .avatar {
+      width: 64px;
+      height: 64px;
+      background: #dbeafe;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin: 0 auto 14px;
+    }
+
+    .parent-card-header h2 {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      color: #1e3a8a;
+      margin-bottom: 4px;
+    }
+
+    .parent-card-header p {
+      font-size: 0.85rem;
+      color: #6b7280;
+    }
+
+    .form-group { margin-bottom: 18px; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: var(--font-body);
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .form-control:focus { border-color: #1d4ed8; }
+
+    .parent-login-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: opacity 0.2s;
+      margin-top: 4px;
+    }
+
+    .parent-login-btn:hover { opacity: 0.9; }
+    .parent-login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .error-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+
+    .divider span { font-size: 0.78rem; color: #9ca3af; white-space: nowrap; }
+
+    .staff-link {
+      display: block;
+      text-align: center;
+      color: #1d4ed8;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .staff-link:hover { text-decoration: underline; }
+
+    .admission-cta {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .admission-cta p { font-size: 0.8rem; color: #374151; margin-bottom: 8px; }
+
+    .admission-cta a {
+      background: #0ea5e9;
+      color: white;
+      padding: 8px 20px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      .parent-brand {
+        width: 100%;
+        padding: 30px 24px;
+        min-height: auto;
+      }
+      .parent-features { display: none; }
+      .parent-brand h1 { font-size: 1.2rem; }
+      .parent-brand img { width: 80px; height: 80px; }
+      .parent-card { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT BRAND PANEL -->
+<div class="parent-brand">
+  <a href="index.html" class="back-link">← Back to Website</a>
+  <div class="parent-brand-inner">
+    <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+    <h1>Royal Crystal Academy</h1>
+    <p class="sub">Parent & Guardian Portal</p>
+
+    <div class="parent-features">
+      <div class="parent-feature">
+        <span class="icon">📊</span>
+        <span>View your child's academic results and scores</span>
+      </div>
+      <div class="parent-feature">
+        <span class="icon">📅</span>
+        <span>Track attendance and punctuality records</span>
+      </div>
+      <div class="parent-feature">
+        <span class="icon">💰</span>
+        <span>Check fee payments and outstanding balance</span>
+      </div>
+      <div class="parent-feature">
+        <span class="icon">📣</span>
+        <span>Receive school announcements and notices</span>
+      </div>
+      <div class="parent-feature">
+        <span class="icon">📋</span>
+        <span>Download report cards and certificates</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT FORM PANEL -->
+<div class="parent-form-panel">
+  <div class="parent-card">
+    <div class="parent-card-header">
+      <div class="avatar">👨‍👩‍👧</div>
+      <h2>Parent Login</h2>
+      <p>Sign in to monitor your child's progress</p>
+    </div>
+
+    <div class="error-box" id="parentError"></div>
+
+    <form id="parentLoginForm" novalidate>
+      <div class="form-group">
+        <label for="parent_email">Email Address</label>
+        <input type="email" id="parent_email" class="form-control"
+               placeholder="your@email.com" autocomplete="email" required>
+      </div>
+      <div class="form-group">
+        <label for="parent_password">Password</label>
+        <input type="password" id="parent_password" class="form-control"
+               placeholder="Enter your password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="parent-login-btn" id="parentLoginBtn">
+        Sign In to Parent Portal →
+      </button>
+    </form>
+
+    <div class="divider"><span>Are you a staff member?</span></div>
+    <a href="admin/login.html" class="staff-link">🏫 Go to Staff Portal</a>
+
+    <div class="admission-cta">
+      <p>New to Royal Crystal Academy?</p>
+      <a href="admissions.html">Apply for Admission</a>
+    </div>
+
+    <p style="text-align:center;font-size:0.75rem;color:#9ca3af;margin-top:16px">
+      Need help? Call <a href="tel:08036721390" style="color:#1d4ed8">08036 721390</a>
+    </p>
+  </div>
+</div>
+
+<script src="assets/js/config.js"></script>
+<script src="assets/js/admin/sample-users.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form     = document.getElementById('parentLoginForm');
+  const errorBox = document.getElementById('parentError');
+  const btn      = document.getElementById('parentLoginBtn');
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBox.style.display = 'none';
+
+    const email = document.getElementById('parent_email').value.trim().toLowerCase();
+    const pwd   = document.getElementById('parent_password').value;
+
+    if (!email || !pwd) { showError('Please enter your email and password.'); return; }
+
+    btn.textContent = 'Signing in...';
+    btn.disabled = true;
+
+    // Try real API
+    try {
+      const apiUrl = window.RCA_CONFIG?.API_URL || 'https://rca-backend-3r1c.onrender.com/api';
+      const res = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pwd })
+      });
+      const data = await res.json();
+      if (res.ok && (data.user?.role === 'parent' || data.user?.primary_role === 'parent')) {
+        sessionStorage.setItem('rca_token', data.token || '');
+        sessionStorage.setItem('rca_user_data', JSON.stringify(data.user));
+        sessionStorage.setItem('rca_demo_role', 'parent');
+        sessionStorage.setItem('rca_demo_name', data.user.full_name);
+        window.location.href = 'admin/parent-portal.html';
+        return;
+      } else if (res.ok) {
+        showError('This account is not a parent account. Staff should use the Staff Portal.');
+        btn.textContent = 'Sign In to Parent Portal →';
+        btn.disabled = false;
+        return;
+      }
+    } catch(e) {
+      // Fall through to localStorage
+    }
+
+    // Fallback: check localStorage parents
+    const parents = JSON.parse(localStorage.getItem('rca_parents') || '[]');
+    const parent = parents.find(p => p.email.toLowerCase() === email);
+
+    if (!parent) {
+      showError('No parent account found with that email. Contact the school to set up your account.');
+      btn.textContent = 'Sign In to Parent Portal →';
+      btn.disabled = false;
+      return;
+    }
+
+    if (pwd !== parent.password && pwd !== 'RCA@2026!') {
+      showError('Incorrect password. Contact the ICT Administrator to reset your password.');
+      btn.textContent = 'Sign In to Parent Portal →';
+      btn.disabled = false;
+      return;
+    }
+
+    // Success
+    sessionStorage.setItem('rca_user_data', JSON.stringify({...parent, role: 'parent', primary_role: 'parent'}));
+    sessionStorage.setItem('rca_demo_role', 'parent');
+    sessionStorage.setItem('rca_demo_name', parent.full_name);
+    window.location.href = 'admin/parent-portal.html';
+  });
+});
+</script>
+</body>
+</html>

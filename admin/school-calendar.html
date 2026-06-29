@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>School Calendar | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/communications.css">
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header"><img src="../assets/images/logo.png" alt="Royal Crystal Academy"><span>Royal Crystal Academy</span></div>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-profile-info">
+        <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+        <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-online-dot">Online</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Main</p>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">⊞</i> Dashboard</a>
+      <p class="sidebar-section-label">Administration</p>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">○</i> Students</a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Teachers</a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Classes</a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Attendance</a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Discipline</a>
+      <p class="sidebar-section-label">Results</p>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Score Entry</a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">○</i> Class Review</a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Approvals</a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Report Cards</a>
+      <p class="sidebar-section-label">Finance</p>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">○</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Finance Reports</a>
+      <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Announcements</a>
+      <a href="school-calendar.html" class="sidebar-link active" data-roles="all"><i class="icon">⊞</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> User Management</a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Activity Logs</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="sidebar-link"><i class="icon">←</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">✕</i> Log out</a>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-content">
+    <header class="admin-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+      <h1 class="topbar-title">School Calendar 2025/2026</h1>
+      <span class="topbar-session">Academic Session: 2025/2026</span>
+      <button class="topbar-bell" title="Notifications">&#128276;<span class="topbar-bell-badge">4</span></button>
+      <div class="topbar-user">
+        <span class="user-role-badge" id="userRoleBadge">Guest</span>
+        <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <div class="cal-grid">
+
+        <!-- Calendar widget -->
+        <div>
+          <div class="cal-card" style="margin-bottom:16px">
+            <div class="cal-header">
+              <button class="cal-nav-btn" id="calPrev">‹</button>
+              <span class="cal-title" id="calMonthLabel"></span>
+              <button class="cal-nav-btn" id="calNext">›</button>
+            </div>
+            <div class="cal-month-grid" id="calGrid"></div>
+          </div>
+
+          <!-- Term overview -->
+          <div class="cal-card">
+            <div class="cal-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+              <span class="cal-title">Academic Term Overview — 2025/2026</span>
+              <button id="addCalEventBtn" onclick="showCalendarEventModal()" class="btn btn-primary btn-sm" style="display:none;font-size:0.8rem">+ Add Entry</button>
+            </div>
+            <div style="padding:14px">
+              <div id="termOverview"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Events panel -->
+        <div>
+          <div class="cal-card" style="margin-bottom:16px">
+            <div class="cal-header">
+              <span class="cal-title" id="eventsForDate">Upcoming Events</span>
+              <button class="btn btn-primary btn-sm" id="addEventBtn" style="font-size:0.72rem;display:none">+ Add Event</button>
+            </div>
+            <div class="cal-events-list" id="calEventsList"></div>
+          </div>
+
+          <!-- Legend -->
+          <div class="cal-card">
+            <div class="cal-header"><span class="cal-title">Event Categories</span></div>
+            <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+                <div style="width:14px;height:14px;border-radius:3px;background:#1d4ed8;flex-shrink:0"></div>
+                <span style="color:#374151">Academic</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+                <div style="width:14px;height:14px;border-radius:3px;background:#16a34a;flex-shrink:0"></div>
+                <span style="color:#374151">Holiday / Closure</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+                <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b;flex-shrink:0"></div>
+                <span style="color:#374151">Exam / Assessment</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+                <div style="width:14px;height:14px;border-radius:3px;background:#7c3aed;flex-shrink:0"></div>
+                <span style="color:#374151">Event / Activity</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+                <div style="width:14px;height:14px;border-radius:3px;background:#dc2626;flex-shrink:0"></div>
+                <span style="color:#374151">Fee Deadline</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:0.8rem">
+                <div style="width:14px;height:14px;border-radius:3px;background:#0f766e;flex-shrink:0"></div>
+                <span style="color:#374151">Meeting / PTM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+<script src="../assets/js/admin/school-calendar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const u = window.CURRENT_USER;
+  const r = u ? (u.roles || [u.role]) : [];
+  if (r.includes('ict_admin') || r.includes('head_teacher') || r.includes('proprietor')) {
+    const btn = document.getElementById('addCalEventBtn');
+    if (btn) btn.style.display = 'inline-flex';
+  }
+});
+</script>
+</body>
+</html>

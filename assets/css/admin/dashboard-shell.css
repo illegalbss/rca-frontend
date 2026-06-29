@@ -1,0 +1,1809 @@
+/* ============================================
+   ADMIN DASHBOARD SHELL — Royal Crystal Academy
+   ============================================
+   Design matches the ALGI mockup:
+   - Deep navy sidebar with school branding + user profile block
+   - Active nav item = solid blue-indigo with left accent
+   - White topbar with notification bell + session badge
+   - Light grey content area (#f0f2f7)
+*/
+
+html, body { height: 100%; }
+
+/* ============================================
+   PAGE SHELL
+   ============================================
+   Same pattern as parent portal:
+   - Sidebar is position:fixed (always visible, full height, no gaps)
+   - Content area has margin-left:240px to make room for sidebar
+   - ::before on shell paints sidebar colour full page height
+     so no white gap ever appears below the sidebar
+*/
+.admin-shell {
+  display: block;
+  min-height: 100vh;
+  background: #f0f2f7;
+  position: relative;
+}
+
+/* Paint sidebar colour behind the full left column */
+.admin-shell::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0;
+  width: 240px;
+  height: 100%;
+  background: #0f1b2d;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ============================================
+   SIDEBAR — fixed, always full height, no gap
+   ============================================ */
+.admin-sidebar {
+  background: #0f1b2d;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 200;
+  transition: transform 0.25s ease;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+/* School brand header */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-header img { width: 34px; height: 34px; flex-shrink: 0; }
+
+.sidebar-header span {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #fff;
+  line-height: 1.25;
+}
+
+/* User profile block */
+.sidebar-profile {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.sidebar-profile-info { min-width: 0; }
+
+.sidebar-profile-role {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.sidebar-profile-name {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-online-dot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: #4ade80;
+  margin-top: 2px;
+}
+
+.sidebar-online-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4ade80;
+  flex-shrink: 0;
+}
+
+/* Nav sections */
+.sidebar-nav {
+  flex: 1;        /* pushes sidebar-footer to the very bottom */
+  padding: 8px 0;
+  overflow-y: auto;
+}
+
+.sidebar-section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.3);
+  padding: 14px 16px 4px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.835rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  position: relative;
+  min-height: 40px;
+  border-radius: 0;
+}
+
+.sidebar-link .icon {
+  font-size: 0.75rem;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: #f4b400;
+}
+
+.badge-soon {
+  margin-left: auto;
+  font-size: 0.6rem;
+  background: rgba(255,255,255,0.12);
+  padding: 2px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+
+.role-hidden { display: none; }
+
+.sidebar-footer {
+  padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.logout-link { color: #f87171; }
+.logout-link:hover { background: rgba(248,113,113,0.1); color: #f87171; }
+
+/* Overlay — desktop hidden */
+.sidebar-overlay { display: none; }
+
+/* ============================================
+   TOPBAR
+   ============================================ */
+.admin-content {
+  margin-left: 240px;       /* same as sidebar width */
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+  background: #f0f2f7;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 62px;
+  padding-inline: 24px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.sidebar-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: #374151;
+  min-width: 40px;
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.topbar-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  flex: 1;
+}
+
+/* Session badge */
+.topbar-session {
+  font-size: 0.75rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Notification bell */
+.topbar-bell {
+  position: relative;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #374151;
+  cursor: pointer;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+
+.topbar-bell:hover { background: #f3f4f6; }
+
+.topbar-bell-badge {
+  position: absolute;
+  top: 2px; right: 2px;
+  min-width: 16px;
+  height: 16px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 2px solid #fff;
+}
+
+/* User section */
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-role-badge {
+  font-size: 0.75rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #6366f1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+.admin-main {
+  flex: 1;
+  padding: 24px;
+  background: #f0f2f7;
+}
+
+/* Page section header */
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.page-header p { font-size: 0.8rem; color: #6b7280; }
+
+/* ============================================
+   DASHBOARD STAT CARDS  (new design)
+   ============================================ */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.dash-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-stat-icon-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.dash-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.dsi-blue   { background: #dbeafe; color: #1d4ed8; }
+.dsi-green  { background: #d1fae5; color: #065f46; }
+.dsi-purple { background: #ede9fe; color: #7c3aed; }
+.dsi-orange { background: #ffedd5; color: #c2410c; }
+.dsi-red    { background: #fee2e2; color: #b91c1c; }
+.dsi-teal   { background: #ccfbf1; color: #0f766e; }
+.dsi-yellow { background: #fef9c3; color: #a16207; }
+.dsi-pink   { background: #fce7f3; color: #9d174d; }
+
+.dash-stat-num {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+}
+
+.dash-stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dash-stat-link {
+  font-size: 0.72rem;
+  color: #1d4ed8;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-weight: 500;
+  text-align: left;
+  margin-top: 2px;
+}
+
+.dash-stat-link:hover { text-decoration: underline; }
+
+/* ============================================
+   DASHBOARD CARDS
+   ============================================ */
+.dash-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+
+.dash-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dash-card-title {
+  font-family: var(--font-heading);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dash-card-link {
+  font-size: 0.72rem;
+  color: #1d4ed8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.dash-card-body { padding: 14px 18px; }
+
+/* ============================================
+   CSS DONUT CHART
+   ============================================ */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.donut-svg { flex-shrink: 0; }
+
+.donut-legend { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+
+.donut-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.donut-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.donut-item-label { flex: 1; color: #374151; }
+.donut-item-count { font-weight: 700; color: #111827; }
+.donut-item-pct   { color: #9ca3af; font-size: 0.72rem; }
+
+/* ============================================
+   RECENT ACTIVITY LIST
+   ============================================ */
+.activity-list { display: flex; flex-direction: column; }
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f9fafb;
+  font-size: 0.8rem;
+}
+
+.activity-item:last-child { border-bottom: none; }
+
+.activity-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.activity-dot.green  { background: #10b981; }
+.activity-dot.blue   { background: #3b82f6; }
+.activity-dot.orange { background: #f59e0b; }
+.activity-dot.red    { background: #ef4444; }
+.activity-dot.purple { background: #8b5cf6; }
+
+.activity-text { flex: 1; color: #374151; line-height: 1.4; }
+.activity-time { font-size: 0.7rem; color: #9ca3af; white-space: nowrap; }
+
+/* ============================================
+   QUICK ACTION BUTTONS (coloured CTA buttons)
+   ============================================ */
+.quick-actions { display: flex; flex-direction: column; gap: 10px; }
+
+.qa-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
+  color: #fff;
+}
+
+.qa-btn:hover { opacity: 0.9; transform: translateY(-1px); color: #fff; }
+
+.qa-green  { background: #16a34a; }
+.qa-blue   { background: #1d4ed8; }
+.qa-purple { background: #7c3aed; }
+.qa-orange { background: #ea580c; }
+.qa-red    { background: #dc2626; }
+.qa-teal   { background: #0f766e; }
+
+/* ============================================
+   UPCOMING EVENTS
+   ============================================ */
+.event-list { display: flex; flex-direction: column; gap: 12px; }
+
+.event-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.event-date-badge {
+  min-width: 42px;
+  text-align: center;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 6px 8px;
+  flex-shrink: 0;
+}
+
+.event-day {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  display: block;
+  line-height: 1;
+}
+
+.event-month {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #6b7280;
+  letter-spacing: 0.05em;
+}
+
+.event-info { flex: 1; }
+.event-title { font-size: 0.8rem; font-weight: 600; color: #111827; margin-bottom: 1px; }
+.event-sub   { font-size: 0.72rem; color: #9ca3af; }
+
+/* ============================================
+   CSS SPARKLINE (academic overview chart)
+   ============================================ */
+.sparkline-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+.sparkline-y {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.68rem;
+  color: #9ca3af;
+  margin-right: 8px;
+  text-align: right;
+}
+
+/* ============================================
+   SYSTEM OVERVIEW (ICT Admin)
+   ============================================ */
+.system-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.8rem;
+}
+
+.system-stat-row:last-child { border-bottom: none; }
+
+.system-stat-label { color: #6b7280; }
+.system-stat-val   { font-weight: 700; color: #111827; }
+
+.storage-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.storage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1d4ed8, #6366f1);
+  border-radius: 4px;
+}
+
+/* Security overview */
+.security-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.78rem;
+}
+
+.security-row:last-child { border-bottom: none; }
+.security-row-label { color: #374151; }
+.security-badge-num {
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.sec-red    { background: #fee2e2; color: #b91c1c; }
+.sec-orange { background: #ffedd5; color: #c2410c; }
+.sec-green  { background: #d1fae5; color: #065f46; }
+
+/* ============================================
+   TEACHER DASHBOARD
+   ============================================ */
+.my-classes-list { display: flex; flex-direction: column; gap: 10px; }
+
+.my-class-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.my-class-name { font-weight: 700; font-size: 0.85rem; color: #111827; }
+.my-class-role { font-size: 0.72rem; color: #6b7280; margin-top: 1px; }
+
+.my-subjects-list { display: flex; flex-direction: column; gap: 8px; }
+
+.my-subject-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.my-subject-name { font-weight: 600; font-size: 0.82rem; color: #111827; }
+.my-subject-classes { font-size: 0.7rem; color: #6b7280; }
+
+/* Tasks & reminders */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f9fafb;
+  font-size: 0.8rem;
+  gap: 10px;
+}
+
+.task-label { flex: 1; color: #374151; }
+
+.task-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.task-pending  { background: #ffedd5; color: #c2410c; }
+.task-done     { background: #d1fae5; color: #065f46; }
+
+/* Important notes */
+.notes-box {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 0.78rem;
+}
+
+.notes-box-title {
+  font-weight: 700;
+  color: #92400e;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+
+.notes-box ul { padding-left: 16px; }
+.notes-box li { color: #78350f; margin-bottom: 4px; line-height: 1.5; }
+
+/* ============================================
+   DASHBOARD GRID LAYOUTS
+   ============================================ */
+.dash-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dash-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dash-grid-2-1 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dash-grid-1-2 {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+@media (max-width: 1100px) {
+  .dash-stats { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+  /* Sidebar slides off screen on mobile */
+  .admin-shell::before { display: none; }
+
+  .admin-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .admin-sidebar.open { transform: translateX(0); }
+
+  /* Content takes full width on mobile */
+  .admin-content { margin-left: 0; }
+
+  .sidebar-toggle { display: block; }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 150;
+  }
+
+  .sidebar-overlay.open { display: block; }
+
+  .topbar-title { font-size: 0.95rem; }
+  .topbar-session { display: none; }
+
+  .dash-grid-2, .dash-grid-3, .dash-grid-2-1, .dash-grid-1-2 {
+    grid-template-columns: 1fr;
+  }
+  .dash-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .admin-main { padding: 14px; }
+  .dash-stats { grid-template-columns: 1fr 1fr; }
+  .dash-stat-num { font-size: 1.3rem; }
+}
+
+
+/* ============================================
+   ADMIN MOBILE RESPONSIVENESS
+   Full fix for all screen sizes
+   ============================================ */
+
+/* Topbar fixes */
+@media (max-width: 768px) {
+  .admin-topbar {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+
+  .topbar-title {
+    font-size: 0.82rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-session { display: none; }
+
+  .topbar-bell { font-size: 1rem; }
+
+  .user-role-badge { display: none; }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+}
+
+/* Admin main padding */
+@media (max-width: 768px) {
+  .admin-main {
+    padding: 16px 12px;
+  }
+}
+
+/* Stat cards - stack on mobile */
+@media (max-width: 768px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+
+  .dash-stat-card {
+    padding: 14px 12px;
+  }
+
+  .dash-stat-num {
+    font-size: 1.4rem;
+  }
+
+  .dash-stat-label {
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px;
+  }
+}
+
+/* Dashboard grid cards - single column on mobile */
+@media (max-width: 900px) {
+  .dash-grid-2,
+  .dash-grid-3,
+  .dash-grid-2-1,
+  .dash-grid-1-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Tables scroll on mobile */
+@media (max-width: 768px) {
+  .admin-main table,
+  .um-table,
+  .log-table,
+  .credentials-table,
+  .data-table {
+    font-size: 0.72rem;
+  }
+
+  .um-table th,
+  .um-table td,
+  .log-table th,
+  .log-table td {
+    padding: 8px 10px;
+  }
+
+  /* Hide less important columns on mobile */
+  .hide-mobile { display: none !important; }
+}
+
+/* Modals full screen on mobile */
+@media (max-width: 600px) {
+  .um-modal,
+  .modal-card {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .um-modal-overlay,
+  .modal-overlay {
+    padding: 0;
+  }
+}
+
+/* Toolbar stack on mobile */
+@media (max-width: 768px) {
+  .um-toolbar,
+  .comm-toolbar,
+  .teachers-toolbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .um-toolbar .btn,
+  .comm-toolbar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .um-search-wrap,
+  .comm-search-wrap {
+    width: 100%;
+  }
+
+  .um-filter-select,
+  .comm-toolbar select {
+    width: 100%;
+  }
+}
+
+/* ICT tabs wrap on mobile */
+@media (max-width: 600px) {
+  .ict-tab-bar {
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .ict-tab-btn {
+    padding: 6px 10px;
+    font-size: 0.72rem;
+  }
+
+  .ict-stats {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
+  }
+}
+
+/* User management stats on mobile */
+@media (max-width: 900px) {
+  .um-stats {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .um-stats {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+/* Score entry on mobile */
+@media (max-width: 768px) {
+  .score-table th,
+  .score-table td {
+    padding: 6px 8px;
+    font-size: 0.72rem;
+  }
+
+  .score-input {
+    width: 50px;
+    padding: 4px;
+  }
+}
+
+/* Welcome banner on mobile */
+@media (max-width: 768px) {
+  .welcome-banner {
+    flex-direction: column;
+    padding: 20px;
+    gap: 12px;
+  }
+
+  .welcome-banner h2 { font-size: 1.1rem; }
+  .welcome-emoji { font-size: 2rem; }
+}
+
+/* Notes box on mobile */
+@media (max-width: 768px) {
+  .notes-box {
+    padding: 16px;
+  }
+
+  .notes-box ul {
+    padding-left: 16px;
+  }
+}
+
+/* Communications grid on mobile */
+@media (max-width: 900px) {
+  .comm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comm-list-panel {
+    position: static;
+    max-height: 400px;
+  }
+}
+
+/* Calendar on mobile */
+@media (max-width: 768px) {
+  .cal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cal-month-grid {
+    gap: 1px;
+    padding: 10px;
+  }
+
+  .cal-day {
+    font-size: 0.72rem;
+  }
+}
+
+/* Parent portal mobile */
+@media (max-width: 768px) {
+  .pp-sidebar {
+    width: 220px;
+  }
+
+  .pp-content {
+    margin-left: 0 !important;
+  }
+
+  .pp-shell::before { display: none; }
+
+  .pp-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pp-dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Login page mobile */
+@media (max-width: 800px) {
+  .login-brand-panel {
+    min-height: 160px;
+    padding: 20px;
+  }
+
+  .login-brand-name { font-size: 1.1rem; }
+  .login-brand-stats { gap: 16px; }
+  .login-card { padding: 20px 16px; }
+}
+
+/* Form grid on mobile */
+@media (max-width: 600px) {
+  .um-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .um-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+/* School badge in topbar */
+.user-avatar {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.user-avatar img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+
+/* Sidebar school badge */
+.sidebar-header img {
+  width: 44px !important;
+  height: 44px !important;
+  object-fit: contain !important;
+  border-radius: 6px !important;
+  filter: none !important;
+  background: white;
+  padding: 2px;
+}
+
+
+/* ============================================
+   ADMIN PADDING FIXES
+   All bordered/rounded elements need breathing room
+   ============================================ */
+
+/* Stat cards */
+.dash-stat-card {
+  padding: 24px 20px !important;
+}
+
+/* Welcome banner */
+.welcome-banner {
+  padding: 28px 32px !important;
+}
+
+/* Dashboard cards */
+.dash-card {
+  padding: 24px !important;
+}
+
+.dash-card-header {
+  padding-bottom: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+/* Table wrapper */
+.table-wrap {
+  padding: 0 !important;
+}
+
+/* Admin panels */
+.admin-panel,
+.cal-card,
+.comm-message-card,
+.notes-box,
+.ict-card,
+.report-card-preview,
+.score-card,
+.approval-card,
+.fee-card,
+.receipt-card {
+  padding: 24px !important;
+}
+
+/* Sidebar profile */
+.sidebar-profile {
+  padding: 20px 16px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Nav items */
+.sidebar-nav a {
+  padding: 12px 16px !important;
+  margin-bottom: 4px !important;
+}
+
+/* Section labels in sidebar */
+.sidebar-section-label {
+  padding: 8px 16px 4px !important;
+}
+
+/* Topbar */
+.admin-topbar {
+  padding: 0 24px !important;
+}
+
+/* Admin main content */
+.admin-main {
+  padding: 28px 24px !important;
+}
+
+/* Badges and pills */
+.badge,
+.status-pill,
+.role-badge,
+.approval-status {
+  padding: 5px 12px !important;
+}
+
+/* Form groups */
+.form-group {
+  margin-bottom: 20px !important;
+}
+
+.form-label {
+  margin-bottom: 8px !important;
+  display: block !important;
+}
+
+.form-control {
+  padding: 12px 16px !important;
+}
+
+/* Modal */
+.modal-card,
+.um-modal {
+  padding: 28px !important;
+}
+
+.modal-header {
+  padding-bottom: 20px !important;
+  margin-bottom: 20px !important;
+}
+
+.modal-actions {
+  padding-top: 20px !important;
+  margin-top: 20px !important;
+  gap: 12px !important;
+}
+
+/* Buttons consistent padding */
+.btn {
+  padding: 10px 20px !important;
+}
+
+.btn-sm {
+  padding: 7px 14px !important;
+}
+
+.btn-lg {
+  padding: 14px 28px !important;
+}
+
+/* ICT tabs */
+.ict-tab-btn {
+  padding: 10px 20px !important;
+}
+
+/* Teacher cards */
+.teacher-card {
+  padding: 24px !important;
+}
+
+/* Announcement items */
+.ann-item {
+  padding: 16px 20px !important;
+}
+
+/* Calendar events */
+.cal-event {
+  padding: 8px 12px !important;
+  margin-bottom: 6px !important;
+}
+
+/* Score table cells */
+.score-table td,
+.score-table th {
+  padding: 12px 10px !important;
+}
+
+/* Parent portal cards */
+.pp-card {
+  padding: 24px !important;
+}
+
+/* Finance cards */
+.finance-summary-card {
+  padding: 24px 20px !important;
+}
+
+/* Activity log rows */
+.log-row {
+  padding: 14px 16px !important;
+}
+
+/* Discipline cards */
+.incident-card {
+  padding: 20px !important;
+}
+
+/* Alert boxes */
+.alert-box,
+.info-banner,
+.approval-banner {
+  padding: 16px 20px !important;
+}
+
+/* Search inputs */
+.search-wrap input,
+.um-search-wrap input {
+  padding: 10px 16px 10px 40px !important;
+}
+
+
+/* ---- Force badge display in topbar ---- */
+#userAvatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: 2px solid rgba(255,255,255,0.2) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#userAvatar img {
+  width: 40px !important;
+  height: 40px !important;
+  object-fit: contain !important;
+  border-radius: 4px !important;
+  background: white !important;
+  padding: 2px !important;
+}
+
+/* Sidebar logo fix */
+.sidebar-header img {
+  width: 44px !important;
+  height: 44px !important;
+  object-fit: contain !important;
+  border-radius: 6px !important;
+  background: white !important;
+  padding: 3px !important;
+}
+
+
+/* ============================================
+   COMPREHENSIVE MOBILE FIXES
+   All admin pages — phone screen optimized
+   ============================================ */
+
+@media (max-width: 768px) {
+
+  /* ---- TOPBAR ---- */
+  .admin-topbar {
+    padding: 0 12px !important;
+    height: 52px !important;
+  }
+
+  .topbar-title {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+  }
+
+  /* ---- MAIN CONTENT ---- */
+  .admin-main {
+    padding: 14px 12px !important;
+  }
+
+  /* ---- STAT CARDS — single row scroll on mobile ---- */
+  .dash-stats,
+  .ict-stats,
+  .um-stats,
+  .club-stats {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    gap: 10px !important;
+    padding-bottom: 8px !important;
+    scrollbar-width: none !important;
+  }
+
+  .dash-stats::-webkit-scrollbar,
+  .ict-stats::-webkit-scrollbar,
+  .um-stats::-webkit-scrollbar,
+  .club-stats::-webkit-scrollbar { display: none !important; }
+
+  .dash-stat-card,
+  .ict-stat-card,
+  .um-stat-card,
+  .club-stat-card {
+    min-width: 110px !important;
+    flex-shrink: 0 !important;
+    padding: 14px 10px !important;
+    text-align: center !important;
+  }
+
+  .dash-stat-num,
+  .ict-stat-num {
+    font-size: 1.4rem !important;
+  }
+
+  .dash-stat-label,
+  .ict-stat-label {
+    font-size: 0.65rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* ---- TWO COLUMN GRIDS — stack on mobile ---- */
+  .dash-grid-2,
+  .ict-grid-2,
+  .club-grid-2,
+  [style*="grid-template-columns: 1fr 1fr"],
+  [style*="grid-template-columns: repeat(2"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ---- USER MANAGEMENT TABLE ---- */
+  .credentials-table,
+  .um-table,
+  .data-table {
+    font-size: 0.72rem !important;
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+
+  .credentials-table th,
+  .credentials-table td {
+    padding: 10px 8px !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* Stack STAFF ID and FULL NAME columns better */
+  .credentials-table td:first-child {
+    font-size: 0.65rem !important;
+    color: #888 !important;
+    white-space: nowrap !important;
+  }
+
+  /* ---- CLASS REVIEW — behavior ratings ---- */
+  .behavior-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 0 !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .behavior-label {
+    font-size: 0.78rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .rating-btns {
+    display: flex !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .rating-btn {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.78rem !important;
+    border-radius: 50% !important;
+  }
+
+  /* ---- ICT DEPARTMENT ---- */
+  .ict-tab-bar {
+    display: flex !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    scrollbar-width: none !important;
+  }
+
+  .ict-tab-btn {
+    white-space: nowrap !important;
+    padding: 8px 14px !important;
+    font-size: 0.75rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ICT performance list */
+  .ict-class-row {
+    padding: 10px 0 !important;
+  }
+
+  .ict-class-name {
+    font-size: 0.82rem !important;
+  }
+
+  /* Lab schedule table */
+  .lab-schedule-table,
+  .schedule-table {
+    font-size: 0.72rem !important;
+    width: 100% !important;
+  }
+
+  .lab-schedule-table td {
+    padding: 6px 4px !important;
+    vertical-align: top !important;
+  }
+
+  /* Computer lab status boxes */
+  .lab-status-box {
+    padding: 12px !important;
+    font-size: 1.2rem !important;
+  }
+
+  /* ---- ICT & CODING CLUBS ---- */
+  .club-member-card {
+    padding: 10px 12px !important;
+  }
+
+  .club-member-name {
+    font-size: 0.82rem !important;
+  }
+
+  .meeting-record {
+    padding: 12px !important;
+  }
+
+  .meeting-record h4 {
+    font-size: 0.85rem !important;
+  }
+
+  .meeting-record p {
+    font-size: 0.75rem !important;
+  }
+
+  .project-card {
+    padding: 12px !important;
+  }
+
+  .project-title {
+    font-size: 0.85rem !important;
+  }
+
+  .award-card {
+    padding: 12px !important;
+  }
+
+  .award-title {
+    font-size: 0.85rem !important;
+  }
+
+  /* Badge/status pills in clubs */
+  .project-status,
+  .meeting-badge {
+    font-size: 0.65rem !important;
+    padding: 3px 8px !important;
+  }
+
+  /* Add buttons — full width on mobile */
+  .club-add-btn,
+  [class*="add-btn"] {
+    font-size: 0.72rem !important;
+    padding: 6px 10px !important;
+  }
+
+  /* ---- CARD HEADERS ---- */
+  .card-header-row,
+  .club-card-header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .card-header-row h3,
+  .club-card-header h3 {
+    font-size: 0.9rem !important;
+  }
+
+  /* ---- GENERAL CARD FIXES ---- */
+  .admin-card,
+  .dash-card,
+  .ict-card,
+  .club-card {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  /* ---- SCORE ENTRY TABLE ---- */
+  .score-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .score-table {
+    min-width: 500px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .score-input {
+    width: 44px !important;
+    padding: 4px !important;
+    font-size: 0.72rem !important;
+  }
+
+  /* ---- APPROVAL BANNER ---- */
+  .approval-banner {
+    padding: 10px 12px !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* ---- FINANCE PAGES ---- */
+  .fee-term-card {
+    padding: 14px !important;
+  }
+
+  .fee-term-card h3 {
+    font-size: 0.9rem !important;
+  }
+
+  .fee-row {
+    font-size: 0.78rem !important;
+    padding: 8px 0 !important;
+  }
+
+  .fee-amount {
+    font-size: 0.82rem !important;
+  }
+
+  /* ---- PAYMENTS ---- */
+  .payment-search-row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .payment-search-row input,
+  .payment-search-row select {
+    width: 100% !important;
+  }
+
+  /* ---- DISCIPLINE ---- */
+  .discipline-class-card {
+    padding: 14px !important;
+  }
+
+  .incident-count {
+    font-size: 1.2rem !important;
+  }
+
+  /* ---- REPORT CARDS ---- */
+  .report-card-controls {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .report-card-controls select,
+  .report-card-controls input {
+    width: 100% !important;
+  }
+
+  /* ---- ANNOUNCEMENTS ---- */
+  .comm-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ann-item {
+    padding: 12px !important;
+  }
+
+  .ann-item h4 {
+    font-size: 0.85rem !important;
+  }
+
+  /* ---- CALENDAR ---- */
+  .cal-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .cal-day-name {
+    font-size: 0.65rem !important;
+  }
+
+  .cal-day {
+    font-size: 0.75rem !important;
+    height: 36px !important;
+    width: 36px !important;
+  }
+
+  /* ---- TEACHERS PAGE ---- */
+  .teachers-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .teacher-card {
+    padding: 14px 10px !important;
+  }
+
+  .teacher-name {
+    font-size: 0.82rem !important;
+  }
+
+  .teacher-role {
+    font-size: 0.68rem !important;
+  }
+
+  /* ---- STUDENTS PAGE ---- */
+  .class-cards-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .class-card {
+    padding: 14px 10px !important;
+  }
+
+  .student-table td,
+  .student-table th {
+    padding: 10px 8px !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* ---- SIDEBAR OVERLAY ---- */
+  .admin-sidebar {
+    width: 260px !important;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .admin-topbar { padding: 0 8px !important; }
+  .admin-main   { padding: 10px 8px !important; }
+  .topbar-title { font-size: 0.78rem !important; }
+  .teachers-grid { grid-template-columns: 1fr !important; }
+  .class-cards-grid { grid-template-columns: 1fr 1fr !important; }
+  .dash-stat-card { min-width: 90px !important; }
+}
+
+/* ---- Club main grid — stack on mobile ---- */
+@media (max-width: 768px) {
+  .club-main-grid,
+  [style*="grid-template-columns:1fr 1fr"],
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Club card header with Add button */
+  .club-section-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+
+  /* Make + Add Member and + Log Meeting buttons smaller */
+  button[onclick*="addMember"],
+  button[onclick*="logMeeting"],
+  button[onclick*="recordAward"],
+  .add-member-btn,
+  .log-meeting-btn {
+    font-size: 0.7rem !important;
+    padding: 5px 8px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Rating buttons — show all 5 ratings in a row */
+  .ratings-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 10px 0 !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+  }
+
+  .ratings-label {
+    flex: 1 !important;
+    font-size: 0.78rem !important;
+    min-width: 0 !important;
+  }
+
+  .ratings-options {
+    display: flex !important;
+    gap: 3px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .ratings-options button {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.7rem !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+  }
+}

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News & Events — Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/shared.css">
+  <link rel="stylesheet" href="assets/css/pages/news.css">
+</head>
+<body>
+
+<!-- ============================================================
+     TOP BAR
+     ============================================================ -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-left">
+      <span class="top-bar-item">📍 20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</span>
+      <span class="top-bar-item">📞 <a href="tel:08036721390">08036 721390</a> / <a href="tel:09080061094">09080 061094</a></span>
+    </div>
+    <div class="top-bar-right">
+      <a href="mailto:info@royalcrystalacademy.edu.ng">✉ info@royalcrystalacademy.edu.ng</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<header class="site-header" id="siteHeader">
+  <div class="navbar-wrap">
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+        <div class="logo-text">
+          <span class="logo-name">Royal Crystal Academy</span>
+          <span class="logo-tagline">Excellence in Education</span>
+        </div>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="admissions.html">Admissions</a></li>
+        <li><a href="news-events.html">News &amp; Events</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="ict-department.html">ICT</a></li>
+        <li><a href="academic-calendar.html">Calendar</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="parent-login.html" class="btn btn-secondary btn-sm">Parent Login</a>
+        <a href="admin/login.html" class="btn btn-outline-light btn-sm">Staff Portal</a>
+      </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Mobile Drawer -->
+<div class="nav-drawer-overlay" id="navOverlay"></div>
+<div class="nav-drawer" id="navDrawer">
+  <button class="nav-drawer-close" id="navDrawerClose">✕</button>
+  <a href="index.html" class="logo">
+    <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+    <div class="logo-text"><span class="logo-name">Royal Crystal Academy</span></div>
+  </a>
+  <nav class="nav-drawer-links">
+    <a href="index.html">Home</a>
+    <a href="about.html">About Us</a>
+    <a href="admissions.html">Admissions</a>
+    <a href="news-events.html">News &amp; Events</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="ict-department.html">ICT Department</a>
+    <a href="academic-calendar.html">Calendar</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+  <div class="nav-drawer-actions">
+    <a href="parent-login.html" class="btn btn-secondary">Parent Login</a>
+    <a href="admin/login.html" class="btn btn-outline">Staff Portal</a>
+  </div>
+</div>
+
+<section class="page-banner" style="background-image:url('assets/images/news-banner.jpg');background-size:cover;background-position:center top;background-repeat:no-repeat">
+    <div class="container">
+      <h1>News & Events</h1>
+      <p>Stay up to date with everything happening at Royal Crystal Academy.</p>
+    </div>
+  </section>
+
+  <!-- FILTER TABS -->
+  <section class="section" style="padding-bottom: 0;">
+    <div class="container">
+      <div class="filter-tabs" role="tablist">
+        <button class="filter-btn active" data-filter="all" role="tab" aria-selected="true">All</button>
+        <button class="filter-btn" data-filter="news" role="tab" aria-selected="false">News</button>
+        <button class="filter-btn" data-filter="event" role="tab" aria-selected="false">Events</button>
+        <button class="filter-btn" data-filter="achievement" role="tab" aria-selected="false">Achievements</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACHIEVEMENTS & NEWS -->
+  <section class="section" style="padding-top: var(--space-lg);">
+    <div class="container">
+
+      <!-- Real Achievements (editable from admin) -->
+      <div class="news-grid grid" id="newsGrid">
+
+        <!-- ACHIEVEMENT 1: Spelling Bee — REAL -->
+        <article class="card news-card-item" data-category="achievement">
+          <div class="news-card-img">
+            <img src="assets/images/news-1.jpg" alt="Spelling Bee Competition" style="width:100%;height:100%;object-fit:cover">
+          </div>
+          <div class="news-card-body">
+            <div class="post-meta">
+              <span class="post-date">📅 July 12, 2025</span>
+              <span class="post-category-tag tag-achievement">Achievement</span>
+            </div>
+            <h3>Certificate of Excellence — Spelling Bee Championship</h3>
+            <p>A Royal Crystal Academy pupil earned a Certificate of Excellence at the Primary School Spelling Bee Competition 3.0, bringing great honour to our school community.</p>
+          </div>
+        </article>
+
+        <!-- ACHIEVEMENT 2: Computer Lab — REAL -->
+        <article class="card news-card-item" data-category="achievement">
+          <div class="news-card-img">
+            <img src="assets/images/ict-lab.jpg" alt="ICT Laboratory" style="width:100%;height:100%;object-fit:cover">
+          </div>
+          <div class="news-card-body">
+            <div class="post-meta">
+              <span class="post-date">📅 2025</span>
+              <span class="post-category-tag tag-achievement">Achievement</span>
+            </div>
+            <h3>Modern ICT Laboratory — Pupils Equipped for the Digital Age</h3>
+            <p>Royal Crystal Academy operates a fully equipped computer laboratory where pupils from Basic 1 to Basic 6 receive hands-on ICT training under our dedicated ICT Administrator.</p>
+          </div>
+        </article>
+
+        <!-- ACHIEVEMENT 3: Inter-House Sports — REAL -->
+        <article class="card news-card-item" data-category="achievement">
+          <div class="news-card-img">
+            <img src="assets/images/gallery-17.jpg" alt="Inter-House Sports" style="width:100%;height:100%;object-fit:cover">
+          </div>
+          <div class="news-card-body">
+            <div class="post-meta">
+              <span class="post-date">📅 July 24, 2025</span>
+              <span class="post-category-tag tag-achievement">Achievement</span>
+            </div>
+            <h3>Annual Inter-House Sports Day Celebration</h3>
+            <p>Our annual inter-house sports event brought together all pupils for a memorable day of athletic competition, team spirit and fun — a highlight of the school calendar.</p>
+          </div>
+        </article>
+
+        <!-- Dynamic news/events loaded from admin announcements -->
+        <div id="dynamicNewsItems"></div>
+
+      </div>
+
+      <div id="noResults" class="no-results" style="display:none;">
+        <p>No posts found in this category yet.</p>
+      </div>
+
+    </div>
+  </section>
+
+<!-- UPCOMING EVENTS SIDEBAR STRIP -->
+  <section class="section upcoming-strip">
+    <div class="container">
+      <h2 class="section-title">Upcoming Events</h2>
+      <div class="grid grid-3">
+        <div class="card upcoming-card">
+          <div class="upcoming-date">
+            <span class="up-day">15</span>
+            <span class="up-month">SEP</span>
+          </div>
+          <div class="upcoming-info">
+            <h4>Term 3 Resumption</h4>
+            <p>All pupils report by 7:30 AM in full uniform.</p>
+          </div>
+        </div>
+        <div class="card upcoming-card">
+          <div class="upcoming-date">
+            <span class="up-day">12</span>
+            <span class="up-month">JUL</span>
+          </div>
+          <div class="upcoming-info">
+            <h4>Parent-Teacher Conference</h4>
+            <p>Saturday 9 AM – 1 PM. All parents invited.</p>
+          </div>
+        </div>
+        <div class="card upcoming-card">
+          <div class="upcoming-date">
+            <span class="up-day">20</span>
+            <span class="up-month">JUN</span>
+          </div>
+          <div class="upcoming-info">
+            <h4>Prize Giving Day</h4>
+            <p>Annual awards ceremony. Assembly Hall, 9 AM.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+
+      <!-- Brand -->
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+          <div class="logo-text">
+            <span class="logo-name">Royal Crystal Academy</span>
+            <span class="logo-tagline" style="color:var(--color-secondary)">Excellence in Education</span>
+          </div>
+        </a>
+        <p>Nurturing curious minds and building strong foundations for life, with a modern ICT lab for the leaders of tomorrow.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Twitter">t</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="WhatsApp">w</a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About Us</a>
+          <a href="admissions.html">Admissions</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact Us</a>
+        </nav>
+      </div>
+
+      <!-- Academics -->
+      <div class="footer-col">
+        <h4>Academics</h4>
+        <nav class="footer-links">
+          <a href="ict-department.html">ICT Department</a>
+          <a href="academic-calendar.html">Calendar</a>
+          <a href="news-events.html">News &amp; Events</a>
+          <a href="admin/login.html">Staff Portal</a>
+          <a href="admin/parent-portal.html">Parent Portal</a>
+        </nav>
+      </div>
+
+      <!-- Contact -->
+            <div class="footer-col">
+        <h4>Contact Info</h4>
+        <div class="footer-contact-item"><span class="icon">📍</span><span>20/21 Amaigbo Lane, Uwani,<br>Enugu State, Nigeria<br>P.O. Box 3573, Enugu</span></div>
+        <div class="footer-contact-item"><span class="icon">📞</span><div><a href="tel:08036721390">08036 721390</a><br><a href="tel:09080061094">09080 061094</a></div></div>
+        <div class="footer-contact-item"><span class="icon">✉</span><a href="mailto:info@royalcrystalacademy.edu.ng">info@royalcrystalacademy.edu.ng</a></div>
+        <div class="footer-contact-item"><span class="icon">🕐</span><span>Mon–Fri: 7:30 AM – 3:30 PM<br>Saturday: Office Hours Only</span></div>
+      </div>
+    </div>
+
+    <!-- Mobile 3-column links grid (hidden on desktop, shown on mobile only) -->
+    <div class="footer-links-mobile-grid">
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About Us</a>
+          <a href="admissions.html">Admissions</a>
+          <a href="contact.html">Contact</a>
+          <a href="academic-calendar.html">Calendar</a>
+          <a href="news-events.html">Events</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <nav class="footer-links">
+          <a href="gallery.html">Gallery</a>
+          <a href="ict-department.html">ICT</a>
+          <a href="admin/login.html">Staff Portal</a>
+          <a href="admin/parent-portal.html">Parent Portal</a>
+          <a href="admissions.html">Apply Now</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Levels</h4>
+        <nav class="footer-links">
+          <a href="admissions.html">Pre-Nursery</a>
+          <a href="admissions.html">Nursery</a>
+          <a href="admissions.html">Basic 1–2</a>
+          <a href="admissions.html">Basic 3–6</a>
+          <a href="ict-department.html">ICT Club</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Gallery Strip (shown on mobile only) -->
+    <div class="footer-gallery-strip">
+      <a href="gallery.html"><img src="assets/images/hero-1.jpg" alt="RCA pupils" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-4.jpg" alt="Graduation" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-8.jpg" alt="Cultural day" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-17.jpg" alt="Sports day" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/staircase.jpg" alt="RCA pupils" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/group-reading.jpg" alt="Group reading" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/why-us.jpg" alt="Graduation" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/ict-lab.jpg" alt="ICT lab" loading="lazy"></a>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 Royal Crystal Academy. All rights reserved.</p>
+      <p>20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</p>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

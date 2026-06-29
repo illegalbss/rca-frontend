@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance Reports | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/finance.css">
+</head>
+<body>
+<div class="admin-shell">
+
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <img src="../assets/images/logo.svg" alt="logo">
+      <span>Royal Crystal Academy</span>
+    </div>
+
+      <!-- User profile block -->
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar-profile-info">
+          <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+          <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+          <div class="sidebar-online-dot">Online</div>
+        </div>
+      </div>
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Main</p>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">&#9632;</i> Dashboard</a>
+      <p class="sidebar-section-label">Administration</p>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">&#9675;</i> Students</a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Teachers</a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Classes</a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Attendance</a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Discipline</a>
+      <p class="sidebar-section-label">Results</p>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Score Entry</a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">&#9675;</i> Class Review</a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Approvals</a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Report Cards</a>
+      <p class="sidebar-section-label">Finance</p>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9675;</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9632;</i> Finance Reports</a>
+      <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">&#9675;</i> User Management</a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">&#9675;</i> Activity Logs</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="sidebar-link"><i class="icon">&#8592;</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">&#10006;</i> Log out</a>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-content">
+    <header class="admin-topbar no-print">
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+      <h1 class="topbar-title">Finance Reports</h1>
+      <span class="topbar-session">Academic Session: 2025/2026</span>
+        <button class="topbar-bell" title="Notifications">
+          &#128276;
+          <span class="topbar-bell-badge">4</span>
+        </button>
+        <div class="topbar-user">
+        <span class="user-role-badge" id="userRoleBadge">Guest</span>
+        <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- Filter + print -->
+      <div class="finance-toolbar no-print" style="margin-bottom:var(--space-xl)">
+        <div class="form-group" style="margin:0">
+          <label>Term</label>
+          <select id="reportTerm" class="form-control">
+            <option value="all">All Terms</option>
+            <option value="term1">First Term</option>
+            <option value="term2" selected>Second Term</option>
+            <option value="term3">Third Term</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Class</label>
+          <select id="reportClass" class="form-control">
+            <option value="all">All Classes</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="applyReportFilter">Apply Filter</button>
+        <button class="btn btn-outline" onclick="window.print()">&#128424; Print Report</button>
+      </div>
+
+      <!-- Top stat cards -->
+      <div class="finance-stats" id="reportStats"></div>
+
+      <!-- Charts row -->
+      <div class="reports-grid" id="reportsGrid"></div>
+
+      <!-- Outstanding balances table -->
+      <div class="outstanding-card">
+        <div class="outstanding-card-header">
+          <h3>&#9888; Outstanding Balances</h3>
+          <span id="outstandingCount" style="font-size:var(--fs-sm);color:var(--color-text-muted)"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="finance-table" id="outstandingTable">
+            <thead>
+              <tr>
+                <th>Admission No.</th>
+                <th>Student Name</th>
+                <th>Class</th>
+                <th>Term</th>
+                <th>Expected</th>
+                <th>Paid</th>
+                <th>Balance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="outstandingBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/finance-data.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const allStudents = window.SAMPLE_STUDENTS || [];
+  const allClasses  = window.SCHOOL_CLASSES  || [];
+  const records     = window.PAYMENT_RECORDS || {};
+  const fmt         = window.formatNaira;
+  const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+  const BADGE = { paid: 'badge-paid', partial: 'badge-partial', unpaid: 'badge-unpaid' };
+
+  // Populate class filter
+  const classSelect = document.getElementById('reportClass');
+  allClasses.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    classSelect.appendChild(opt);
+  });
+
+  function getFilteredRecords(termFilter, classFilter) {
+    return Object.entries(records).filter(([key, rec]) => {
+      const [adm, term] = key.split('|');
+      if (termFilter !== 'all' && term !== termFilter) return false;
+      if (classFilter !== 'all') {
+        const st = allStudents.find(s => s.admission_no === adm);
+        if (!st || st.class_name !== classFilter) return false;
+      }
+      return true;
+    }).map(([key, rec]) => {
+      const [adm, term] = key.split('|');
+      const st = allStudents.find(s => s.admission_no === adm);
+      return { ...rec, admission_no: adm, term,
+        student_name: st ? st.full_name : adm,
+        class_name:   st ? st.class_name : '' };
+    });
+  }
+
+  function render() {
+    const termFilter  = document.getElementById('reportTerm').value;
+    const classFilter = document.getElementById('reportClass').value;
+    const data = getFilteredRecords(termFilter, classFilter);
+
+    const totalExpected    = data.reduce((s, r) => s + r.amount_expected, 0);
+    const totalPaid        = data.reduce((s, r) => s + r.amount_paid, 0);
+    const totalOutstanding = totalExpected - totalPaid;
+    const paidRecs    = data.filter(r => r.status === 'paid');
+    const partialRecs = data.filter(r => r.status === 'partial');
+    const unpaidRecs  = data.filter(r => r.status === 'unpaid');
+    const collectionRate = totalExpected > 0 ? (totalPaid / totalExpected * 100).toFixed(1) : 0;
+
+    /* Stat cards */
+    document.getElementById('reportStats').innerHTML = `
+      <div class="finance-stat-card stat-total">
+        <span class="finance-stat-label">Total Expected</span>
+        <span class="finance-stat-value">${fmt(totalExpected)}</span>
+        <span class="finance-stat-sub">${data.length} fee records</span>
+      </div>
+      <div class="finance-stat-card stat-paid">
+        <span class="finance-stat-label">Total Collected</span>
+        <span class="finance-stat-value">${fmt(totalPaid)}</span>
+        <span class="finance-stat-sub">Collection rate: ${collectionRate}%</span>
+      </div>
+      <div class="finance-stat-card stat-unpaid">
+        <span class="finance-stat-label">Outstanding</span>
+        <span class="finance-stat-value">${fmt(totalOutstanding)}</span>
+        <span class="finance-stat-sub">${partialRecs.length + unpaidRecs.length} accounts pending</span>
+      </div>
+      <div class="finance-stat-card" style="border-left-color:var(--color-info)">
+        <span class="finance-stat-label">Fully Paid</span>
+        <span class="finance-stat-value">${paidRecs.length}</span>
+        <span class="finance-stat-sub">of ${data.length} records (${data.length > 0 ? (paidRecs.length/data.length*100).toFixed(0) : 0}%)</span>
+      </div>
+    `;
+
+    /* Collection by class bar chart */
+    const byClass = {};
+    data.forEach(r => {
+      if (!byClass[r.class_name]) byClass[r.class_name] = { expected: 0, paid: 0 };
+      byClass[r.class_name].expected += r.amount_expected;
+      byClass[r.class_name].paid     += r.amount_paid;
+    });
+    const classEntries = Object.entries(byClass).sort((a,b) => b[1].paid - a[1].paid).slice(0, 11);
+    const maxPaid = Math.max(...classEntries.map(([,v]) => v.paid), 1);
+
+    const barRows = classEntries.map(([cls, v]) => {
+      const pct = Math.round(v.paid / maxPaid * 100);
+      return `<div class="bar-row">
+        <span class="bar-label">${cls}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <span class="bar-amount">${fmt(v.paid)}</span>
+      </div>`;
+    }).join('');
+
+    /* Payment status donut legend */
+    const paidPct    = data.length > 0 ? (paidRecs.length    / data.length * 100).toFixed(1) : 0;
+    const partialPct = data.length > 0 ? (partialRecs.length / data.length * 100).toFixed(1) : 0;
+    const unpaidPct  = data.length > 0 ? (unpaidRecs.length  / data.length * 100).toFixed(1) : 0;
+
+    document.getElementById('reportsGrid').innerHTML = `
+      <div class="report-chart-card">
+        <div class="report-chart-title">&#128184; Collection by Class</div>
+        <div class="bar-chart">${barRows || '<p style="color:var(--color-text-muted);font-size:var(--fs-sm)">No data for current filter.</p>'}</div>
+      </div>
+      <div class="report-chart-card">
+        <div class="report-chart-title">&#128200; Payment Status Breakdown</div>
+        <div class="donut-legend">
+          <div class="donut-legend-row">
+            <span class="donut-dot paid"></span>
+            <span class="donut-legend-label">Fully Paid</span>
+            <span class="donut-legend-val">${paidRecs.length}</span>
+            <span class="donut-legend-pct">(${paidPct}%)</span>
+          </div>
+          <div class="donut-legend-row">
+            <span class="donut-dot partial"></span>
+            <span class="donut-legend-label">Partial Payment</span>
+            <span class="donut-legend-val">${partialRecs.length}</span>
+            <span class="donut-legend-pct">(${partialPct}%)</span>
+          </div>
+          <div class="donut-legend-row">
+            <span class="donut-dot unpaid"></span>
+            <span class="donut-legend-label">Not Yet Paid</span>
+            <span class="donut-legend-val">${unpaidRecs.length}</span>
+            <span class="donut-legend-pct">(${unpaidPct}%)</span>
+          </div>
+        </div>
+        <div style="margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--color-border)">
+          <div class="report-chart-title" style="margin-bottom:var(--space-md)">&#128181; Revenue Summary</div>
+          <div style="font-size:var(--fs-sm);display:flex;flex-direction:column;gap:var(--space-sm)">
+            <div style="display:flex;justify-content:space-between"><span>School Fees</span><strong>${fmt(data.reduce((s,r)=>s+(window.computeFeeBreakdown(r.admission_no,r.term)?.lines[0]?.amount||0),0))}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Utility Bills</span><strong>${fmt(data.length * 5000)}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Lesson Fees</span><strong>${fmt(data.length * 5000)}</strong></div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid var(--color-border);padding-top:var(--space-sm);font-weight:700;color:var(--color-primary)"><span>Grand Total Expected</span><strong>${fmt(totalExpected)}</strong></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    /* Outstanding table */
+    const outstanding = data
+      .filter(r => r.status !== 'paid')
+      .sort((a,b) => b.balance - a.balance);
+
+    document.getElementById('outstandingCount').textContent =
+      `${outstanding.length} account${outstanding.length !== 1 ? 's' : ''} with balances`;
+
+    document.getElementById('outstandingBody').innerHTML = outstanding.length === 0
+      ? '<tr><td colspan="8" style="text-align:center;color:var(--color-success);padding:2rem">&#10004; All accounts fully paid for this filter!</td></tr>'
+      : outstanding.map(r => `
+        <tr>
+          <td>${r.admission_no}</td>
+          <td>${r.student_name}</td>
+          <td>${r.class_name}</td>
+          <td>${TERM_LABELS[r.term] || r.term}</td>
+          <td class="amount-col">${fmt(r.amount_expected)}</td>
+          <td class="amount-col">${fmt(r.amount_paid)}</td>
+          <td class="amount-col balance-col">${fmt(r.balance)}</td>
+          <td><span class="${BADGE[r.status]}">${r.status}</span></td>
+        </tr>
+      `).join('');
+  }
+
+  document.getElementById('applyReportFilter').addEventListener('click', render);
+  render();
+});
+</script>
+</body>
+</html>

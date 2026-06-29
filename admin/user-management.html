@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Management | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/user-management.css">
+</head>
+<body>
+<div class="admin-shell">
+
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+      <span>Royal Crystal Academy</span>
+    </div>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-profile-info">
+        <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+        <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-online-dot">Online</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Main</p>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">⊞</i> Dashboard</a>
+      <p class="sidebar-section-label">Administration</p>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">○</i> Students</a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Teachers</a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Classes</a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Attendance</a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Discipline</a>
+      <p class="sidebar-section-label">Results</p>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Score Entry</a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">○</i> Class Review</a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Approvals</a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Report Cards</a>
+      <p class="sidebar-section-label">Finance</p>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">○</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Finance Reports</a>
+      <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+      <a href="user-management.html" class="sidebar-link active" data-roles="ict_admin"><i class="icon">⊞</i> User Management</a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Activity Logs</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="sidebar-link"><i class="icon">←</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">✕</i> Log out</a>
+    </div>
+  </aside>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-content">
+    <header class="admin-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+      <h1 class="topbar-title">User Management</h1>
+      <span class="topbar-session">Academic Session: 2025/2026</span>
+      <button class="topbar-bell" title="Notifications">&#128276;<span class="topbar-bell-badge">4</span></button>
+      <div class="topbar-user">
+        <span class="user-role-badge" id="userRoleBadge">Guest</span>
+        <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- Stat cards -->
+      <div class="um-stats" id="umStats"></div>
+
+      <!-- Toolbar -->
+      <div class="um-toolbar">
+        <div class="um-search-wrap">
+          <span class="um-search-icon">🔍</span>
+          <input type="search" id="umSearch" class="form-control" placeholder="Search name, email or staff ID…">
+        </div>
+        <select id="umRoleFilter" class="form-control um-filter-select">
+          <option value="all">All Roles</option>
+          <option value="ict_admin">ICT Administrator</option>
+          <option value="head_teacher">Head Teacher</option>
+          <option value="class_teacher">Form Teacher</option>
+          <option value="subject_teacher">Subject Teacher</option>
+          <option value="accountant">Accountant</option>
+          <option value="parent">Parent</option>
+        </select>
+        <select id="umStatusFilter" class="form-control um-filter-select" style="min-width:130px">
+          <option value="all">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="deactivated">Deactivated</option>
+        </select>
+        <span class="um-total-pill" id="umTotalPill">Loading…</span>
+        <button class="btn btn-primary" id="createUserBtn" style="white-space:nowrap;font-size:0.82rem;padding:8px 16px">
+          ➕ Create Account
+        </button>
+      </div>
+
+      <!-- User table -->
+      <div class="um-card">
+        <div class="um-card-header">
+          <span class="um-card-title">All User Accounts</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="um-table">
+            <thead>
+              <tr>
+                <th>Name / Email</th>
+                <th>Role</th>
+                <th>Staff ID</th>
+                <th>Last Login</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="umTableBody"></tbody>
+          </table>
+        </div>
+        <div class="um-no-results" id="umNoResults" style="display:none">
+          No accounts match your search.
+        </div>
+      </div>
+
+      <!-- Staff credentials (ICT Admin only, printable) -->
+      <div class="um-cred-section no-print" id="credentialsSection" style="display:none">
+        <div class="um-cred-header">
+          <div>
+            <div class="um-cred-title">📋 Staff Login Credentials</div>
+            <div class="um-cred-sub">Official school emails for all staff — distribute to new teachers on their first day</div>
+          </div>
+          <button onclick="window.print()" class="btn btn-outline btn-sm" style="font-size:0.78rem">🖨 Print</button>
+        </div>
+        <table class="credentials-table">
+          <thead>
+            <tr><th>Staff ID</th><th>Full Name</th><th>Job Title</th><th>Login Email</th><th>Status</th></tr>
+          </thead>
+          <tbody id="credentialsBody"></tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================================================
+     CREATE / EDIT USER MODAL
+     ============================================================ -->
+<div class="um-modal-overlay" id="createEditModal">
+  <div class="um-modal">
+    <div class="um-modal-header">
+      <span class="um-modal-title" id="modalTitle">Create New Account</span>
+      <button class="um-modal-close" id="modalClose">✕</button>
+    </div>
+    <div class="um-modal-body">
+      <div id="modalAlert" style="display:none"></div>
+
+      <div class="um-form-grid">
+        <!-- Full name -->
+        <div class="um-form-group um-full">
+          <label class="um-form-label">Full Name *</label>
+          <input type="text" id="fFullName" class="um-form-input" placeholder="e.g. Chiamaka Nnaji">
+        </div>
+
+        <!-- Primary role -->
+        <div class="um-form-group">
+          <label class="um-form-label">Primary Role *</label>
+          <select id="fPrimaryRole" class="um-form-select">
+            <option value="">— Select role —</option>
+            <option value="subject_teacher">Subject Teacher</option>
+            <option value="class_teacher">Form Teacher</option>
+            <option value="head_teacher">Head Teacher</option>
+            <option value="accountant">Accountant</option>
+            <option value="ict_admin">ICT Administrator</option>
+          </select>
+        </div>
+
+        <!-- Also form teacher? -->
+        <div class="um-form-group" id="alsoFormTeacherGroup" style="display:none">
+          <label class="um-form-label">Also a Form Teacher?</label>
+          <label class="um-checkbox-row">
+            <input type="checkbox" id="fAlsoFormTeacher">
+            <span>Yes — this teacher is also a Form Teacher</span>
+          </label>
+        </div>
+
+        <!-- Email (auto-generated, editable) -->
+        <div class="um-form-group um-full">
+          <label class="um-form-label">Login Email *</label>
+          <input type="email" id="fEmail" class="um-form-input" placeholder="will auto-fill when you type name">
+          <span class="um-form-hint">Auto-generated as firstname.lastname@royalcrystalacademy.edu.ng — edit if needed</span>
+        </div>
+
+        <!-- Job title -->
+        <div class="um-form-group um-full">
+          <label class="um-form-label">Job Title</label>
+          <input type="text" id="fJobTitle" class="um-form-input" placeholder="e.g. Form Teacher — Basic 3">
+        </div>
+
+        <!-- Assigned classes -->
+        <div class="um-form-group um-full" id="fClassesGroup">
+          <label class="um-form-label">Assigned Classes</label>
+          <div id="fClassesCheckboxes" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px"></div>
+          <span class="um-form-hint">Select all classes this teacher teaches in</span>
+        </div>
+
+        <!-- Assigned subjects -->
+        <div class="um-form-group um-full" id="fSubjectsGroup">
+          <label class="um-form-label">Assigned Subjects</label>
+          <div id="fSubjectsCheckboxes" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:4px"></div>
+          <span class="um-form-hint">Select the subjects this teacher enters scores for</span>
+        </div>
+
+        <!-- Form class (if class_teacher) -->
+        <div class="um-form-group um-full" id="fFormClassGroup" style="display:none">
+          <label class="um-form-label">Form Class (the class they review)</label>
+          <select id="fFormClass" class="um-form-select">
+            <option value="">— Select form class —</option>
+          </select>
+          <span class="um-form-hint">This is the single class they can enter behaviour ratings and comments for</span>
+        </div>
+
+        <!-- Temp password -->
+        <div class="um-form-group um-full" id="fPasswordGroup">
+          <label class="um-form-label">Temporary Password *</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="fPassword" class="um-form-input" placeholder="Set a temporary password" style="flex:1">
+            <button type="button" id="generatePwdBtn" class="btn btn-outline" style="font-size:0.78rem;padding:8px 12px;white-space:nowrap">Generate</button>
+          </div>
+          <span class="um-form-hint">The teacher will use this to log in on their first day</span>
+        </div>
+      </div>
+    </div>
+    <div class="um-modal-footer">
+      <button class="btn btn-outline" id="modalCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="modalSaveBtn">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     VIEW USER MODAL
+     ============================================================ -->
+<div class="um-modal-overlay" id="viewModal">
+  <div class="um-modal">
+    <div class="um-modal-header">
+      <span class="um-modal-title">Account Details</span>
+      <button class="um-modal-close" id="viewModalClose">✕</button>
+    </div>
+    <div class="um-modal-body" id="viewModalBody"></div>
+    <div class="um-modal-footer">
+      <button class="btn btn-outline" id="viewModalCloseBtn">Close</button>
+      <button class="btn btn-primary" id="viewModalEditBtn">Edit Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     RESET PASSWORD MODAL
+     ============================================================ -->
+<div class="um-modal-overlay" id="resetModal">
+  <div class="um-modal" style="max-width:400px">
+    <div class="um-modal-header">
+      <span class="um-modal-title">Reset Password</span>
+      <button class="um-modal-close" id="resetModalClose">✕</button>
+    </div>
+    <div class="um-modal-body">
+      <div id="resetModalBody"></div>
+    </div>
+    <div class="um-modal-footer">
+      <button class="btn btn-outline" id="resetModalCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="resetConfirmBtn">Generate New Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DEACTIVATE CONFIRM MODAL
+     ============================================================ -->
+<div class="um-modal-overlay" id="deactModal">
+  <div class="um-modal" style="max-width:400px">
+    <div class="um-modal-header">
+      <span class="um-modal-title" id="deactModalTitle">Deactivate Account</span>
+      <button class="um-modal-close" id="deactModalClose">✕</button>
+    </div>
+    <div class="um-modal-body" id="deactModalBody"></div>
+    <div class="um-modal-footer">
+      <button class="btn btn-outline" id="deactCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="deactConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+<script src="../assets/js/admin/parent-manager.js"></script>
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/subjects-and-grading.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+<script src="../assets/js/admin/user-management.js"></script>
+
+  <!-- PARENTS SECTION -->
+  <section class="um-section" id="parentsSection" style="margin-top:24px">
+    <div class="dash-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+        <div>
+          <h3 style="font-size:1rem;color:var(--color-primary);margin-bottom:4px">👨‍👩‍👧 Parent Accounts</h3>
+          <p style="font-size:0.82rem;color:#6b7280">Add parents and link them to their children</p>
+        </div>
+        <button onclick="showAddParentModal()" class="btn btn-primary btn-sm">+ Add Parent Account</button>
+      </div>
+      <div id="parentsList"></div>
+    </div>
+  </section>
+
+  <!-- ADD PARENT MODAL -->
+  <div id="addParentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="background:var(--color-primary);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
+        <span style="color:#fff;font-weight:700">Add Parent Account</span>
+        <button onclick="closeParentModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer">✕</button>
+      </div>
+      <div style="padding:24px">
+        <div class="form-group">
+          <label class="form-label">Parent/Guardian Full Name *</label>
+          <input type="text" id="par_name" class="form-control" placeholder="e.g. Mr John Okafor">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input type="email" id="par_email" class="form-control" placeholder="parent@email.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number *</label>
+          <input type="tel" id="par_phone" class="form-control" placeholder="e.g. 08012345678">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password (default: RCA@2026!)</label>
+          <input type="text" id="par_password" class="form-control" value="RCA@2026!">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Link to Children (select students)</label>
+          <div id="studentCheckboxes" style="max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button onclick="closeParentModal()" class="btn btn-outline" style="flex:1">Cancel</button>
+          <button onclick="submitAddParent()" class="btn btn-primary" style="flex:1">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/admin/parent-manager.js"></script>
+  <script>
+    // Load parent list
+    function renderParents() {
+      const list = document.getElementById('parentsList');
+      if (!list) return;
+      const parents = window.RCA_PARENTS?.getAll() || [];
+      if (parents.length === 0) {
+        list.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:20px">No parent accounts yet. Click + Add Parent Account to create one.</p>';
+        return;
+      }
+      list.innerHTML = parents.map(p => {
+        const children = window.RCA_PARENTS.getChildren(p.id);
+        return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div>
+            <strong style="font-size:0.9rem;color:#111">${p.full_name}</strong>
+            <span style="display:block;font-size:0.78rem;color:#6b7280">${p.email} • ${p.phone || 'No phone'}</span>
+            <span style="display:block;font-size:0.75rem;color:#1d4ed8;margin-top:4px">
+              ${children.length > 0 ? '👦 ' + children.map(c => c.full_name + ' (' + c.class_name + ')').join(', ') : '⚠ No children linked yet'}
+            </span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="linkChildModal('${p.id}')" style="padding:6px 12px;background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">+ Link Child</button>
+            <button onclick="deleteParent('${p.id}')" style="padding:6px 12px;background:#fef2f2;color:#dc2626;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">Delete</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function showAddParentModal() {
+      const modal = document.getElementById('addParentModal');
+      modal.style.display = 'flex';
+      // Populate student checkboxes
+      const allStudents = (window.SAMPLE_STUDENTS || []).filter(s => s.status !== 'archived' && s.status !== 'inactive');
+      const box = document.getElementById('studentCheckboxes');
+      box.innerHTML = allStudents.map(s => `
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
+          <input type="checkbox" value="${s.admission_no}" style="width:16px;height:16px">
+          ${s.full_name} — ${s.class_name}
+        </label>
+      `).join('') || '<p style="color:#9ca3af;font-size:0.82rem">No students registered yet</p>';
+    }
+
+    function closeParentModal() {
+      document.getElementById('addParentModal').style.display = 'none';
+    }
+
+    function submitAddParent() {
+      const name  = document.getElementById('par_name').value.trim();
+      const email = document.getElementById('par_email').value.trim();
+      const phone = document.getElementById('par_phone').value.trim();
+      const pass  = document.getElementById('par_password').value.trim();
+
+      if (!name || !email || !phone) { alert('Please fill in name, email and phone.'); return; }
+
+      const checked = [...document.querySelectorAll('#studentCheckboxes input:checked')].map(i => i.value);
+
+      const parent = window.RCA_PARENTS.add({ full_name: name, email, phone, password: pass, children: checked });
+
+      closeParentModal();
+      renderParents();
+
+      // Show success
+      const toast = document.createElement('div');
+      toast.textContent = `✅ Parent account created for ${name}. Login: ${email} / ${pass}`;
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:14px 20px;border-radius:10px;z-index:9999;font-size:0.85rem;font-weight:600;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 5000);
+    }
+
+    function linkChildModal(parentId) {
+      const allStudents = (window.SAMPLE_STUDENTS || []).filter(s => s.status !== 'archived');
+      const p = window.RCA_PARENTS.getAll().find(p => p.id === parentId);
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:400px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+          <h3 style="margin-bottom:16px;color:var(--color-primary);font-size:1rem">Link Child to ${p?.full_name}</h3>
+          <div style="max-height:250px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:16px">
+            ${allStudents.map(s => `
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
+                <input type="checkbox" value="${s.admission_no}" ${p?.children?.includes(s.admission_no) ? 'checked' : ''} style="width:16px;height:16px">
+                ${s.full_name} — ${s.class_name}
+              </label>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:10px">
+            <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-outline" style="flex:1">Cancel</button>
+            <button onclick="saveLinkedChildren('${parentId}', this)" class="btn btn-primary" style="flex:1">Save</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+    }
+
+    function saveLinkedChildren(parentId, btn) {
+      const modal = btn.closest('[style*="fixed"]');
+      const checked = [...modal.querySelectorAll('input:checked')].map(i => i.value);
+      const parents = window.RCA_PARENTS.getAll();
+      const idx = parents.findIndex(p => p.id === parentId);
+      if (idx > -1) { parents[idx].children = checked; window.RCA_PARENTS.saveAll(parents); }
+      modal.remove();
+      renderParents();
+    }
+
+    function deleteParent(parentId) {
+      if (!confirm('Delete this parent account?')) return;
+      window.RCA_PARENTS.delete(parentId);
+      renderParents();
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', renderParents);
+  </script>
+</body>
+</html>

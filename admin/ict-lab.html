@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICT Lab & Curriculum | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/communications.css">
+  <style>
+    /* Tab bar */
+    .ict-tab-bar {
+      display: flex;
+      gap: 4px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .ict-tab-btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #6b7280;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .ict-tab-btn:hover { background: #f3f4f6; color: #374151; }
+    .ict-tab-btn.active { background: #7c3aed; color: #fff; }
+    .ict-tab-pane { display: none; }
+    .ict-tab-pane.active { display: block; }
+
+    @media print {
+      .admin-sidebar, .admin-topbar, .ict-tab-bar, .no-print { display: none !important; }
+      .admin-content { margin-left: 0 !important; }
+      .ict-tab-pane { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="admin-shell">
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header"><img src="../assets/images/logo.png" alt="Royal Crystal Academy"><span>Royal Crystal Academy</span></div>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-profile-info">
+        <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+        <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-online-dot">Online</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Main</p>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">⊞</i> Dashboard</a>
+      <p class="sidebar-section-label">Administration</p>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">○</i> Students</a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Teachers</a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Classes</a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Attendance</a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Discipline</a>
+      <p class="sidebar-section-label">Results</p>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Score Entry</a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">○</i> Class Review</a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Approvals</a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Report Cards</a>
+      <p class="sidebar-section-label">Finance</p>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">○</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Finance Reports</a>
+      <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Announcements</a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link active" data-roles="ict_admin,head_teacher"><i class="icon">⊞</i> ICT Lab & Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> User Management</a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Activity Logs</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="sidebar-link"><i class="icon">←</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">✕</i> Log out</a>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-content">
+    <header class="admin-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+      <h1 class="topbar-title">ICT Department</h1>
+      <span class="topbar-session">Academic Session: 2025/2026</span>
+      <button class="topbar-bell">&#128276;<span class="topbar-bell-badge">4</span></button>
+      <div class="topbar-user">
+        <span class="user-role-badge" id="userRoleBadge">Guest</span>
+        <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- Tab navigation -->
+      <div class="ict-tab-bar no-print">
+        <button class="ict-tab-btn active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="ict-tab-btn" data-tab="curriculum">📚 Curriculum</button>
+        <button class="ict-tab-btn" data-tab="progress">📈 Student Progress</button>
+        <button class="ict-tab-btn" data-tab="lab">💻 Computer Lab</button>
+        <button class="ict-tab-btn" data-tab="reports">🖨 Reports</button>
+      </div>
+
+      <!-- Tab panes — populated by ict-lab.js -->
+      <div class="ict-tab-pane active" id="tab-dashboard">
+        <div style="text-align:center;padding:40px;color:#9ca3af">Loading dashboard...</div>
+      </div>
+      <div class="ict-tab-pane" id="tab-curriculum"></div>
+      <div class="ict-tab-pane" id="tab-progress"></div>
+      <div class="ict-tab-pane" id="tab-lab"></div>
+      <div class="ict-tab-pane" id="tab-reports"></div>
+
+    </main>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/ict-data.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+<script src="../assets/js/admin/ict-lab.js"></script>
+</body>
+</html>

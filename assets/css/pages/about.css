@@ -1,0 +1,62 @@
+/* ============================================
+   ABOUT PAGE SPECIFIC STYLES
+   ============================================ */
+
+.about-story img.story-img {
+  border-radius: var(--radius-lg);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.story-text h2 {
+  margin-bottom: var(--space-md);
+}
+
+.story-text p {
+  margin-bottom: var(--space-md);
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 768px) {
+  .about-story .grid-2 {
+    gap: var(--space-md);
+  }
+}
+
+/* --- Staff Cards --- */
+.staff-card {
+  text-align: center;
+}
+
+.staff-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto var(--space-md);
+}
+
+.staff-card h4 {
+  margin-bottom: var(--space-xs);
+}
+
+.staff-role {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* ---- ABOUT PAGE RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .about-hero { padding: var(--space-xl) 0; min-height: auto; }
+  .about-intro { flex-direction: column; }
+  .about-intro img { width: 100%; border-radius: var(--radius-lg); }
+  .leadership-grid { grid-template-columns: 1fr 1fr; }
+  .values-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+  .leadership-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr; }
+}

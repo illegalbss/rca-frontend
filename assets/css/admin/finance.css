@@ -1,0 +1,447 @@
+/* ============================================
+   FINANCE MODULE STYLES
+   ============================================
+   Used by: fees.html, payments.html,
+            receipts.html, finance-reports.html
+*/
+
+/* ---- Summary stat cards ---- */
+.finance-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.finance-stat-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-lg);
+  border-left: 5px solid var(--color-primary);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.finance-stat-card.stat-paid   { border-left-color: var(--color-success); }
+.finance-stat-card.stat-partial { border-left-color: var(--color-warning); }
+.finance-stat-card.stat-unpaid  { border-left-color: var(--color-danger); }
+.finance-stat-card.stat-total   { border-left-color: var(--color-primary); }
+
+.finance-stat-label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.finance-stat-value {
+  font-family: var(--font-heading);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.finance-stat-card.stat-paid   .finance-stat-value { color: var(--color-success); }
+.finance-stat-card.stat-unpaid .finance-stat-value { color: var(--color-danger); }
+.finance-stat-card.stat-partial .finance-stat-value { color: var(--color-warning); }
+
+.finance-stat-sub {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+/* ---- Toolbar / filter bar ---- */
+.finance-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  background: var(--color-bg-card);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  box-shadow: var(--shadow);
+}
+
+.finance-toolbar .form-group {
+  margin-bottom: 0;
+  min-width: 150px;
+}
+
+.finance-toolbar label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+}
+
+.finance-toolbar .btn { align-self: flex-end; }
+
+/* ---- Payment status badges ---- */
+.badge-paid    { background: rgba(42,157,143,0.12); color: #1a6b62; font-weight: 700; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; }
+.badge-partial { background: rgba(244,162,97,0.15);  color: #a0522d; font-weight: 700; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; }
+.badge-unpaid  { background: rgba(230,57,70,0.10);   color: #a32d2d; font-weight: 700; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; }
+
+/* ---- Main data table ---- */
+.finance-table-wrap {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.finance-table th {
+  background: var(--color-bg);
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.finance-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.finance-table tr:last-child td { border-bottom: none; }
+
+.finance-table tr:hover td { background: var(--color-bg); }
+
+.finance-table .amount-col { font-family: var(--font-heading); font-weight: 600; }
+.finance-table .balance-col { color: var(--color-danger); font-weight: 600; }
+.finance-table .balance-zero { color: var(--color-success); }
+
+/* ---- Fee breakdown card (fees.html) ---- */
+.fee-schedule-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.fee-schedule-title {
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-sm);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.fee-line-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-md);
+}
+
+.fee-line-table td {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+}
+
+.fee-line-table tr:last-child td { border-bottom: none; }
+
+.fee-line-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+  font-family: var(--font-heading);
+}
+
+.fee-total-row td {
+  font-weight: 700;
+  color: var(--color-primary);
+  border-top: 2px solid var(--color-primary) !important;
+  font-size: var(--fs-base);
+  padding-top: var(--space-md) !important;
+}
+
+.fee-discount-note {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  background: rgba(30,86,49,0.07);
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md);
+  margin-top: var(--space-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.fee-terms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+/* ---- Record payment modal / form ---- */
+.payment-form-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.payment-form-title {
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  margin-bottom: var(--space-lg);
+}
+
+.payment-lookup-result {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+  border: 1px solid var(--color-border);
+  display: none;
+}
+
+.payment-lookup-result.visible { display: block; }
+
+.lookup-student-name {
+  font-weight: 700;
+  font-size: var(--fs-base);
+  margin-bottom: 4px;
+}
+
+.lookup-meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.lookup-balance-row {
+  display: flex;
+  gap: var(--space-xl);
+  font-size: var(--fs-sm);
+}
+
+.lookup-balance-item strong {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+}
+
+.lookup-balance-item.owed strong  { color: var(--color-danger); }
+.lookup-balance-item.paid strong  { color: var(--color-success); }
+.lookup-balance-item.total strong { color: var(--color-primary); }
+
+/* ---- Receipt ---- */
+.receipt-wrap {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.receipt-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-xl);
+}
+
+.receipt-header {
+  text-align: center;
+  border-bottom: 3px solid var(--color-primary);
+  padding-bottom: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.receipt-header img { width: 48px; height: 48px; margin-bottom: var(--space-sm); }
+
+.receipt-school-name {
+  font-family: var(--font-heading);
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.receipt-subtitle { font-size: var(--fs-sm); color: #555; }
+.receipt-no {
+  display: inline-block;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  padding: 3px 14px;
+  border-radius: 999px;
+  margin-top: var(--space-sm);
+}
+
+.receipt-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm) var(--space-lg);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.receipt-info-item { font-size: var(--fs-sm); }
+.receipt-info-label { color: #777; font-size: 0.7rem; text-transform: uppercase; display: block; }
+.receipt-info-value { font-weight: 600; }
+
+.receipt-lines { margin-bottom: var(--space-lg); }
+
+.receipt-line {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+}
+
+.receipt-line:last-child { border-bottom: none; }
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-md) 0;
+  border-top: 2px solid var(--color-primary);
+  font-weight: 700;
+  font-size: var(--fs-base);
+  color: var(--color-primary);
+}
+
+.receipt-paid-stamp {
+  text-align: center;
+  margin: var(--space-lg) 0;
+}
+
+.receipt-stamp {
+  display: inline-block;
+  border: 3px solid var(--color-success);
+  color: var(--color-success);
+  font-family: var(--font-heading);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius);
+  transform: rotate(-5deg);
+  letter-spacing: 0.1em;
+}
+
+.receipt-footer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #777;
+  margin-top: var(--space-lg);
+  border-top: 1px dashed #ddd;
+  padding-top: var(--space-md);
+}
+
+.receipt-print-btn {
+  margin-top: var(--space-lg);
+  text-align: center;
+}
+
+/* ---- Finance reports charts ---- */
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.report-chart-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--space-xl);
+}
+
+.report-chart-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--fs-base);
+  margin-bottom: var(--space-lg);
+  color: var(--color-text);
+}
+
+/* Simple bar chart (CSS only, no library) */
+.bar-chart { display: flex; flex-direction: column; gap: var(--space-sm); }
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 80px;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--fs-sm);
+}
+
+.bar-label { color: var(--color-text-muted); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { background: var(--color-bg); border-radius: 4px; height: 10px; overflow: hidden; }
+.bar-fill  { height: 100%; border-radius: 4px; background: var(--color-primary); transition: width 0.6s ease; }
+.bar-fill.bar-partial { background: var(--color-warning); }
+.bar-fill.bar-unpaid  { background: var(--color-danger); }
+.bar-amount { text-align: right; font-weight: 600; font-size: 0.75rem; }
+
+/* Donut-style summary */
+.donut-legend { display: flex; flex-direction: column; gap: var(--space-sm); }
+.donut-legend-row { display: flex; align-items: center; gap: var(--space-sm); font-size: var(--fs-sm); }
+.donut-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.donut-dot.paid    { background: var(--color-success); }
+.donut-dot.partial { background: var(--color-warning); }
+.donut-dot.unpaid  { background: var(--color-danger); }
+.donut-legend-label { flex: 1; color: var(--color-text-muted); }
+.donut-legend-val { font-weight: 700; }
+.donut-legend-pct { color: var(--color-text-muted); font-size: 0.75rem; }
+
+/* ---- Outstanding list ---- */
+.outstanding-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: var(--space-lg);
+}
+
+.outstanding-card-header {
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(230,57,70,0.07);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.outstanding-card-header h3 { font-size: var(--fs-base); font-weight: 700; color: var(--color-danger); }
+
+/* ---- Print styles for receipt ---- */
+@media print {
+  .admin-sidebar, .no-print, .admin-topbar { display: none !important; }
+  .admin-shell { display: block; }
+  .admin-main { padding: 0; }
+  body { background: #fff; }
+  .receipt-card { box-shadow: none; border: none; }
+  @page { margin: 1cm; }
+}
+
+@media (max-width: 700px) {
+  .finance-stats { grid-template-columns: 1fr 1fr; }
+  .finance-toolbar { flex-direction: column; align-items: stretch; }
+  .bar-row { grid-template-columns: 80px 1fr 60px; }
+  .receipt-info-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .finance-stats { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,263 @@
+/* ============================================
+   ATTENDANCE PAGE STYLES
+   ============================================ */
+
+/* --- Toolbar: class + date selectors --- */
+.attendance-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.selector-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.selector-group label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.selector-group .form-control {
+  min-width: 200px;
+}
+
+.date-nav {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.date-nav-btn {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.9rem;
+  font-size: var(--fs-base);
+  min-height: 44px;
+  color: var(--color-text);
+}
+
+.date-nav-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.today-btn {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+/* --- Weekend notice --- */
+.weekend-notice {
+  background: rgba(244, 162, 97, 0.12);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-md);
+}
+
+/* --- Summary cards --- */
+.attendance-summary {
+  margin-bottom: var(--space-lg);
+}
+
+.summary-card {
+  text-align: center;
+  padding: var(--space-md);
+}
+
+.summary-card-num {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+}
+
+.summary-card-label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.summary-present .summary-card-num { color: var(--color-success); }
+.summary-absent  .summary-card-num { color: var(--color-danger); }
+.summary-late    .summary-card-num { color: var(--color-warning); }
+.summary-excused .summary-card-num { color: var(--color-info); }
+
+/* --- Register toolbar (search + mark all present) --- */
+.register-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* --- Register table --- */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.register-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 620px;
+}
+
+.register-table th {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.register-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+}
+
+.register-table tr:last-child td {
+  border-bottom: none;
+}
+
+.col-avatar {
+  width: 44px;
+}
+
+.col-status {
+  width: 280px;
+}
+
+.row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   STATUS PILL BUTTONS (the 4-way toggle per row)
+   ============================================
+   Concept: a row of 4 small buttons (P / A / L / E),
+   each representing one possible status. Only ONE can
+   be "selected" at a time per pupil. We apply a distinct
+   class (status-active-present, status-active-absent, etc)
+   to whichever button matches that pupil's CURRENT status,
+   giving it a colored border + background.
+*/
+.status-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.status-pill {
+  width: 44px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  transition: var(--transition);
+}
+
+.status-pill:hover {
+  border-color: var(--color-text-muted);
+}
+
+.status-pill.active-present {
+  background: rgba(42, 157, 143, 0.15);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.status-pill.active-absent {
+  background: rgba(230, 57, 70, 0.15);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.status-pill.active-late {
+  background: rgba(244, 162, 97, 0.2);
+  border-color: var(--color-warning);
+  color: #8a5a1f;
+}
+
+.status-pill.active-excused {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--color-info);
+  color: var(--color-info);
+}
+
+.no-results {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl) 0;
+}
+
+/* --- Save bar --- */
+.save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--color-bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  position: sticky;
+  bottom: var(--space-md);
+}
+
+.save-status {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.save-status.unsaved {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.save-status.saved {
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+/* On small screens, stack the toolbar and shrink status pills slightly */
+@media (max-width: 700px) {
+  .attendance-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .selector-group .form-control {
+    min-width: 0;
+    width: 100%;
+  }
+  .register-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

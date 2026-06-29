@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Royal Crystal Academy — Nurturing Minds, Building Futures</title>
+  <meta name="description" content="Royal Crystal Academy is a leading primary school in 20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria, offering quality education from Pre-Nursery to Basic 6 with a modern ICT laboratory.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/variables.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/shared.css">
+  <link rel="stylesheet" href="assets/css/pages/home.css">
+  <!-- Preload hero images -->
+  <link rel="preload" href="assets/images/hero-1.jpg" as="image">
+  <link rel="preload" href="assets/images/hero-2.jpg" as="image">
+  <link rel="preload" href="assets/images/hero-3.jpg" as="image">
+</head>
+<body>
+
+<!-- ============================================================
+     TOP BAR
+     ============================================================ -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-left">
+      <span class="top-bar-item">📍 20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</span>
+      <span class="top-bar-item">📞 <a href="tel:08036721390">08036 721390</a> / <a href="tel:09080061094">09080 061094</a></span>
+    </div>
+    <div class="top-bar-right">
+      <a href="mailto:info@royalcrystalacademy.edu.ng">✉ info@royalcrystalacademy.edu.ng</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     NAVIGATION
+     ============================================================ -->
+<header class="site-header" id="siteHeader">
+  <div class="navbar-wrap">
+    <nav class="navbar">
+      <a href="index.html" class="logo">
+        <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+        <div class="logo-text">
+          <span class="logo-name">Royal Crystal Academy</span>
+          <span class="logo-tagline">Excellence in Education</span>
+        </div>
+      </a>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" class="active">Home</a></li>
+        <li><a href="about.html">About Us</a></li>
+        <li><a href="admissions.html">Admissions</a></li>
+        <li><a href="news-events.html">News & Events</a></li>
+        <li><a href="gallery.html">Gallery</a></li>
+        <li><a href="ict-department.html">ICT</a></li>
+        <li><a href="academic-calendar.html">Calendar</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="parent-login.html" class="btn btn-secondary btn-sm">Parent Login</a>
+        <a href="admin/login.html" class="btn btn-outline-light btn-sm">Staff Portal</a>
+      </div>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Mobile Drawer -->
+<div class="nav-drawer-overlay" id="navOverlay"></div>
+<div class="nav-drawer" id="navDrawer">
+  <button class="nav-drawer-close" id="navDrawerClose">✕</button>
+  <a href="index.html" class="logo">
+    <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+    <div class="logo-text">
+      <span class="logo-name">Royal Crystal Academy</span>
+    </div>
+  </a>
+  <nav class="nav-drawer-links">
+    <a href="index.html" class="active">Home</a>
+    <a href="about.html">About Us</a>
+    <a href="admissions.html">Admissions</a>
+    <a href="news-events.html">News & Events</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="ict-department.html">ICT Department</a>
+    <a href="academic-calendar.html">Calendar</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+  <div class="nav-drawer-actions">
+    <a href="parent-login.html" class="btn btn-secondary">Parent Login</a>
+    <a href="admin/login.html" class="btn btn-outline">Staff Portal</a>
+  </div>
+</div>
+
+<!-- ============================================================
+     HERO SECTION — Full viewport slider
+     ============================================================ -->
+<section class="hero" id="hero" style="background:linear-gradient(135deg,#4A0A12 0%,#6B0F1A 100%);min-height:100vh;display:block">
+  <div class="hero-slider" id="heroSlider">
+    <div class="hero-slide active" style="position:absolute;inset:0;opacity:1;z-index:2;display:flex;align-items:center">
+      <img src="assets/images/hero-1.jpg" alt="Royal Crystal Academy pupils" class="hero-bg-img">
+      <div class="hero-slide-overlay"></div>
+      <div class="hero-slide-content container">
+        <span class="hero-badge">Welcome to Royal Crystal Academy</span>
+        <h1 class="hero-title">We Offer <span>Quality</span><br>Education</h1>
+        <p class="hero-text">Nurturing curious minds and building strong foundations for life — with a modern ICT lab for the leaders of tomorrow.</p>
+        <div class="hero-actions">
+          <a href="admissions.html" class="btn btn-secondary btn-lg">Apply for Admission</a>
+          <a href="about.html" class="btn btn-outline-light btn-lg">Learn More</a>
+        </div>
+      </div>
+    </div>
+    <div class="hero-slide" style="position:absolute;inset:0;display:flex;align-items:center">
+      <img src="assets/images/hero-2.jpg" alt="Royal Crystal Academy pupils reading" class="hero-bg-img">
+      <div class="hero-slide-overlay"></div>
+      <div class="hero-slide-content container">
+        <span class="hero-badge">Modern Facilities</span>
+        <h1 class="hero-title">Standard <span>Facilities</span><br>for Learning</h1>
+        <p class="hero-text">State-of-the-art classrooms, a well-equipped ICT laboratory, and a safe, nurturing environment for every child.</p>
+        <div class="hero-actions">
+          <a href="gallery.html" class="btn btn-secondary btn-lg">View Facilities</a>
+          <a href="contact.html" class="btn btn-outline-light btn-lg">Contact Us</a>
+        </div>
+      </div>
+    </div>
+    <div class="hero-slide" style="position:absolute;inset:0;display:flex;align-items:center">
+      <img src="assets/images/hero-3.jpg" alt="Royal Crystal Academy pupils" class="hero-bg-img">
+      <div class="hero-slide-overlay"></div>
+      <div class="hero-slide-content container">
+        <span class="hero-badge">Academic Excellence</span>
+        <h1 class="hero-title">Helping You <span>Achieve</span><br>Your Goals</h1>
+        <p class="hero-text">From Pre-Nursery to Basic 6, we provide an environment where every child can thrive academically and socially.</p>
+        <div class="hero-actions">
+          <a href="admissions.html" class="btn btn-secondary btn-lg">Get Started</a>
+          <a href="about.html" class="btn btn-outline-light btn-lg">Our Story</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slider controls -->
+  <button class="hero-prev" id="heroPrev">&#8249;</button>
+  <button class="hero-next" id="heroNext">&#8250;</button>
+  <div class="hero-dots" id="heroDots">
+    <button class="hero-dot active" data-index="0"></button>
+    <button class="hero-dot" data-index="1"></button>
+    <button class="hero-dot" data-index="2"></button>
+  </div>
+</section>
+
+<!-- ============================================================
+     STATISTICS STRIP
+     ============================================================ -->
+<section class="stats-strip bg-primary">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item reveal">
+        <div class="stat-icon">👥</div>
+        <div class="stat-number" data-target="400">0</div>
+        <div class="stat-plus">+</div>
+        <div class="stat-label">Active Pupils</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-1">
+        <div class="stat-icon">👨‍🏫</div>
+        <div class="stat-number" data-target="20">0</div>
+        <div class="stat-plus">+</div>
+        <div class="stat-label">Dedicated Staff</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-2">
+        <div class="stat-icon">💻</div>
+        <div class="stat-number" data-target="10">0</div>
+        <div class="stat-plus">+</div>
+        <div class="stat-label">Computers in Lab</div>
+      </div>
+      <div class="stat-item reveal reveal-delay-3">
+        <div class="stat-icon">🏫</div>
+        <div class="stat-number" data-target="12">0</div>
+        <div class="stat-plus"></div>
+        <div class="stat-label">Class Levels</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ABOUT SECTION
+     ============================================================ -->
+<section class="section about-section">
+  <div class="container">
+    <div class="about-grid">
+      <div class="about-images reveal">
+        <div class="about-img-main">
+          <img src="assets/images/about-main.jpg" alt="Royal Crystal Academy school building with pupils in cultural attire" loading="lazy">
+        </div>
+        <div class="about-img-accent">
+          <img src="assets/images/about-accent.jpg" alt="Royal Crystal Academy pupils on staircase" loading="lazy">
+        </div>
+        <div class="about-years-badge">
+          <span class="years-num">10+</span>
+          <span class="years-label">Years of Excellence</span>
+        </div>
+      </div>
+
+      <div class="about-content reveal reveal-delay-2">
+        <span class="section-label">About Us</span>
+        <h2 class="section-title">We Are One of the <span>Best</span> Schools</h2>
+        <div class="divider"></div>
+        <p>Royal Crystal Academy is committed to establishing an institution that responds appropriately to the needs of its students, the school community, the Nigerian state and the world in general.</p>
+        <p style="margin-top:1rem">We provide quality education from Pre-Nursery through Basic 6, combining academic excellence with character formation and modern technology skills.</p>
+
+        <div class="about-features">
+          <div class="about-feature">
+            <div class="feature-icon">✓</div>
+            <div>
+              <strong>Quality Teaching Staff</strong>
+              <p>Qualified, experienced and dedicated teachers</p>
+            </div>
+          </div>
+          <div class="about-feature">
+            <div class="feature-icon">✓</div>
+            <div>
+              <strong>Modern ICT Laboratory</strong>
+              <p>10 computers for Basic 3–6 pupils</p>
+            </div>
+          </div>
+          <div class="about-feature">
+            <div class="feature-icon">✓</div>
+            <div>
+              <strong>Safe Learning Environment</strong>
+              <p>Secure, nurturing and child-friendly campus</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="about-actions">
+          <a href="about.html" class="btn btn-primary">Read More</a>
+          <a href="admissions.html" class="btn btn-outline">Admissions</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CLASS LEVELS SECTION
+     ============================================================ -->
+<section class="section bg-light levels-section">
+  <div class="container">
+    <div class="section-header center reveal">
+      <span class="section-label">Our Classes</span>
+      <h2 class="section-title">Class <span>Levels</span> Offered</h2>
+      <div class="divider center"></div>
+      <p class="section-subtitle">From Pre-Nursery to Basic 6, we provide quality education at every stage of your child's development.</p>
+    </div>
+
+    <div class="levels-grid">
+      <div class="level-card reveal">
+        <div class="level-icon" style="background:rgba(107,15,26,0.08);color:var(--color-primary)">🌱</div>
+        <h3>Pre-Nursery</h3>
+        <p>Ages 2–3. Play-based learning, early development and social skills.</p>
+        <span class="level-badge">2 Classes</span>
+      </div>
+      <div class="level-card reveal reveal-delay-1">
+        <div class="level-icon" style="background:rgba(201,150,12,0.1);color:var(--color-secondary-dark)">🌻</div>
+        <h3>Nursery</h3>
+        <p>Ages 3–5. Foundation literacy, numeracy and creative expression.</p>
+        <span class="level-badge">3 Classes</span>
+      </div>
+      <div class="level-card reveal reveal-delay-2">
+        <div class="level-icon" style="background:rgba(22,163,74,0.1);color:#16a34a">📖</div>
+        <h3>Basic 1 – 2</h3>
+        <p>Ages 6–8. Core subjects, reading, writing and arithmetic.</p>
+        <span class="level-badge">3 Classes</span>
+      </div>
+      <div class="level-card reveal reveal-delay-3">
+        <div class="level-icon" style="background:rgba(29,78,216,0.1);color:#1d4ed8">💻</div>
+        <h3>Basic 3 – 6</h3>
+        <p>Ages 9–12. Advanced subjects plus ICT, preparing for secondary school.</p>
+        <span class="level-badge">4 Classes + ICT</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     WHY CHOOSE US
+     ============================================================ -->
+<section class="section why-section">
+  <div class="container">
+    <div class="why-grid">
+      <div class="why-content reveal">
+        <span class="section-label">Why Choose Us</span>
+        <h2 class="section-title">Let's Help You Overshoot<br>Your <span>Goals</span> in the Right Ways</h2>
+        <div class="divider"></div>
+        <p>At Royal Crystal Academy, we believe every child is gifted. Our approach combines academic rigour with character development, ICT skills and a caring, family-oriented atmosphere.</p>
+
+        <div class="why-points">
+          <div class="why-point">
+            <div class="why-point-num">01</div>
+            <div>
+              <h4>Experienced Educators</h4>
+              <p>All teachers are qualified and trained to nurture each child's unique potential.</p>
+            </div>
+          </div>
+          <div class="why-point">
+            <div class="why-point-num">02</div>
+            <div>
+              <h4>ICT-Driven Learning</h4>
+              <p>Our computer lab prepares pupils for the digital world from Basic 3 onwards.</p>
+            </div>
+          </div>
+          <div class="why-point">
+            <div class="why-point-num">03</div>
+            <div>
+              <h4>Character Formation</h4>
+              <p>We emphasise values, discipline, respect and responsibility in every child.</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem">
+          <a href="admissions.html" class="btn btn-primary">Apply Now</a>
+          <a href="contact.html" class="btn btn-outline">Make Enquiry</a>
+        </div>
+      </div>
+
+      <div class="why-image reveal reveal-delay-2">
+        <img src="assets/images/why-us.jpg" alt="Happy pupils at Royal Crystal Academy" loading="lazy">
+        <div class="why-cta-card">
+          <h4>Make Enquiry?</h4>
+          <p>Want to enquire or seek advice about your next academic move? Don't hesitate to contact us.</p>
+          <a href="contact.html" class="btn btn-secondary btn-sm">Call Now</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     NEWS & EVENTS PREVIEW
+     ============================================================ -->
+<section class="section bg-off-white news-section">
+  <div class="container">
+    <div class="section-header reveal" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+      <div>
+        <span class="section-label">Latest Updates</span>
+        <h2 class="section-title">Recent <span>News</span></h2>
+        <div class="divider"></div>
+      </div>
+      <a href="news-events.html" class="btn btn-outline">View All Events</a>
+    </div>
+
+    <div class="news-grid">
+      <article class="news-card reveal">
+        <div class="news-card-img">
+          <img src="assets/images/news-1.jpg" alt="End of Term" loading="lazy">
+          <span class="news-card-cat">Achievement</span>
+        </div>
+        <div class="news-card-body">
+          <div class="news-card-date">📅 July 12, 2025</div>
+          <h3>Certificate of Excellence — Spelling Bee Championship</h3>
+          <p>A Royal Crystal Academy pupil earned a Certificate of Excellence at the Primary School Spelling Bee Competition 3.0, bringing great honour to our school community.</p>
+          <a href="news-events.html" class="news-read-more">Read More →</a>
+        </div>
+      </article>
+
+      <article class="news-card reveal reveal-delay-1">
+        <div class="news-card-img">
+          <img src="assets/images/news-2.jpg" alt="Sports Day" loading="lazy">
+          <span class="news-card-cat">Graduation</span>
+        </div>
+        <div class="news-card-body">
+          <div class="news-card-date">📅 2025</div>
+          <h3>Graduation Ceremony — Nursery 3</h3>
+          <p>Our Nursery 3 pupils celebrated their graduation in colourful gowns, marking a proud milestone for families and the school.</p>
+          <a href="news-events.html" class="news-read-more">Read More →</a>
+        </div>
+      </article>
+
+      <article class="news-card reveal reveal-delay-2">
+        <div class="news-card-img">
+          <img src="assets/images/news-3.jpg" alt="ICT Lab" loading="lazy">
+          <span class="news-card-cat">ICT</span>
+        </div>
+        <div class="news-card-body">
+          <div class="news-card-date">📅 May 30, 2026</div>
+          <h3>Inter-House Sports Day Celebration</h3>
+          <p>Our annual inter-house sports event brought together all pupils for a memorable day of fun and competition.</p>
+          <a href="news-events.html" class="news-read-more">Read More →</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     IMPORTANT EVENTS
+     ============================================================ -->
+<section class="section events-section bg-gradient">
+  <div class="container">
+    <div class="section-header center reveal">
+      <span class="section-label" style="background:rgba(201,150,12,0.2);color:var(--color-secondary-light)">Academic Calendar</span>
+      <h2 class="section-title" style="color:#fff">Important <span style="color:var(--color-secondary)">Events</span></h2>
+      <div class="divider center"></div>
+    </div>
+
+    <div class="events-list" id="homepageEventsList">
+      <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;text-align:center;padding:20px">Loading events...</p>
+    </div>
+    </section>
+
+<!-- ============================================================
+     GALLERY PREVIEW
+     ============================================================ -->
+<section class="section gallery-section">
+  <div class="container">
+    <div class="section-header center reveal">
+      <span class="section-label">Photo Gallery</span>
+      <h2 class="section-title">Our <span>Gallery</span></h2>
+      <div class="divider center"></div>
+      <p class="section-subtitle">A glimpse into life at Royal Crystal Academy</p>
+    </div>
+
+    <div class="gallery-preview-grid reveal">
+      <div class="gallery-item gallery-item-lg">
+        <img src="assets/images/about-main.jpg" alt="School building" loading="lazy">
+        <div class="gallery-overlay"><span>School Campus</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/gallery-4.jpg" alt="Graduation" loading="lazy">
+        <div class="gallery-overlay"><span>Graduation Day</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/gallery-3.jpg" alt="Inter-house Sports" loading="lazy">
+        <div class="gallery-overlay"><span>Sports Day</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/gallery-8.jpg" alt="Cultural Day" loading="lazy">
+        <div class="gallery-overlay"><span>Cultural Day</span></div>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/images/gallery-2.jpg" alt="School Events" loading="lazy">
+        <div class="gallery-overlay"><span>School Events</span></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:2rem">
+      <a href="gallery.html" class="btn btn-outline">View Full Gallery</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     ADMISSIONS CTA
+     ============================================================ -->
+<section class="cta-section bg-primary">
+  <div class="container">
+    <div class="cta-content reveal">
+      <div>
+        <h2 style="color:#fff;font-size:var(--fs-3xl)">Ready to Join<br><span style="color:var(--color-secondary)">Royal Crystal Academy?</span></h2>
+        <p style="color:rgba(255,255,255,0.8);margin-top:1rem;max-width:500px">Give your child the best foundation. Apply today and secure a place in our nurturing, excellent learning environment.</p>
+      </div>
+      <div class="cta-actions">
+        <a href="admissions.html" class="btn btn-secondary btn-lg">Apply for Admission</a>
+        <a href="contact.html" class="btn btn-outline-light btn-lg">Contact Admissions</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     CONTACT STRIP
+     ============================================================ -->
+<section class="contact-strip bg-off-white">
+  <div class="container">
+    <div class="contact-strip-grid">
+      <div class="contact-strip-item reveal">
+        <div class="contact-strip-icon">📍</div>
+        <div>
+          <h4>Our Location</h4>
+          <p>20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</p>
+        </div>
+      </div>
+      <div class="contact-strip-item reveal reveal-delay-1">
+        <div class="contact-strip-icon">📞</div>
+        <div>
+          <h4>Call Us</h4>
+          <p><a href="tel:08036721390">+234 08036 721390</a></p>
+        </div>
+      </div>
+      <div class="contact-strip-item reveal reveal-delay-2">
+        <div class="contact-strip-icon">✉</div>
+        <div>
+          <h4>Email Us</h4>
+          <p><a href="mailto:info@royalcrystalacademy.edu.ng">info@royalcrystalacademy.edu.ng</a></p>
+        </div>
+      </div>
+      <div class="contact-strip-item reveal reveal-delay-3">
+        <div class="contact-strip-icon">🕐</div>
+        <div>
+          <h4>School Hours</h4>
+          <p>Mon–Fri: 7:30 AM – 3:30 PM<br>Saturday: Office Hours Only</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+
+      <!-- Brand -->
+      <div class="footer-brand">
+        <a href="index.html" class="logo">
+          <img src="assets/images/logo.png" alt="Royal Crystal Academy">
+          <div class="logo-text">
+            <span class="logo-name">Royal Crystal Academy</span>
+            <span class="logo-tagline" style="color:var(--color-secondary)">Excellence in Education</span>
+          </div>
+        </a>
+        <p>Nurturing curious minds and building strong foundations for life, with a modern ICT lab for the leaders of tomorrow.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Facebook">f</a>
+          <a href="#" aria-label="Twitter">t</a>
+          <a href="#" aria-label="Instagram">ig</a>
+          <a href="#" aria-label="WhatsApp">w</a>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About Us</a>
+          <a href="admissions.html">Admissions</a>
+          <a href="gallery.html">Gallery</a>
+          <a href="contact.html">Contact Us</a>
+        </nav>
+      </div>
+
+      <!-- Academics -->
+      <div class="footer-col">
+        <h4>Academics</h4>
+        <nav class="footer-links">
+          <a href="ict-department.html">ICT Department</a>
+          <a href="academic-calendar.html">Calendar</a>
+          <a href="news-events.html">News &amp; Events</a>
+          <a href="admin/login.html">Staff Portal</a>
+          <a href="admin/parent-portal.html">Parent Portal</a>
+        </nav>
+      </div>
+
+      <!-- Contact -->
+            <div class="footer-col">
+        <h4>Contact Info</h4>
+        <div class="footer-contact-item"><span class="icon">📍</span><span>20/21 Amaigbo Lane, Uwani,<br>Enugu State, Nigeria<br>P.O. Box 3573, Enugu</span></div>
+        <div class="footer-contact-item"><span class="icon">📞</span><div><a href="tel:08036721390">08036 721390</a><br><a href="tel:09080061094">09080 061094</a></div></div>
+        <div class="footer-contact-item"><span class="icon">✉</span><a href="mailto:info@royalcrystalacademy.edu.ng">info@royalcrystalacademy.edu.ng</a></div>
+        <div class="footer-contact-item"><span class="icon">🕐</span><span>Mon–Fri: 7:30 AM – 3:30 PM<br>Saturday: Office Hours Only</span></div>
+      </div>
+    </div>
+
+    <!-- Mobile 3-column links grid (hidden on desktop, shown on mobile only) -->
+    <div class="footer-links-mobile-grid">
+      <div class="footer-col">
+        <h4>Resources</h4>
+        <nav class="footer-links">
+          <a href="index.html">Home</a>
+          <a href="about.html">About Us</a>
+          <a href="admissions.html">Admissions</a>
+          <a href="contact.html">Contact</a>
+          <a href="academic-calendar.html">Calendar</a>
+          <a href="news-events.html">Events</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <nav class="footer-links">
+          <a href="gallery.html">Gallery</a>
+          <a href="ict-department.html">ICT</a>
+          <a href="admin/login.html">Staff Portal</a>
+          <a href="admin/parent-portal.html">Parent Portal</a>
+          <a href="admissions.html">Apply Now</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Levels</h4>
+        <nav class="footer-links">
+          <a href="admissions.html">Pre-Nursery</a>
+          <a href="admissions.html">Nursery</a>
+          <a href="admissions.html">Basic 1–2</a>
+          <a href="admissions.html">Basic 3–6</a>
+          <a href="ict-department.html">ICT Club</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Gallery Strip (shown on mobile only) -->
+    <div class="footer-gallery-strip">
+      <a href="gallery.html"><img src="assets/images/hero-1.jpg" alt="RCA pupils" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-4.jpg" alt="Graduation" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-8.jpg" alt="Cultural day" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/gallery-17.jpg" alt="Sports day" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/staircase.jpg" alt="RCA pupils" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/group-reading.jpg" alt="Group reading" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/why-us.jpg" alt="Graduation" loading="lazy"></a>
+      <a href="gallery.html"><img src="assets/images/ict-lab.jpg" alt="ICT lab" loading="lazy"></a>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 Royal Crystal Academy. All rights reserved.</p>
+      <p>20/21 Amaigbo Lane, Uwani, Enugu State, Nigeria</p>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

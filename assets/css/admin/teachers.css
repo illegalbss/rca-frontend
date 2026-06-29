@@ -1,0 +1,279 @@
+/* ============================================
+   TEACHERS PAGE STYLES
+   ============================================ */
+
+.teachers-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  padding-left: 2.5rem;
+}
+
+.role-filter {
+  width: auto;
+  min-width: 160px;
+}
+
+.total-pill {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ============================================
+   TEACHER CARDS
+   ============================================ */
+.teacher-cards-grid {
+  margin-bottom: var(--space-lg);
+}
+
+.teacher-card {
+  display: flex;
+  gap: var(--space-md);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.teacher-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.teacher-card-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--fs-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.teacher-card-body {
+  flex: 1;
+  min-width: 0; /* allows text truncation to work inside a flex child */
+}
+
+.teacher-card-name {
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teacher-card-role {
+  font-size: var(--fs-sm);
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.teacher-card-meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.teacher-card-classes {
+  margin-top: var(--space-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.class-chip {
+  background: var(--color-bg);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.class-chip-more {
+  background: rgba(30, 86, 49, 0.1);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.no-results {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl) 0;
+}
+
+/* ============================================
+   TEACHER DETAIL MODAL
+   ============================================
+   Concept: a modal is an overlay that sits ON TOP of the
+   page. We use position: fixed so it stays centered in the
+   viewport even if the page is scrolled. It's hidden by
+   default (display: none) and toggled to flex (centers its
+   content) by JS when a teacher card is clicked.
+*/
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.modal-card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-md);
+  right: var(--space-md);
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding-right: var(--space-xl);
+}
+
+.modal-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  margin-bottom: 0.2rem;
+}
+
+.modal-role-badge {
+  display: inline-block;
+  background: rgba(30, 86, 49, 0.1);
+  color: var(--color-primary);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.modal-section {
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.modal-section-label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.modal-section-value {
+  font-weight: 500;
+}
+
+.modal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
+.modal-chip {
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: 0.25rem 0.65rem;
+  font-size: var(--fs-sm);
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-lg);
+}
+
+.modal-actions .btn {
+  flex: 1;
+}
+
+/* On small screens, stack the toolbar */
+@media (max-width: 700px) {
+  .teachers-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .role-filter {
+    width: 100%;
+  }
+}

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/students.css">
+</head>
+<body>
+
+  <div class="admin-shell">
+
+    <!-- ============ SIDEBAR (identical on every admin page) ============ -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+        <span>Royal Crystal Academy</span>
+      </div>
+
+      <!-- User profile block — populated by dashboard-shell.js -->
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+        <div class="sidebar-profile-info">
+          <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+          <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+          <div class="sidebar-online-dot">Online</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <p class="sidebar-section-label">Main</p>
+        <a href="dashboard.html" class="sidebar-link" data-roles="all">
+          <i class="icon">&#9632;</i> Dashboard
+        </a>
+
+        <p class="sidebar-section-label">Administration</p>
+        <a href="students.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant">
+          <i class="icon">&#9675;</i> Students
+        </a>
+        <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Teachers
+        </a>
+        <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Classes
+        </a>
+        <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Attendance
+        </a>
+        <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Discipline
+        </a>
+
+        <p class="sidebar-section-label">Results</p>
+        <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+          <i class="icon">&#9675;</i> Score Entry
+        </a>
+        <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher">
+          <i class="icon">&#9675;</i> Class Review
+        </a>
+        <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Approvals
+        </a>
+        <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+          <i class="icon">&#9675;</i> Report Cards
+        </a>
+
+        <p class="sidebar-section-label">Finance</p>
+        <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
+        <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Record Payment</a>
+        <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9675;</i> Receipts</a>
+        <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
+
+        <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+        <a href="user-management.html" class="sidebar-link" data-roles="ict_admin">
+          <i class="icon">&#9675;</i> User Management
+        </a>
+        <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin">
+          <i class="icon">&#9675;</i> Activity Logs
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../index.html" class="sidebar-link">
+          <i class="icon">&#8592;</i> Back to website
+        </a>
+        <a href="login.html" class="sidebar-link logout-link" id="logoutBtn">
+          <i class="icon">&#10006;</i> Log out
+        </a>
+      </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ============ MAIN AREA ============ -->
+    <div class="admin-content">
+
+      <header class="admin-topbar">
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+        <h1 class="topbar-title" id="topbarTitle">Students</h1>
+        <span class="topbar-session">Academic Session: 2025/2026</span>
+        <button class="topbar-bell" title="Notifications">
+          &#128276;
+          <span class="topbar-bell-badge">4</span>
+        </button>
+        <div class="topbar-user">
+          <span class="user-role-badge" id="userRoleBadge">Guest</span>
+          <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+        </div>
+      </header>
+
+      <main class="admin-main">
+
+        <!-- ============================================
+             VIEW 1: CLASS PICKER (shown by default)
+             ============================================ -->
+        <section id="classPickerView">
+
+          <div class="students-toolbar">
+            <div class="search-wrap">
+              <span class="search-icon">&#9906;</span>
+              <input type="search" id="globalSearch" class="form-control search-input"
+                     placeholder="Search any pupil by name or admission number...">
+            </div>
+            <span class="total-pill" id="totalPupilsPill">Loading...</span>
+          </div>
+
+          <!-- Global search results appear here, hidden until the user types -->
+          <div class="card search-results-card" id="searchResultsCard" style="display:none;">
+            <h3>Search Results</h3>
+            <div id="searchResultsList"></div>
+          </div>
+
+          <!-- Class cards grid - populated by JS -->
+          <div id="classCardsContainer">
+            <p class="section-group-label">Pre-Nursery &amp; Nursery</p>
+            <div class="grid grid-4 class-cards-grid" id="nurseryClassCards"></div>
+
+            <p class="section-group-label">Primary (Basic 1 - 6)</p>
+            <div class="grid grid-4 class-cards-grid" id="primaryClassCards"></div>
+          </div>
+
+        </section>
+
+        <!-- ============================================
+             VIEW 2: CLASS DETAIL (hidden until a class is clicked)
+             ============================================ -->
+        <section id="classDetailView" style="display:none;">
+
+          <button class="back-link" id="backToClasses">&larr; Back to all classes</button>
+
+          <div class="class-detail-header">
+            <div>
+              <h2 id="classDetailTitle">Class Name</h2>
+              <p id="classDetailCount" class="class-detail-count">0 pupils</p>
+            </div>
+            <button class="btn btn-primary" id="addPupilBtn">+ Add Pupil</button>
+          </div>
+
+          <div class="card">
+            <div class="table-toolbar">
+              <div class="search-wrap">
+                <span class="search-icon">&#9906;</span>
+                <input type="search" id="classSearch" class="form-control search-input" placeholder="Search this class...">
+              </div>
+              <div class="sort-wrap">
+                <label for="sortSelect">Sort by</label>
+                <select id="sortSelect" class="form-control">
+                  <option value="name_asc">Name (A-Z)</option>
+                  <option value="name_desc">Name (Z-A)</option>
+                  <option value="admission_asc">Admission No.</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-scroll">
+              <table class="data-table" id="studentsTable">
+                <thead>
+                  <tr>
+                    <th class="col-avatar"></th>
+                    <th>Name</th>
+                    <th>Admission No.</th>
+                    <th>Gender</th>
+                    <th>Status</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                  <!-- Rows inserted by JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <p class="no-results" id="noResultsMsg" style="display:none;">No pupils match your search.</p>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- 
+    SCRIPT LOAD ORDER MATTERS:
+    1. sample-students.js MUST load first - it creates window.SAMPLE_STUDENTS
+    2. dashboard-shell.js handles sidebar/topbar (shared on every admin page)
+    3. students.js is THIS page's own logic, and depends on data from #1
+  -->
+  <script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+  <script src="../assets/js/admin/sample-teachers.js"></script>
+  <script src="../assets/js/admin/sample-users.js"></script>
+  <script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+  <script src="../assets/js/admin/students.js"></script>
+</body>
+</html>

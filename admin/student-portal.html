@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal | Greenfield Primary School</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/parent-portal.css">
+</head>
+<body class="portal-body">
+
+  <header class="portal-header">
+    <div class="portal-header-inner">
+      <div class="portal-logo">
+        <img src="../assets/images/logo.svg" alt="Greenfield Primary School">
+        <span>Greenfield Primary — Student Portal</span>
+      </div>
+      <div class="portal-user-info">
+        <span id="studentName">Loading...</span>
+        <a href="login.html" class="portal-logout-btn" id="portalLogoutBtn">Log out</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="portal-main">
+    <div id="portalContent">
+      <div class="portal-loading">Loading your results...</div>
+    </div>
+  </main>
+
+  <script src="../assets/js/admin/sample-students.js"></script>
+  <script src="../assets/js/admin/subjects-and-grading.js"></script>
+  <script src="../assets/js/admin/sample-results.js"></script>
+  <script src="../assets/js/admin/behavior-ratings.js"></script>
+  <script src="../assets/js/admin/result-approvals.js"></script>
+  <script src="../assets/js/admin/sample-teachers.js"></script>
+  <script src="../assets/js/admin/sample-users.js"></script>
+  <script src="../assets/js/admin/student-portal.js"></script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+/* ============================================
+   STUDENTS PAGE STYLES
+   ============================================ */
+
+/* --- Toolbar (search + total count) --- */
+.students-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+
+.search-icon {
+  position: absolute;
+  left: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  padding-left: 2.5rem;
+}
+
+.total-pill {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* --- Search Results Card --- */
+.search-results-card {
+  margin-bottom: var(--space-lg);
+}
+
+.search-results-card h3 {
+  margin-bottom: var(--space-md);
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-name {
+  font-weight: 600;
+}
+
+.search-result-meta {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Section group labels (Pre-Nursery vs Primary headers) --- */
+.section-group-label {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin: var(--space-lg) 0 var(--space-sm);
+}
+
+.section-group-label:first-child {
+  margin-top: 0;
+}
+
+/* ============================================
+   CLASS PICKER CARDS
+   ============================================ */
+.class-cards-grid {
+  margin-bottom: var(--space-md);
+}
+
+.class-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  cursor: pointer;
+  transition: var(--transition);
+  border: 2px solid transparent;
+}
+
+.class-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.class-card-name {
+  font-weight: 700;
+  font-size: var(--fs-base);
+}
+
+.class-card-count {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+.class-card-genders {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+  font-size: var(--fs-sm);
+}
+
+.gender-pill {
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gender-pill.male {
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--color-info);
+}
+
+.gender-pill.female {
+  background: rgba(212, 83, 126, 0.12);
+  color: #b13d63;
+}
+
+/* ============================================
+   CLASS DETAIL VIEW
+   ============================================ */
+.back-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  padding: var(--space-sm) 0;
+  margin-bottom: var(--space-md);
+  min-height: 44px;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.class-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.class-detail-count {
+  color: var(--color-text-muted);
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.sort-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.sort-wrap select {
+  width: auto;
+}
+
+/* ============================================
+   DATA TABLE
+   ============================================
+   Concept: with up to 40 rows per class, the table could
+   get tall on small screens. .table-scroll lets the TABLE
+   scroll horizontally on narrow phones without breaking
+   the rest of the page layout.
+*/
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px; /* prevents columns from crushing together on mobile */
+}
+
+.data-table th {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.data-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tr:hover td {
+  background: var(--color-bg);
+}
+
+.col-avatar {
+  width: 44px;
+}
+
+.col-actions {
+  text-align: right;
+}
+
+.row-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.row-action-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  min-height: 32px;
+}
+
+.row-action-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.no-results {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl) 0;
+}
+
+/* On small screens, stack the toolbar items */
+@media (max-width: 600px) {
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sort-wrap {
+    justify-content: space-between;
+  }
+}

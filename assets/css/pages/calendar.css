@@ -1,0 +1,173 @@
+/* ============================================
+   ACADEMIC CALENDAR PAGE STYLES
+   ============================================ */
+
+/* --- Term Overview Cards --- */
+.term-card {
+  position: relative;
+  border-top: 4px solid var(--color-border);
+}
+
+.term-card.term-done   { border-top-color: var(--color-text-muted); }
+.term-card.term-active { border-top-color: var(--color-primary); }
+.term-card.term-upcoming { border-top-color: var(--color-secondary); }
+
+.term-status {
+  display: inline-block;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  margin-bottom: var(--space-sm);
+}
+
+.term-done .term-status {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--color-text-muted);
+}
+.term-active .term-status {
+  background: rgba(42, 157, 143, 0.15);
+  color: var(--color-success);
+}
+.term-upcoming .term-status {
+  background: rgba(244, 180, 0, 0.15);
+  color: var(--color-secondary-dark);
+}
+
+.term-card h3 {
+  margin-bottom: var(--space-sm);
+}
+
+.term-dates {
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.term-weeks {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* ============================================
+   VERTICAL TIMELINE
+   ============================================
+   Concept: A vertical line (::before on .timeline)
+   runs down the left side. Each .timeline-item has
+   a dot that sits ON TOP of that line, plus a card
+   to the right showing event details.
+*/
+
+.timeline {
+  position: relative;
+  padding-left: 32px;
+}
+
+/* The vertical line itself */
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: var(--space-lg);
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+/* The dot marker on the timeline */
+.timeline-dot {
+  position: absolute;
+  left: -32px;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid var(--color-bg-card);
+  box-shadow: 0 0 0 2px var(--color-border);
+}
+
+.dot-done {
+  background: var(--color-text-muted);
+  box-shadow: 0 0 0 2px var(--color-text-muted);
+}
+.dot-active {
+  background: var(--color-success);
+  box-shadow: 0 0 0 2px var(--color-success);
+}
+.dot-upcoming {
+  background: var(--color-secondary);
+  box-shadow: 0 0 0 2px var(--color-secondary);
+}
+
+.timeline-content {
+  padding: var(--space-md) var(--space-lg);
+}
+
+.timeline-date {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.timeline-content h4 {
+  margin-bottom: var(--space-xs);
+}
+
+.timeline-content p {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* --- Holiday Table --- */
+.holiday-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.holiday-table th, .holiday-table td {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.holiday-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+}
+
+.holiday-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* On larger screens, give the timeline more breathing room */
+@media (min-width: 768px) {
+  .timeline {
+    padding-left: 40px;
+    max-width: 700px;
+  }
+  .timeline::before {
+    left: 9px;
+  }
+  .timeline-dot {
+    left: -40px;
+  }
+}
+
+/* ---- CALENDAR PAGE RESPONSIVE ---- */
+@media (max-width: 768px) {
+  .calendar-grid { grid-template-columns: 1fr; }
+  .term-timeline { flex-direction: column; }
+  .cal-month-grid { font-size: 0.8rem; }
+}

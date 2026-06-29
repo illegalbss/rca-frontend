@@ -1,0 +1,182 @@
+/* ============================================
+   ICT DEPARTMENT PAGE STYLES
+   ============================================ */
+
+.ict-banner {
+  background: linear-gradient(135deg, #0f6e56 0%, #1d9e75 100%);
+}
+
+.ict-lab-img {
+  border-radius: var(--radius-lg);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ict-intro-text h2 {
+  margin-bottom: var(--space-md);
+}
+
+.ict-intro-text p {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+}
+
+.ict-stats {
+  margin-top: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.ict-stat {
+  text-align: center;
+  background: var(--color-bg);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+}
+
+.ict-stat-num {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.ict-stat-label {
+  font-size: var(--fs-sm);
+  color: var(--color-text-muted);
+}
+
+.section-subtitle {
+  text-align: center;
+  color: var(--color-text-muted);
+  margin-top: calc(-1 * var(--space-md));
+  margin-bottom: var(--space-xl);
+}
+
+/* ============================================
+   CURRICULUM ACCORDION
+   ============================================
+   Concept: Each .accordion-item has a header (always
+   visible/clickable) and a content panel (collapsed
+   by default via max-height: 0). JS toggles an "open"
+   class on click. This is the SAME max-height trick
+   we used for the mobile nav menu!
+*/
+
+.curriculum-accordion {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.accordion-item {
+  background: var(--color-bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--space-sm);
+  overflow: hidden;
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: var(--fs-base);
+  color: var(--color-text);
+}
+
+.accordion-level {
+  background: var(--color-success);
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.accordion-title {
+  flex: 1;
+  font-weight: 600;
+}
+
+.accordion-icon {
+  font-size: var(--fs-lg);
+  color: var(--color-text-muted);
+  transition: transform var(--transition);
+  flex-shrink: 0;
+}
+
+.accordion-header[aria-expanded="true"] .accordion-icon {
+  transform: rotate(45deg); /* turns the + into an × */
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.accordion-content .check-list {
+  padding: 0 var(--space-lg) var(--space-lg);
+}
+
+/* --- Club Cards --- */
+.club-card {
+  text-align: center;
+}
+
+.club-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-md);
+}
+
+.club-card h3 {
+  margin-bottom: var(--space-sm);
+}
+
+.club-card p {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+}
+
+/* --- ICT Staff Card --- */
+.ict-staff {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+
+.ict-staff-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.ict-staff h4 {
+  margin-bottom: var(--space-xs);
+}
+
+.ict-staff p {
+  color: var(--color-text-muted);
+  font-size: var(--fs-sm);
+}
+
+/* ---- ICT DEPARTMENT PAGE RESPONSIVE ---- */
+@media (max-width: 900px) {
+  .ict-hero { min-height: auto; padding: var(--space-xl) 0; }
+  .curriculum-grid { grid-template-columns: 1fr; }
+  .ict-features-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+  .ict-features-grid { grid-template-columns: 1fr; }
+  .accordion-header { font-size: var(--fs-sm); }
+}
