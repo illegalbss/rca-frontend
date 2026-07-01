@@ -476,6 +476,7 @@ Status:       ${student.status}
 
       allStudents.push(newStudent);
       if (window.RCA) window.RCA.save('students');
+      if (window.logActivity) window.logActivity('create', `Student enrolled: ${newStudent.full_name} (${newStudent.class_name})`, 'students');
 
       // Phase 4: save to real database
       if (window.RCA_API) {
@@ -522,6 +523,7 @@ Status:       ${student.status}
       student.parent_phone  = phone || student.parent_phone;
 
       if (window.RCA) window.RCA.save('students');
+      if (window.logActivity) window.logActivity('update', `Student record updated: ${student.full_name} (${cls})`, 'students');
 
       // Phase 4: update in real database
       if (window.RCA_API) {
@@ -546,6 +548,7 @@ This will archive the record. You can restore it from User Management if needed.
 
     student.status = 'archived';
     if (window.RCA) window.RCA.save('students');
+    if (window.logActivity) window.logActivity('delete', `Student archived: ${student.full_name} (${student.class_name})`, 'students');
 
     // Phase 4: update in real database
     if (window.RCA_API) {

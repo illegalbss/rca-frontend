@@ -76,6 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // one re-implementing this sessionStorage lookup themselves.
   window.CURRENT_USER = currentUser;
 
+  // Auto-log login once per session (flag set by login.js before redirect)
+  if (sessionStorage.getItem('rca_log_login') === '1') {
+    sessionStorage.removeItem('rca_log_login');
+    if (window.logActivity) {
+      window.logActivity('login', 'Admin portal', 'login');
+    }
+  }
+
   /* --------------------------------------------
      2. MOBILE SIDEBAR TOGGLE
      -------------------------------------------- */

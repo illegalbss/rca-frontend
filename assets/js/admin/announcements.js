@@ -305,6 +305,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
       saveAnnouncements(all);
+      if (window.logActivity) {
+        const verb = existing ? 'updated' : 'published';
+        window.logActivity(existing ? 'update' : 'publish', `Announcement ${verb}: "${title}"`, 'announcements');
+      }
       modal.remove();
       renderAnnouncements();
       showToast(existing ? 'Announcement updated' : 'Announcement published ✅');

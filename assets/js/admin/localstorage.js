@@ -45,7 +45,7 @@
 
   const VERSION   = 'rca_v1';
   const META_KEY  = VERSION + '_meta';
-  const DATA_VERSION = '2.4.0'; // bumped to pick up accountant rename + parent modal fix
+  const DATA_VERSION = '2.5.0'; // bumped: logActivity moved here + seed activity log
 
   /* ---- Safe JSON helpers ---- */
   function lsGet(key) {
@@ -328,6 +328,27 @@
     window.RCA.saveAll();
   });
 
+  /* ---- Seed demo activity log on first init ---- */
+  if (needsInit && !lsGet('clean_mode')) {
+    const now = Date.now();
+    const ago = ms => new Date(now - ms).toISOString();
+    const seedLogs = [
+      { user:'Ada Nwankwo',         role:'head_teacher',    action:'login',   category:'login',     target:'Admin portal',                              timestamp: ago(7200000)   },
+      { user:'Chukwuma Izuchukwu',  role:'ict_admin',       action:'login',   category:'login',     target:'Admin portal',                              timestamp: ago(5400000)   },
+      { user:'Ada Nwankwo',         role:'head_teacher',    action:'approve', category:'approvals', target:'Basic 4 — Term 2 results approved',          timestamp: ago(5100000)   },
+      { user:'Ada Nwankwo',         role:'head_teacher',    action:'publish', category:'results',   target:'Basic 4 — Term 2 report cards published',    timestamp: ago(4900000)   },
+      { user:'Chukwuma Izuchukwu',  role:'ict_admin',       action:'create',  category:'users',     target:'New staff account created: Mrs. Amaka Obi',  timestamp: ago(3600000)   },
+      { user:'Nnamdi Eze',          role:'accountant',      action:'payment', category:'payments',  target:'₦30,000 payment recorded — Basic 3 pupil',   timestamp: ago(3300000)   },
+      { user:'Chioma Okafor',       role:'class_teacher',   action:'create',  category:'scores',    target:'Scores entered for Basic 5 — Mathematics',   timestamp: ago(2700000)   },
+      { user:'Nnamdi Eze',          role:'accountant',      action:'payment', category:'payments',  target:'₦30,000 payment recorded — Nursery 2 pupil', timestamp: ago(2400000)   },
+      { user:'Chioma Okafor',       role:'class_teacher',   action:'create',  category:'scores',    target:'Scores entered for Basic 5 — English Language', timestamp: ago(1800000) },
+      { user:'Ada Nwankwo',         role:'head_teacher',    action:'create',  category:'review',    target:'Class review completed — Basic 5',            timestamp: ago(900000)    },
+      { user:'Chukwuma Izuchukwu',  role:'ict_admin',       action:'system',  category:'system',    target:'Data version upgraded to 2.5.0',              timestamp: ago(60000)     },
+    ];
+    lsSet('activity_log', seedLogs);
+    window.ACTIVITY_LOG = seedLogs;
+  }
+
   /* ---- Log the init result ---- */
   const usage = window.RCA.usage();
   console.log(
@@ -337,3 +358,25 @@
   );
 
 })();
+
+/* ============================================
+   GLOBAL LOG HELPER
+   Available to every admin page that loads localstorage.js.
+   Call: window.logActivity('create', 'Student added: John Doe', 'students')
+   ============================================ */
+window.logActivity = function(action, target, category) {
+  if (!window.ACTIVITY_LOG) window.ACTIVITY_LOG = [];
+  const user = window.CURRENT_USER;
+  window.ACTIVITY_LOG.unshift({
+    user:      user ? user.full_name : 'System',
+    role:      user ? (user.primary_role || user.role) : 'system',
+    action:    action,
+    category:  category || 'general',
+    target:    target || '',
+    timestamp: new Date().toISOString()
+  });
+  // Persist immediately
+  try {
+    localStorage.setItem('rca_v1_activity_log', JSON.stringify(window.ACTIVITY_LOG));
+  } catch(e) {}
+};

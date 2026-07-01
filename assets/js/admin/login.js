@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sessionStorage.setItem('rca_user_data', JSON.stringify(user));
 
     const role = user.primary_role || user.role;
+    sessionStorage.setItem('rca_log_login', '1');
     if (role === 'parent') {
       window.location.href = 'parent-portal.html';
     } else {

@@ -109,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
         record.approved_by = currentUser.full_name || 'Head Teacher';
         record.approved_at = new Date().toISOString();
+        if (window.logActivity) window.logActivity('approve', `Results approved: ${btn.dataset.class} — ${termSelect.value}`, 'approvals');
         render();
       });
     });
@@ -134,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
         record.published_by = currentUser.full_name || 'ICT Administrator';
         record.published_at = new Date().toISOString();
+        if (window.logActivity) window.logActivity('publish', `Report cards published: ${btn.dataset.class} — ${termSelect.value}`, 'results');
         render();
       });
     });
@@ -179,6 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
     record.return_reason = returnReason.value.trim() || 'Please review and resubmit.';
     record.approved_by = null;
     record.approved_at = null;
+    if (window.logActivity) window.logActivity('update', `Results returned for correction: ${pendingReturnClass} — ${termSelect.value}`, 'approvals');
     closeReturnModal();
     render();
   });

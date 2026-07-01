@@ -355,6 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         parent_notified: notified
       });
 
+      if (window.logActivity) window.logActivity('create', `Discipline incident logged: ${student?.full_name || admNo} (${currentClass}) — ${capitalize(severity)}`, 'discipline');
       overlay.remove();
       renderIncidentTable();
       renderClassCards();

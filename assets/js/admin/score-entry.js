@@ -442,6 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     markSaved();
     if (window.RCA) window.RCA.save('results');
+    if (window.logActivity) window.logActivity('create', `Scores submitted for review: ${className} — ${subjectSelect.options[subjectSelect.selectedIndex]?.text || subjectSelect.value} (${term})`, 'scores');
     renderApprovalBanner();
     lockTableIfNeeded();
     if (window.RCA) { window.RCA.save('results'); window.RCA.save('approvals'); }
