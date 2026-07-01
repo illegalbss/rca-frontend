@@ -165,18 +165,12 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    // Compact school timings notice
-    const nurseryClasses = ['Pre-Nursery', 'Nursery 1', 'Nursery 2'];
-    const hasNursery  = children.some(c => nurseryClasses.includes(c.class_name));
-    const hasPrimary  = children.some(c => !nurseryClasses.includes(c.class_name));
-    const timingLines = [];
-    if (hasPrimary)  timingLines.push('Primary: Mon–Wed 3:30pm · Thu–Fri 2:00pm');
-    if (hasNursery)  timingLines.push('Nursery: Mon–Wed 2:00pm · Thu–Fri 12 Noon');
+    // Compact school timings notice — always show both sections
     const noticeEl = document.createElement('div');
     noticeEl.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;font-size:0.82rem;color:#1e40af';
     noticeEl.innerHTML = `<span style="font-size:1rem;flex-shrink:0">🕐</span>
-      <div><strong>School Closing Times:</strong> ${timingLines.join(' &nbsp;|&nbsp; ')} &nbsp;·&nbsp; Assembly starts <strong>7:20 AM.</strong>
-      <span style="margin-left:8px;color:#92400e;font-weight:600">Late pickup: ₦500/child.</span>
+      <div><strong>School Timings:</strong> Assembly <strong>7:20 AM</strong> &nbsp;·&nbsp; Primary: Mon–Wed <strong>3:30 PM</strong> · Thu–Fri <strong>2:00 PM</strong> &nbsp;·&nbsp; Nursery: Mon–Wed <strong>2:00 PM</strong> · Thu–Fri <strong>12 Noon</strong>
+      &nbsp;&nbsp;<span style="color:#92400e;font-weight:600">⚠ Late pickup: ₦500/child.</span>
       <a href="#" onclick="showPage('school-info',document.querySelector('[data-page=school-info]'));return false" style="margin-left:8px;color:#2563eb;text-decoration:underline;font-size:0.78rem">View full info →</a></div>`;
     const statsEl = document.getElementById('dashStats');
     statsEl.parentNode.insertBefore(noticeEl, statsEl.nextSibling);
@@ -830,11 +824,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('schoolInfoContent');
     if (!el) return;
 
-    // Detect if parent has nursery or primary children (or both)
-    const nurseryClasses = ['Pre-Nursery', 'Nursery 1', 'Nursery 2'];
-    const hasNursery  = children.some(c => nurseryClasses.includes(c.class_name));
-    const hasPrimary  = children.some(c => !nurseryClasses.includes(c.class_name));
-
     const card = (icon, title, body) => `
       <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
@@ -845,70 +834,102 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
 
     const row = (label, value, highlight) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9">
         <span style="font-size:0.82rem;color:#374151">${label}</span>
         <span style="font-size:0.83rem;font-weight:700;color:${highlight || '#1a3a5c'}">${value}</span>
       </div>`;
 
-    /* ---- 1. School Timings ---- */
-    const timingRows = [
-      row('Morning Assembly', '7:20 AM — All pupils must be seated', '#065f46'),
-    ];
-    if (hasPrimary) {
-      timingRows.push(
-        `<div style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;padding:10px 0 4px">Primary School</div>`,
-        row('Monday – Wednesday', 'Closing: 3:30 PM'),
-        row('Thursday – Friday', 'Closing: 2:00 PM'),
-      );
-    }
-    if (hasNursery) {
-      timingRows.push(
-        `<div style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;padding:10px 0 4px">Nursery Section</div>`,
-        row('Monday – Wednesday', 'Closing: 2:00 PM'),
-        row('Thursday – Friday', 'Closing: 12:00 Noon'),
-      );
-    }
+    const sectionLabel = txt => `<div style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;padding:12px 0 4px">${txt}</div>`;
 
+    /* ---- 1. School Timings ---- */
     const timingCard = card('🕐', 'School Timings', `
-      <div style="border-top:1px solid #f1f5f9">${timingRows.join('')}</div>
+      <div style="border-top:1px solid #f1f5f9">
+        ${row('Morning Assembly', '7:20 AM — All pupils must be seated', '#065f46')}
+        ${sectionLabel('Primary School (Basic 1 – Basic 6)')}
+        ${row('Monday – Wednesday', 'Closing: 3:30 PM')}
+        ${row('Thursday – Friday', 'Closing: 2:00 PM')}
+        ${sectionLabel('Nursery Section (Pre-Nursery – Nursery 3)')}
+        ${row('Monday – Wednesday', 'Closing: 2:00 PM')}
+        ${row('Thursday – Friday', 'Closing: 12:00 Noon')}
+      </div>
       <div style="margin-top:14px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#92400e;display:flex;gap:8px;align-items:flex-start">
         <span style="font-size:1rem;flex-shrink:0">⚠️</span>
-        <span><strong>Late Pickup Fee:</strong> Parents who arrive after closing time will be charged <strong>₦500 per child per occurrence.</strong> Please endeavour to pick up your wards promptly.</span>
+        <span><strong>Late Pickup Fee:</strong> Parents who arrive after closing time will be charged <strong>₦500 per child, per occurrence.</strong> Please endeavour to pick up your wards promptly.</span>
       </div>
     `);
 
     /* ---- 2. Approved Uniform ---- */
     const uniformCard = card('👕', 'Approved School Uniform', `
       <div style="border-top:1px solid #f1f5f9">
-        ${row('Monday – Wednesday', 'School Uniform')}
+        ${sectionLabel('Dressing Days')}
+        ${row('Monday – Wednesday', 'Full School Uniform')}
         ${row('Thursday – Friday', 'Sports Kit / P.E. Wear')}
       </div>
-      <div style="margin-top:12px;font-size:0.8rem;color:#64748b;background:#f8fafc;border-radius:8px;padding:10px 14px;line-height:1.6">
-        All pupils must wear the correct uniform on the designated days. Pupils in unapproved attire may be sent home to change.
+      <div style="margin-top:14px">
+        ${sectionLabel('Uniform Components')}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          ${[
+            ['Boys', 'White shirt, Navy trousers, School tie, Black shoes'],
+            ['Girls', 'White blouse, Navy skirt/pinafore, School tie, Black shoes'],
+            ['P.E. (Boys)', 'School track suit, White trainers'],
+            ['P.E. (Girls)', 'School track suit, White trainers'],
+          ].map(([label, desc]) => `
+            <div style="background:#f8fafc;border-radius:8px;padding:10px 12px">
+              <div style="font-size:0.72rem;font-weight:700;color:#1a3a5c;margin-bottom:3px">${label}</div>
+              <div style="font-size:0.78rem;color:#374151;line-height:1.5">${desc}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:0.78rem;color:#64748b;background:#f8fafc;border-radius:8px;padding:10px 14px;line-height:1.6">
+        Pupils in unapproved attire may be asked to return home to change. Uniform items are available from the school office.
       </div>
     `);
 
     /* ---- 3. Termly Requirements ---- */
     const reqs = [
-      ['2 big tissues', '(for classroom hygiene)'],
-      ['1 Dettol or Bleach', '(disinfectant)'],
-      ['2 Table Soap', '(hand washing)'],
-      ['1 Detergent 280g', '(cleaning supplies)'],
+      ['2 Big Tissues',       'For classroom hygiene'],
+      ['1 Dettol or Bleach',  'Disinfectant for cleaning'],
+      ['2 Table Soap',        'For hand washing'],
+      ['1 Detergent 280g',    'Cleaning supplies'],
     ];
     const reqCard = card('📦', 'Compulsory Termly Requirements', `
-      <p style="font-size:0.82rem;color:#374151;margin-bottom:12px">
-        The following items are required from every pupil at the <strong>start of each term.</strong>
-        Please ensure they are provided before the second week of resumption.
+      <p style="font-size:0.82rem;color:#374151;margin:0 0 12px">
+        Every pupil must bring the following items at the <strong>start of each term,</strong>
+        no later than the second week of resumption.
       </p>
-      <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
-        ${reqs.map(([item, note]) => `
-          <li style="font-size:0.85rem;color:#1a3a5c">
-            <strong>${item}</strong> <span style="color:#64748b;font-size:0.78rem">${note}</span>
-          </li>`).join('')}
-      </ol>
+      <div style="border-top:1px solid #f1f5f9">
+        ${reqs.map(([item, note], i) => `
+          <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9">
+            <div style="width:22px;height:22px;border-radius:50%;background:#1a3a5c;color:#fff;font-size:0.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</div>
+            <div>
+              <div style="font-size:0.85rem;font-weight:700;color:#1a3a5c">${item}</div>
+              <div style="font-size:0.75rem;color:#64748b">${note}</div>
+            </div>
+          </div>`).join('')}
+      </div>
     `);
 
-    el.innerHTML = timingCard + uniformCard + reqCard;
+    /* ---- 4. School Fees ---- */
+    const fee = (window.FEE_SCHEDULE && window.FEE_SCHEDULE['2025/2026']?.term2)
+      || { school_fees: 30000, utility_bill: 5000, lesson_fee: 5000 };
+    const total = fee.school_fees + fee.utility_bill + fee.lesson_fee;
+    const feesCard = card('💳', 'School Fees — Per Term', `
+      <div style="border-top:1px solid #f1f5f9">
+        ${row('School Fees', fmt(fee.school_fees))}
+        ${row('Utility Bill', fmt(fee.utility_bill))}
+        ${row('Lesson Fee', fmt(fee.lesson_fee))}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;margin-top:2px">
+          <span style="font-size:0.88rem;font-weight:700;color:#1a3a5c">Total Per Term</span>
+          <span style="font-size:1rem;font-weight:700;color:#065f46">${fmt(total)}</span>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:0.78rem;color:#64748b;background:#f8fafc;border-radius:8px;padding:10px 14px;line-height:1.6">
+        Fees are payable at the beginning of each term. Please collect your receipt from the school office after payment.
+        Late payment may attract a charge. Contact the school accountant for any queries.
+      </div>
+    `);
+
+    el.innerHTML = timingCard + uniformCard + reqCard + feesCard;
   }
 
   /* ================================================

@@ -57,7 +57,8 @@
   line-height: 1.2;
 }
 
-.pp-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+.pp-nav { flex: 1; padding: 12px 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.pp-nav::-webkit-scrollbar { display: none; }
 
 .pp-nav-link {
   display: flex;
