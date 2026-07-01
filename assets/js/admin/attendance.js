@@ -380,7 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
   */
   populateClassDropdown();
   dateSelect.value = toDateInputValue(new Date());
-  classSelect.value = allClasses[0];
+  if (classSelect.options.length > 0) {
+    classSelect.value = classSelect.options[0].value;
+  }
   renderRegister();
 
 });
