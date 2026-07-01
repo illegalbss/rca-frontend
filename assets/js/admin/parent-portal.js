@@ -725,6 +725,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const attEl = document.getElementById('attendanceContent');
     if (!attEl) return;
 
+    if (!children.length) {
+      attEl.innerHTML = '<div style="text-align:center;padding:48px 24px;color:#9ca3af"><div style="font-size:2.5rem;margin-bottom:12px">📋</div>'
+        + '<p style="font-size:0.9rem;font-weight:600;color:#374151;margin-bottom:8px">No attendance records available</p>'
+        + '<p style="font-size:0.82rem">No children are currently linked to your account.<br>Please contact the school office to link your child\'s profile.</p></div>';
+      return;
+    }
+
     // Simulate realistic attendance for each child from real attendance data
     // In Phase 4 this reads from the database per pupil
     function getAttendance(child) {
@@ -821,113 +828,134 @@ document.addEventListener('DOMContentLoaded', () => {
      SCHOOL INFORMATION PAGE
      ================================================ */
   function buildSchoolInfo() {
-    const el = document.getElementById('schoolInfoContent');
+    var el = document.getElementById('schoolInfoContent');
     if (!el) return;
 
-    const card = (icon, title, body) => `
-      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-          <span style="font-size:1.4rem">${icon}</span>
-          <h3 style="font-family:var(--font-heading);font-size:0.95rem;font-weight:700;color:#1a3a5c;margin:0">${title}</h3>
-        </div>
-        ${body}
-      </div>`;
+    var f = window.formatNaira || function(n) { return '₦' + Number(n).toLocaleString(); };
 
-    const row = (label, value, highlight) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9">
-        <span style="font-size:0.82rem;color:#374151">${label}</span>
-        <span style="font-size:0.83rem;font-weight:700;color:${highlight || '#1a3a5c'}">${value}</span>
-      </div>`;
-
-    const sectionLabel = txt => `<div style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;padding:12px 0 4px">${txt}</div>`;
+    function siCard(icon, title, body) {
+      return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">'
+        + '<span style="font-size:1.4rem">' + icon + '</span>'
+        + '<h3 style="font-family:var(--font-heading);font-size:0.95rem;font-weight:700;color:#1a3a5c;margin:0">' + title + '</h3>'
+        + '</div>' + body + '</div>';
+    }
+    function siRow(label, value, color) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9">'
+        + '<span style="font-size:0.82rem;color:#374151">' + label + '</span>'
+        + '<span style="font-size:0.83rem;font-weight:700;color:' + (color || '#1a3a5c') + '">' + value + '</span>'
+        + '</div>';
+    }
+    function siSec(txt) {
+      return '<div style="font-size:0.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.06em;padding:12px 0 4px">' + txt + '</div>';
+    }
 
     /* ---- 1. School Timings ---- */
-    const timingCard = card('🕐', 'School Timings', `
-      <div style="border-top:1px solid #f1f5f9">
-        ${row('Morning Assembly', '7:20 AM — All pupils must be seated', '#065f46')}
-        ${sectionLabel('Primary School (Basic 1 – Basic 6)')}
-        ${row('Monday – Wednesday', 'Closing: 3:30 PM')}
-        ${row('Thursday – Friday', 'Closing: 2:00 PM')}
-        ${sectionLabel('Nursery Section (Pre-Nursery – Nursery 3)')}
-        ${row('Monday – Wednesday', 'Closing: 2:00 PM')}
-        ${row('Thursday – Friday', 'Closing: 12:00 Noon')}
-      </div>
-      <div style="margin-top:14px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#92400e;display:flex;gap:8px;align-items:flex-start">
-        <span style="font-size:1rem;flex-shrink:0">⚠️</span>
-        <span><strong>Late Pickup Fee:</strong> Parents who arrive after closing time will be charged <strong>₦500 per child, per occurrence.</strong> Please endeavour to pick up your wards promptly.</span>
-      </div>
-    `);
+    var timingBody = '<div style="border-top:1px solid #f1f5f9">'
+      + siRow('Morning Assembly', '7:20 AM — All pupils must be seated', '#065f46')
+      + siSec('Primary School (Basic 1 – Basic 6)')
+      + siRow('Monday – Wednesday', 'Closing: 3:30 PM')
+      + siRow('Thursday – Friday', 'Closing: 2:00 PM')
+      + siSec('Nursery Section (Pre-Nursery – Nursery 3)')
+      + siRow('Monday – Wednesday', 'Closing: 2:00 PM')
+      + siRow('Thursday – Friday', 'Closing: 12:00 Noon')
+      + '</div>'
+      + '<div style="margin-top:14px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#92400e;display:flex;gap:8px;align-items:flex-start">'
+      + '<span style="font-size:1rem;flex-shrink:0">&#9888;&#65039;</span>'
+      + '<span><strong>Late Pickup Fee:</strong> Parents who arrive after closing time will be charged <strong>&#8358;500 per child, per occurrence.</strong> Please endeavour to pick up your wards promptly.</span>'
+      + '</div>';
+    var timingCard = siCard('🕐', 'School Timings', timingBody);
 
-    /* ---- 2. Approved Uniform ---- */
-    const uniformCard = card('👕', 'Approved School Uniform', `
-      <div style="border-top:1px solid #f1f5f9">
-        ${sectionLabel('Dressing Days')}
-        ${row('Monday – Wednesday', 'Full School Uniform')}
-        ${row('Thursday – Friday', 'Sports Kit / P.E. Wear')}
-      </div>
-      <div style="margin-top:14px">
-        ${sectionLabel('Uniform Components')}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-          ${[
-            ['Boys', 'White shirt, Navy trousers, School tie, Black shoes'],
-            ['Girls', 'White blouse, Navy skirt/pinafore, School tie, Black shoes'],
-            ['P.E. (Boys)', 'School track suit, White trainers'],
-            ['P.E. (Girls)', 'School track suit, White trainers'],
-          ].map(([label, desc]) => `
-            <div style="background:#f8fafc;border-radius:8px;padding:10px 12px">
-              <div style="font-size:0.72rem;font-weight:700;color:#1a3a5c;margin-bottom:3px">${label}</div>
-              <div style="font-size:0.78rem;color:#374151;line-height:1.5">${desc}</div>
-            </div>`).join('')}
-        </div>
-      </div>
-      <div style="margin-top:12px;font-size:0.78rem;color:#64748b;background:#f8fafc;border-radius:8px;padding:10px 14px;line-height:1.6">
-        Pupils in unapproved attire may be asked to return home to change. Uniform items are available from the school office.
-      </div>
-    `);
+    /* ---- 2. Approved Uniform Schedule ---- */
+    var uniformDays = [
+      ['Monday &amp; Wednesday', 'Full School Uniform Day',
+       'Full school uniform &nbsp;&middot;&nbsp; Black cover shoes &nbsp;&middot;&nbsp; Black stockings / socks'],
+      ['Tuesday &amp; Thursday', 'Sportswear Day',
+       'School sportswear &nbsp;&middot;&nbsp; White canvas shoes &nbsp;&middot;&nbsp; White socks'],
+      ['Friday', 'Friday Wear',
+       'Black jeans &nbsp;&middot;&nbsp; RCA white branded top &nbsp;&middot;&nbsp; White canvas shoes &nbsp;&middot;&nbsp; White stockings / socks'],
+      ['1st &amp; Last Tuesday of Every Month', 'Inter-House Sports Wear Day',
+       'Inter-house sports uniform &nbsp;&middot;&nbsp; White canvas shoes &nbsp;&middot;&nbsp; White socks'],
+    ];
+    var uniformBody = '<div style="border-top:1px solid #f1f5f9">';
+    for (var ui = 0; ui < uniformDays.length; ui++) {
+      var ud = uniformDays[ui];
+      uniformBody += '<div style="padding:11px 0;border-bottom:1px solid #f1f5f9">'
+        + '<div style="display:flex;align-items:flex-start;gap:10px">'
+        + '<div style="min-width:24px;height:24px;border-radius:50%;background:#1a3a5c;color:#fff;font-size:0.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">' + (ui + 1) + '</div>'
+        + '<div>'
+        + '<div style="font-size:0.85rem;font-weight:700;color:#1a3a5c">' + ud[0]
+        + ' <span style="font-weight:500;color:#64748b;font-size:0.78rem">— ' + ud[1] + '</span></div>'
+        + '<div style="font-size:0.78rem;color:#374151;margin-top:3px;line-height:1.5">' + ud[2] + '</div>'
+        + '</div></div></div>';
+    }
+    uniformBody += '</div>'
+      + '<div style="margin-top:12px;font-size:0.78rem;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;line-height:1.6">'
+      + '&#9888;&#65039; Pupils in unapproved attire may be sent home to change. Hair must be plain black without accessories.'
+      + '</div>';
+    var uniformCard = siCard('👕', 'Approved School Uniform Schedule', uniformBody);
 
     /* ---- 3. Termly Requirements ---- */
-    const reqs = [
-      ['2 Big Tissues',       'For classroom hygiene'],
-      ['1 Dettol or Bleach',  'Disinfectant for cleaning'],
-      ['2 Table Soap',        'For hand washing'],
-      ['1 Detergent 280g',    'Cleaning supplies'],
+    var termReqs = [
+      ['2 Big Tissues',      'For classroom hygiene'],
+      ['1 Dettol or Bleach', 'Disinfectant for cleaning'],
+      ['2 Table Soap',       'For hand washing'],
+      ['1 Detergent 280g',   'Cleaning supplies'],
     ];
-    const reqCard = card('📦', 'Compulsory Termly Requirements', `
-      <p style="font-size:0.82rem;color:#374151;margin:0 0 12px">
-        Every pupil must bring the following items at the <strong>start of each term,</strong>
-        no later than the second week of resumption.
-      </p>
-      <div style="border-top:1px solid #f1f5f9">
-        ${reqs.map(([item, note], i) => `
-          <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9">
-            <div style="width:22px;height:22px;border-radius:50%;background:#1a3a5c;color:#fff;font-size:0.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i + 1}</div>
-            <div>
-              <div style="font-size:0.85rem;font-weight:700;color:#1a3a5c">${item}</div>
-              <div style="font-size:0.75rem;color:#64748b">${note}</div>
-            </div>
-          </div>`).join('')}
-      </div>
-    `);
+    var reqBody = '<p style="font-size:0.82rem;color:#374151;margin:0 0 12px">Every pupil must bring the following items at the <strong>start of each term</strong>, no later than the second week of resumption.</p>'
+      + '<div style="border-top:1px solid #f1f5f9">';
+    for (var ri = 0; ri < termReqs.length; ri++) {
+      var rq = termReqs[ri];
+      reqBody += '<div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9">'
+        + '<div style="width:22px;height:22px;border-radius:50%;background:#1a3a5c;color:#fff;font-size:0.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (ri + 1) + '</div>'
+        + '<div>'
+        + '<div style="font-size:0.85rem;font-weight:700;color:#1a3a5c">' + rq[0] + '</div>'
+        + '<div style="font-size:0.75rem;color:#64748b">' + rq[1] + '</div>'
+        + '</div></div>';
+    }
+    reqBody += '</div>';
+    var reqCard = siCard('📦', 'Compulsory Termly Requirements', reqBody);
 
     /* ---- 4. School Fees ---- */
-    const fee = (window.FEE_SCHEDULE && window.FEE_SCHEDULE['2025/2026']?.term2)
-      || { school_fees: 30000, utility_bill: 5000, lesson_fee: 5000 };
-    const total = fee.school_fees + fee.utility_bill + fee.lesson_fee;
-    const feesCard = card('💳', 'School Fees — Per Term', `
-      <div style="border-top:1px solid #f1f5f9">
-        ${row('School Fees', fmt(fee.school_fees))}
-        ${row('Utility Bill', fmt(fee.utility_bill))}
-        ${row('Lesson Fee', fmt(fee.lesson_fee))}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;margin-top:2px">
-          <span style="font-size:0.88rem;font-weight:700;color:#1a3a5c">Total Per Term</span>
-          <span style="font-size:1rem;font-weight:700;color:#065f46">${fmt(total)}</span>
-        </div>
-      </div>
-      <div style="margin-top:10px;font-size:0.78rem;color:#64748b;background:#f8fafc;border-radius:8px;padding:10px 14px;line-height:1.6">
-        Fees are payable at the beginning of each term. Please collect your receipt from the school office after payment.
-        Late payment may attract a charge. Contact the school accountant for any queries.
-      </div>
-    `);
+    var FS = window.FEE_STRUCTURE || {};
+    var feeTerms = [
+      { key: 'term1', label: 'First Term',  levy_label: 'Christmas Party Levy',           levy: (FS.term1 && FS.term1.levy_amount) || 5000 },
+      { key: 'term2', label: 'Second Term', levy_label: 'Inter-House Sports Levy',        levy: (FS.term2 && FS.term2.levy_amount) || 5000 },
+      { key: 'term3', label: 'Third Term',  levy_label: 'Graduation Levy (non-graduating)',levy: (FS.term3 && FS.term3.levy_amount) || 5000 },
+    ];
+    var base_fees    = (FS.term1 && FS.term1.school_fees)   || 30000;
+    var utility_bill = (FS.term1 && FS.term1.utility_bill)  || 5000;
+    var lesson_fee   = (FS.term1 && FS.term1.lesson_fee)    || 5000;
+    var grad_levy    = (FS.term3 && FS.term3.levy_basic6_amount) || 8000;
+
+    var feesBody = '<p style="font-size:0.82rem;color:#374151;margin:0 0 14px">The following charges apply to every child per term. All fees are payable at the start of each term.</p>';
+
+    for (var fi = 0; fi < feeTerms.length; fi++) {
+      var ft = feeTerms[fi];
+      var total = base_fees + utility_bill + lesson_fee + ft.levy;
+      feesBody += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:12px">'
+        + '<div style="font-size:0.8rem;font-weight:800;color:#1a3a5c;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0">'
+        + ft.label + '</div>'
+        + siRow('School Fees', f(base_fees))
+        + siRow('Utility Bill', f(utility_bill))
+        + siRow('Lesson Fee', f(lesson_fee))
+        + siRow(ft.levy_label, f(ft.levy), '#7c3aed')
+        + '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;margin-top:2px">'
+        + '<span style="font-size:0.88rem;font-weight:700;color:#1a3a5c">Total (per child)</span>'
+        + '<span style="font-size:1rem;font-weight:700;color:#065f46">' + f(total) + '</span>'
+        + '</div>'
+        + (fi === 2
+          ? '<div style="margin-top:8px;font-size:0.75rem;color:#7c3aed;background:#f5f3ff;border-radius:6px;padding:6px 10px">'
+            + '&#127891; <strong>Basic 6 (graduating pupils)</strong> pay ' + f(grad_levy) + ' graduation levy — total <strong>' + f(base_fees + utility_bill + lesson_fee + grad_levy) + '</strong>. Subject to government approval.</div>'
+          : '')
+        + '</div>';
+    }
+
+    feesBody += '<div style="margin-top:4px;font-size:0.78rem;color:#64748b;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;line-height:1.6">'
+      + '&#9432; Fees are payable at the <strong>beginning of each term</strong>. Please collect your official receipt from the school office after payment. '
+      + 'Contact the school accountant for any fee enquiries.'
+      + '</div>';
+    var feesCard = siCard('💳', 'School Fees — Per Term', feesBody);
 
     el.innerHTML = timingCard + uniformCard + reqCard + feesCard;
   }
