@@ -41,13 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Store full user object for pages that need linked_classes etc.
     sessionStorage.setItem('rca_user_data', JSON.stringify(user));
 
-    const role = user.primary_role || user.role;
     sessionStorage.setItem('rca_log_login', '1');
-    if (role === 'parent') {
-      window.location.href = 'parent-portal.html';
-    } else {
-      window.location.href = 'dashboard.html';
-    }
+    window.location.href = 'dashboard.html';
   }
 
   /* ---- Form submit ---- */
@@ -80,6 +75,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Block parents — they have their own login page
+      const apiRole = data.user.primary_role || data.user.role;
+      if (apiRole === 'parent') {
+        setLoading(false);
+        showError('This login is for staff only. Please use the Parent Portal login.');
+        document.getElementById('loginError').innerHTML =
+          'This login is for staff only. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
+        return;
+      }
       // Success — store token and user, then redirect
       storeSession(data.user, data.token);
       return;
@@ -93,14 +97,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const allUsers = window.SAMPLE_USERS || [];
     let user = allUsers.find(u => u.email.toLowerCase() === email);
 
-    // If not found in staff accounts, check parent accounts
+    // If found in parent accounts — redirect, don't allow staff login
     if (!user && window.RCA_PARENTS) {
-      user = window.RCA_PARENTS.getByEmail(email) || null;
+      const parentUser = window.RCA_PARENTS.getByEmail(email) || null;
+      if (parentUser) {
+        setLoading(false);
+        errorBox.style.display = 'block';
+        errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
+        return;
+      }
     }
 
     if (!user) {
       setLoading(false);
-      showError('No account found with that email address.');
+      showError('No staff account found with that email address.');
+      return;
+    }
+
+    // Block parents who somehow ended up in SAMPLE_USERS
+    const demoRole = user.primary_role || user.role;
+    if (demoRole === 'parent') {
+      setLoading(false);
+      errorBox.style.display = 'block';
+      errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
       return;
     }
 
