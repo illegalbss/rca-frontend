@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admission Register | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/admission-register.css">
+</head>
+<body>
+<div class="admin-shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+      <span>Royal Crystal Academy</span>
+    </div>
+
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-profile-info">
+        <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+        <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-online-dot">Online</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Main</p>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all">
+        <i class="icon">⊞</i> Dashboard
+      </a>
+
+      <p class="sidebar-section-label">Administration</p>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant">
+        <i class="icon">○</i> Students
+      </a>
+      <a href="admission-form.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+        <i class="icon">○</i> Admission Form
+      </a>
+      <a href="admission-register.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+        <i class="icon">○</i> Admission Register
+      </a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+        <i class="icon">○</i> Teachers
+      </a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+        <i class="icon">○</i> Classes
+      </a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+        <i class="icon">○</i> Attendance
+      </a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+        <i class="icon">○</i> Discipline
+      </a>
+
+      <p class="sidebar-section-label">Results</p>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher">
+        <i class="icon">○</i> Score Entry
+      </a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher">
+        <i class="icon">○</i> Class Review
+      </a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+        <i class="icon">○</i> Approvals
+      </a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+        <i class="icon">○</i> Report Cards
+      </a>
+
+      <p class="sidebar-section-label">Finance</p>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant">
+        <i class="icon">○</i> Fee Schedule
+      </a>
+      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant">
+        <i class="icon">○</i> Record Payment
+      </a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent">
+        <i class="icon">○</i> Receipts
+      </a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant">
+        <i class="icon">○</i> Finance Reports
+      </a>
+
+      <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent">
+        <i class="icon">○</i> Announcements
+      </a>
+      <a href="announcements.html?tab=newsletter" class="sidebar-link" data-roles="all">
+        <i class="icon">○</i> Newsletter
+      </a>
+      <a href="school-programme.html" class="sidebar-link" data-roles="all">
+        <i class="icon">○</i> Programme of Events
+      </a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent">
+        <i class="icon">○</i> School Calendar
+      </a>
+
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+        <i class="icon">○</i> ICT Lab &amp; Curriculum
+      </a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
+        <i class="icon">○</i> ICT &amp; Coding Clubs
+      </a>
+
+      <p class="sidebar-section-label">System</p>
+      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin">
+        <i class="icon">○</i> User Management
+      </a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin">
+        <i class="icon">○</i> Activity Logs
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="../index.html" class="sidebar-link"><i class="icon">←</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn">
+        <i class="icon">✕</i> Log out
+      </a>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <div class="admin-content">
+
+    <!-- Topbar -->
+    <header class="admin-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
+      <h1 class="topbar-title">Admission Register</h1>
+      <span class="topbar-session">Academic Session: 2025/2026</span>
+      <button class="topbar-bell" title="Notifications">&#128276;
+        <span class="topbar-bell-badge">4</span>
+      </button>
+      <div class="topbar-user">
+        <span class="user-role-badge" id="userRoleBadge">Guest</span>
+        <div class="user-avatar" id="userAvatar">
+          <img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;">
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- Stats Row -->
+      <div class="ar-stats-row">
+        <div class="ar-stat-card">
+          <div class="ar-stat-icon blue">&#128101;</div>
+          <div>
+            <div class="ar-stat-num" id="statTotal">0</div>
+            <div class="ar-stat-label">Total Registered</div>
+          </div>
+        </div>
+        <div class="ar-stat-card">
+          <div class="ar-stat-icon green">&#10003;</div>
+          <div>
+            <div class="ar-stat-num" id="statActive">0</div>
+            <div class="ar-stat-label">Active Students</div>
+          </div>
+        </div>
+        <div class="ar-stat-card">
+          <div class="ar-stat-icon purple">&#127891;</div>
+          <div>
+            <div class="ar-stat-num" id="statGraduated">0</div>
+            <div class="ar-stat-label">Graduated</div>
+          </div>
+        </div>
+        <div class="ar-stat-card">
+          <div class="ar-stat-icon teal">&#8594;</div>
+          <div>
+            <div class="ar-stat-num" id="statTransferred">0</div>
+            <div class="ar-stat-label">Transferred</div>
+          </div>
+        </div>
+        <div class="ar-stat-card">
+          <div class="ar-stat-icon orange">&#9888;</div>
+          <div>
+            <div class="ar-stat-num" id="statWithdrawn">0</div>
+            <div class="ar-stat-label">Withdrawn</div>
+          </div>
+        </div>
+        <div class="ar-stat-card">
+          <div class="ar-stat-icon yellow">&#11088;</div>
+          <div>
+            <div class="ar-stat-num" id="statNew">0</div>
+            <div class="ar-stat-label">New This Month</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="ar-toolbar">
+        <div class="ar-search-wrap">
+          <span class="ar-search-icon">&#128269;</span>
+          <input id="arSearch" type="text" placeholder="Search by name, admission no., parent, phone, previous school…">
+        </div>
+        <select id="arClassFilter" class="ar-filter-select">
+          <option value="">All Classes</option>
+        </select>
+        <select id="arStatusFilter" class="ar-filter-select">
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="graduated">Graduated</option>
+          <option value="transferred">Transferred</option>
+          <option value="withdrawn">Withdrawn</option>
+          <option value="deceased">Deceased</option>
+        </select>
+        <div class="ar-toolbar-right">
+          <span class="ar-toolbar-count" id="arTotalCount">0 records</span>
+          <button class="ar-btn ar-btn-import" id="arImportBtn" title="Import existing students from the student roster">&#8659; Import Roster</button>
+          <button class="ar-btn ar-btn-secondary" id="arPrintBtn">&#128424; Print &amp; Export</button>
+          <button class="ar-btn ar-btn-primary" id="arAddBtn">+ Add Student</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="ar-table-card">
+        <div class="ar-table-header">
+          <span class="ar-table-title">Student Admission Register</span>
+          <span style="font-size:0.75rem;color:#9ca3af">All records are stored permanently and remain searchable at any time</span>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="col-serial">S/N</th>
+                <th class="col-admno">Adm. No</th>
+                <th class="col-name">Full Name</th>
+                <th class="col-class">Class</th>
+                <th class="col-dob">Date of Birth</th>
+                <th class="col-admission">Date Admitted</th>
+                <th class="col-parent">Parent / Guardian</th>
+                <th class="col-status">Status</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="arTableBody"></tbody>
+          </table>
+        </div>
+        <div class="ar-no-results" id="arNoResults">
+          <div class="ar-no-results-icon">&#128196;</div>
+          <div style="font-weight:700;color:#374151;margin-bottom:6px">No records found</div>
+          <div style="font-size:0.82rem">Try adjusting your search or filters, or add your first student.</div>
+        </div>
+      </div>
+
+    </main>
+  </div><!-- end admin-content -->
+</div><!-- end admin-shell -->
+
+<!-- ═══ MODALS ═══ -->
+<!-- Add / Edit / Promote modal (JS populates innerHTML) -->
+<div id="arFormModal" class="ar-modal-overlay"></div>
+
+<!-- View profile modal (JS populates innerHTML) -->
+<div id="arViewModal" class="ar-modal-overlay"></div>
+
+<!-- Print / Export modal (JS populates innerHTML) -->
+<div id="arPrintModal" class="ar-modal-overlay"></div>
+
+<!-- Print area (hidden on screen, visible when window.print() is called) -->
+<div id="arPrintArea"></div>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/finance-data.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+<script src="../assets/js/admin/admission-register.js"></script>
+</body>
+</html>

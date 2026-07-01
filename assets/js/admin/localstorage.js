@@ -219,6 +219,10 @@
   let parentPayments = lsGet('parent_payments') || {};
   window.PARENT_PAYMENTS = parentPayments;
 
+  /* ADMISSION REGISTER (permanent official student records) */
+  let admissionRegister = lsGet('admission_register') || [];
+  window.ADMISSION_REGISTER = admissionRegister;
+
   /* ---- Write meta ---- */
   lsSet('meta', {
     dataVersion: DATA_VERSION,
@@ -255,7 +259,8 @@
         maintenance:   () => lsSet('maintenance',   window.ICT_MAINTENANCE),
         discipline:    () => lsSet('discipline',    window.SAMPLE_DISCIPLINE),
         activity_log:  () => lsSet('activity_log',  window.ACTIVITY_LOG),
-        parent_payments:()=> lsSet('parent_payments',window.PARENT_PAYMENTS)
+        parent_payments:  () => lsSet('parent_payments',  window.PARENT_PAYMENTS),
+        admission_register: () => lsSet('admission_register', window.ADMISSION_REGISTER)
       };
       if (MAP[storeName]) {
         MAP[storeName]();
@@ -272,7 +277,7 @@
     saveAll() {
       ['students','teachers','users','results','approvals','behavior',
        'payments','announcements','events','computers','maintenance',
-       'discipline','activity_log','parent_payments'].forEach(s => this.save(s));
+       'discipline','activity_log','parent_payments','admission_register'].forEach(s => this.save(s));
     },
 
     /* Clear all localStorage and start fresh (reset button in ICT Admin) */
