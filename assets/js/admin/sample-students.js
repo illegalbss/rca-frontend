@@ -35,6 +35,16 @@
   // localstorage.js will prefer saved localStorage data if it exists.
   window.SAMPLE_STUDENTS_SEED = [
 
+    /* ===== PRE-NURSERY 2 ===== */
+    { id:'RCA/2026/0057', admission_no:'RCA/2026/0057', first_name:'EDEH',     last_name:'GODSENT CHIDALU',            full_name:'EDEH GODSENT CHIDALU',            gender:'male',   class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+    { id:'RCA/2026/0058', admission_no:'RCA/2026/0058', first_name:'JOSEPH',   last_name:'GEORGE KAMSIYOCHUKWU',       full_name:'JOSEPH GEORGE KAMSIYOCHUKWU',     gender:'male',   class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+    { id:'RCA/2026/0059', admission_no:'RCA/2026/0059', first_name:'IKE',      last_name:'MUNACHIMSO STEPHANNIE',      full_name:'IKE MUNACHIMSO STEPHANNIE',        gender:'female', class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+    { id:'RCA/2026/0060', admission_no:'RCA/2026/0060', first_name:'UGWU',     last_name:'CHIZARAM-EKPERE FAVOUR',     full_name:'UGWU CHIZARAM-EKPERE FAVOUR',      gender:'female', class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+    { id:'RCA/2026/0061', admission_no:'RCA/2026/0061', first_name:'ILOKA',    last_name:'CHIMKAMARA AUGUSTINA',       full_name:'ILOKA CHIMKAMARA AUGUSTINA',       gender:'female', class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+    { id:'RCA/2026/0062', admission_no:'RCA/2026/0062', first_name:'EMEIHE',   last_name:'EXCEL CHIDIERE',             full_name:'EMEIHE EXCEL CHIDIERE',            gender:'male',   class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+    { id:'RCA/2026/0063', admission_no:'RCA/2026/0063', first_name:'AMAECHI',  last_name:'DESTINY SOMNAETOCHUKWU',     full_name:'AMAECHI DESTINY SOMNAETOCHUKWU',   gender:'male',   class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+    { id:'RCA/2026/0064', admission_no:'RCA/2026/0064', first_name:'OBUTE',    last_name:'FRANKLIN OLUEBUBECHUKWU',    full_name:'OBUTE FRANKLIN OLUEBUBECHUKWU',    gender:'male',   class_name:'Pre-Nursery 2', date_of_birth:null, parent_phone:null, status:'active' },
+
     /* ===== BASIC 4 ===== */
     { id:'RCA/2026/0093', admission_no:'RCA/2026/0093', first_name:'AGU',          last_name:'WISDOM MAKUOCHUKWU',        full_name:'AGU WISDOM MAKUOCHUKWU',          gender:'male',   class_name:'Basic 4', date_of_birth:null, parent_phone:null, status:'active' },
     { id:'RCA/2026/0094', admission_no:'RCA/2026/0094', first_name:'ANYACHOKIE',   last_name:'NELSON CHIDIOMIMI',         full_name:'ANYACHOKIE NELSON CHIDIOMIMI',     gender:'male',   class_name:'Basic 4', date_of_birth:null, parent_phone:null, status:'active' },
