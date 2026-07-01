@@ -108,8 +108,7 @@
   /* STUDENTS */
   let students = needsInit ? null : lsGet('students');
   if (!students) {
-    // Start empty — real students come from API or manual entry
-    students = [];
+    students = window.SAMPLE_STUDENTS_SEED || [];
     lsSet('students', students);
   }
   // Filter out any archived/inactive students on load
