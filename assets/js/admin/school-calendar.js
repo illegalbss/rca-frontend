@@ -164,19 +164,12 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---- Term overview ---- */
   function renderTermOverview() {
     const el = document.getElementById('termOverview');
-    const terms = [
-      { label:'First Term 2025/2026',  start:'Sep 15, 2025', end:'Dec 19, 2025', color:'#1d4ed8' },
-      { label:'Second Term 2025/2026', start:'Jan 12, 2026',  end:'Apr 3, 2026',  color:'#7c3aed' },
-      { label:'Third Term 2025/2026',  start:'Apr 27, 2026', end:'Jul 24, 2026', color:'#16a34a' },
-    ];
-    el.innerHTML = terms.map(t => `
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">
-        <div style="width:4px;border-radius:2px;align-self:stretch;background:${t.color}"></div>
-        <div>
-          <div style="font-size:0.82rem;font-weight:600;color:#111827">${t.label}</div>
-          <div style="font-size:0.72rem;color:#6b7280">${t.start} → ${t.end}</div>
-        </div>
-      </div>`).join('');
+    el.innerHTML = `
+      <div style="text-align:center;padding:18px 12px;color:#9ca3af;font-size:0.82rem">
+        <div style="font-size:1.5rem;margin-bottom:8px">📅</div>
+        <div style="font-weight:600;color:#6b7280;margin-bottom:4px">No term dates configured</div>
+        <div>The ICT Administrator or Head Teacher can add term dates and events using the <strong>+ Add Entry</strong> button above.</div>
+      </div>`;
   }
 
   /* ---- Nav buttons ---- */

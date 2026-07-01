@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -32,6 +32,7 @@
       <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">⊞</i> Dashboard</a>
       <p class="sidebar-section-label">Administration</p>
       <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">○</i> Students</a>
+      <a href="admission-form.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Form</a>
       <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Teachers</a>
       <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Classes</a>
       <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Attendance</a>
@@ -48,6 +49,8 @@
       <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Finance Reports</a>
       <p class="sidebar-section-label">Communications</p>
       <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="announcements.html?tab=newsletter" class="sidebar-link" data-roles="all"><i class="icon">○</i> Newsletter</a>
+      <a href="school-programme.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Programme of Events</a>
       <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
       <p class="sidebar-section-label">ICT Department</p>
       <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
@@ -147,6 +150,20 @@
           </thead>
           <tbody id="credentialsBody"></tbody>
         </table>
+      </div>
+
+      <!-- ============================================================
+           PARENT ACCOUNTS SECTION (inside main layout)
+           ============================================================ -->
+      <div class="um-card" id="parentsSection" style="margin-top:24px">
+        <div class="um-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <span class="um-card-title">👨‍👩‍👧 Parent Accounts</span>
+            <p style="font-size:0.78rem;color:#6b7280;margin-top:2px">Add parents and link them to their children</p>
+          </div>
+          <button onclick="showAddParentModal()" class="btn btn-primary" style="font-size:0.82rem;padding:8px 16px;white-space:nowrap">+ Add Parent Account</button>
+        </div>
+        <div id="parentsList" style="padding:4px 0"></div>
       </div>
 
     </main>
@@ -312,58 +329,48 @@
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script src="../assets/js/admin/user-management.js"></script>
 
-  <!-- PARENTS SECTION -->
-  <section class="um-section" id="parentsSection" style="margin-top:24px">
-    <div class="dash-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
-        <div>
-          <h3 style="font-size:1rem;color:var(--color-primary);margin-bottom:4px">👨‍👩‍👧 Parent Accounts</h3>
-          <p style="font-size:0.82rem;color:#6b7280">Add parents and link them to their children</p>
-        </div>
-        <button onclick="showAddParentModal()" class="btn btn-primary btn-sm">+ Add Parent Account</button>
-      </div>
-      <div id="parentsList"></div>
+<!-- ADD PARENT MODAL — uses same um-* classes as the staff modal -->
+<div class="um-modal-overlay" id="addParentModal">
+  <div class="um-modal">
+    <div class="um-modal-header">
+      <span class="um-modal-title">Add Parent Account</span>
+      <button class="um-modal-close" onclick="closeParentModal()">✕</button>
     </div>
-  </section>
-
-  <!-- ADD PARENT MODAL -->
-  <div id="addParentModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;padding:20px">
-    <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-      <div style="background:var(--color-primary);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
-        <span style="color:#fff;font-weight:700">Add Parent Account</span>
-        <button onclick="closeParentModal()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer">✕</button>
-      </div>
-      <div style="padding:24px">
-        <div class="form-group">
-          <label class="form-label">Parent/Guardian Full Name *</label>
-          <input type="text" id="par_name" class="form-control" placeholder="e.g. Mr John Okafor">
+    <div class="um-modal-body">
+      <div id="parentModalAlert" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem"></div>
+      <div class="um-form-grid">
+        <div class="um-form-group um-full">
+          <label class="um-form-label">Parent / Guardian Full Name *</label>
+          <input type="text" id="par_name" class="um-form-input" placeholder="e.g. Mr John Okafor">
         </div>
-        <div class="form-group">
-          <label class="form-label">Email Address *</label>
-          <input type="email" id="par_email" class="form-control" placeholder="parent@email.com">
+        <div class="um-form-group">
+          <label class="um-form-label">Email Address *</label>
+          <input type="email" id="par_email" class="um-form-input" placeholder="parent@email.com">
         </div>
-        <div class="form-group">
-          <label class="form-label">Phone Number *</label>
-          <input type="tel" id="par_phone" class="form-control" placeholder="e.g. 08012345678">
+        <div class="um-form-group">
+          <label class="um-form-label">Phone Number *</label>
+          <input type="tel" id="par_phone" class="um-form-input" placeholder="08012345678">
         </div>
-        <div class="form-group">
-          <label class="form-label">Password (default: RCA@2026!)</label>
-          <input type="text" id="par_password" class="form-control" value="RCA@2026!">
+        <div class="um-form-group um-full">
+          <label class="um-form-label">Password</label>
+          <input type="text" id="par_password" class="um-form-input" value="RCA@2026!">
+          <span class="um-form-hint">Default is RCA@2026! — parent can change after first login</span>
         </div>
-        <div class="form-group">
-          <label class="form-label">Link to Children (select students)</label>
-          <div id="studentCheckboxes" style="max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px"></div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:4px">
-          <button onclick="closeParentModal()" class="btn btn-outline" style="flex:1">Cancel</button>
-          <button onclick="submitAddParent()" class="btn btn-primary" style="flex:1">Create Account</button>
+        <div class="um-form-group um-full">
+          <label class="um-form-label">Link to Children</label>
+          <div id="studentCheckboxes" style="max-height:180px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-top:4px"></div>
+          <span class="um-form-hint">Select the pupil(s) belonging to this parent</span>
         </div>
       </div>
+    </div>
+    <div class="um-modal-footer">
+      <button class="btn btn-outline" onclick="closeParentModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitAddParent()">Create Account</button>
     </div>
   </div>
+</div>
 
-  <script src="../assets/js/admin/parent-manager.js"></script>
-  <script>
+<script>
     // Load parent list
     function renderParents() {
       const list = document.getElementById('parentsList');
@@ -393,20 +400,25 @@
 
     function showAddParentModal() {
       const modal = document.getElementById('addParentModal');
-      modal.style.display = 'flex';
+      modal.classList.add('open');
+      // Clear previous values
+      ['par_name','par_email','par_phone'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('par_password').value = 'RCA@2026!';
+      document.getElementById('parentModalAlert').style.display = 'none';
       // Populate student checkboxes
       const allStudents = (window.SAMPLE_STUDENTS || []).filter(s => s.status !== 'archived' && s.status !== 'inactive');
       const box = document.getElementById('studentCheckboxes');
-      box.innerHTML = allStudents.map(s => `
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
-          <input type="checkbox" value="${s.admission_no}" style="width:16px;height:16px">
-          ${s.full_name} — ${s.class_name}
-        </label>
-      `).join('') || '<p style="color:#9ca3af;font-size:0.82rem">No students registered yet</p>';
+      box.innerHTML = allStudents.length
+        ? allStudents.map(s => `
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
+              <input type="checkbox" value="${s.admission_no}" style="width:16px;height:16px">
+              ${s.full_name} — ${s.class_name}
+            </label>`).join('')
+        : '<p style="color:#9ca3af;font-size:0.82rem;padding:4px">No students registered yet</p>';
     }
 
     function closeParentModal() {
-      document.getElementById('addParentModal').style.display = 'none';
+      document.getElementById('addParentModal').classList.remove('open');
     }
 
     function submitAddParent() {
@@ -414,8 +426,13 @@
       const email = document.getElementById('par_email').value.trim();
       const phone = document.getElementById('par_phone').value.trim();
       const pass  = document.getElementById('par_password').value.trim();
+      const alertEl = document.getElementById('parentModalAlert');
 
-      if (!name || !email || !phone) { alert('Please fill in name, email and phone.'); return; }
+      if (!name || !email || !phone) {
+        alertEl.textContent = 'Please fill in name, email and phone.';
+        alertEl.style.display = 'block';
+        return;
+      }
 
       const checked = [...document.querySelectorAll('#studentCheckboxes input:checked')].map(i => i.value);
 
@@ -471,6 +488,11 @@
       window.RCA_PARENTS.delete(parentId);
       renderParents();
     }
+
+    // Close parent modal when clicking outside it
+    document.getElementById('addParentModal').addEventListener('click', function(e) {
+      if (e.target === this) closeParentModal();
+    });
 
     // Init
     document.addEventListener('DOMContentLoaded', renderParents);

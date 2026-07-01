@@ -10,15 +10,17 @@
 
 (function () {
 
-  // Approval workflow statuses
+  // Approval workflow statuses — includes tone for CSS class binding
   window.APPROVAL_STATUSES = {
-    draft:     { label: 'Draft',     color: '#9ca3af', bg: '#f3f4f6' },
-    submitted: { label: 'Submitted', color: '#92400e', bg: '#fef3c7' },
-    reviewed:  { label: 'Reviewed',  color: '#1e40af', bg: '#dbeafe' },
-    approved:  { label: 'Approved',  color: '#065f46', bg: '#d1fae5' },
-    published: { label: 'Published', color: '#065f46', bg: '#d1fae5' },
-    returned:  { label: 'Returned',  color: '#991b1b', bg: '#fee2e2' }
+    draft:     { label: 'Draft',     color: '#9ca3af', bg: '#f3f4f6', tone: 'gray'    },
+    submitted: { label: 'Submitted', color: '#92400e', bg: '#fef3c7', tone: 'amber'   },
+    reviewed:  { label: 'Reviewed',  color: '#1e40af', bg: '#dbeafe', tone: 'blue'    },
+    approved:  { label: 'Approved',  color: '#065f46', bg: '#d1fae5', tone: 'teal'    },
+    published: { label: 'Published', color: '#065f46', bg: '#d1fae5', tone: 'success' },
+    returned:  { label: 'Returned',  color: '#991b1b', bg: '#fee2e2', tone: 'red'     }
   };
+  // Alias so both names work
+  window.APPROVAL_STATUS_INFO = window.APPROVAL_STATUSES;
 
   // Empty approvals — real data comes from API/localStorage
   if (!window.RESULT_APPROVALS) {

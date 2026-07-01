@@ -44,6 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToClassesBtn   = document.getElementById('backToClasses');
   const topbarTitle        = document.getElementById('topbarTitle');
 
+  // RBAC: only admins can add, edit, or remove pupils
+  const _cu       = window.CURRENT_USER;
+  const _roles    = _cu ? (_cu.roles || [_cu.role]) : [];
+  const isAdmin   = _roles.includes('ict_admin') || _roles.includes('head_teacher') || _roles.includes('proprietor');
+
+  // Hide the "+ Add Pupil" button entirely for non-admins
+  const addPupilBtn = document.getElementById('addPupilBtn');
+  if (!isAdmin && addPupilBtn) addPupilBtn.style.display = 'none';
+
   /* --------------------------------------------
      HELPER: get a 2-letter initials string from a name
      -------------------------------------------- 
@@ -68,20 +77,34 @@ document.addEventListener('DOMContentLoaded', () => {
      one card showing that count + a male/female breakdown.
   */
   function renderClassCards() {
-    // Filter classes visible to this user
-    const currentUser = window.CURRENT_USER;
-    const currentRoles = currentUser ? (currentUser.roles || [currentUser.role]) : [];
-    const isAdmin = currentRoles.includes('ict_admin') || currentRoles.includes('head_teacher') || currentRoles.includes('proprietor');
-    const myClasses = currentUser?.linked_classes || [];
-    const visibleClasses = isAdmin ? allClasses :
-      allClasses.filter(cls => myClasses.some(mc => mc.trim().toLowerCase() === cls.trim().toLowerCase()));
     totalPupilsPill.textContent = `${allStudents.length} pupils total`;
+
+    // Determine which classes this user can see in the Students view.
+    // Admins see all classes; teachers see only their form class.
+    // For dual-role (form+subject) teachers, form_class narrows it to the
+    // one class they are actually responsible for as form teacher.
+    // Pure form teachers (e.g. nursery, Basic 1-2) only have one class in
+    // linked_classes so that is used directly.
+    let visibleClasses;
+    if (isAdmin) {
+      visibleClasses = allClasses;
+    } else {
+      const formClass = _cu?.form_class;
+      if (formClass) {
+        visibleClasses = allClasses.filter(cls => cls === formClass);
+      } else {
+        const myLinked = _cu?.linked_classes || [];
+        visibleClasses = allClasses.filter(cls =>
+          myLinked.some(mc => mc.trim().toLowerCase() === cls.trim().toLowerCase())
+        );
+      }
+    }
 
     // Clear existing cards to prevent duplicates on re-render
     nurseryCardsWrap.innerHTML = '';
     primaryCardsWrap.innerHTML = '';
 
-    allClasses.forEach(className => {
+    visibleClasses.forEach(className => {
       // .filter() returns a NEW array containing only students
       // whose class_name matches this one
       const studentsInClass = allStudents.filter(s =>
@@ -208,8 +231,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <td class="col-actions">
           <div class="row-actions">
             <button class="row-action-btn" onclick="window._viewStudent('${student.admission_no}')">View</button>
+            ${isAdmin ? `
             <button class="row-action-btn" onclick="window._editStudent('${student.admission_no}')">Edit</button>
             <button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="window._deleteStudent('${student.admission_no}')">Remove</button>
+            ` : ''}
           </div>
         </td>
       </tr>

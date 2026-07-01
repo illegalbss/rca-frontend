@@ -18,7 +18,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const allStudents = window.SAMPLE_STUDENTS || [];
   const allTeachers = window.SAMPLE_TEACHERS || [];
-  const allClasses  = window.SCHOOL_CLASSES || [];
+  const allUsers    = window.SAMPLE_USERS    || [];
+  const allClasses  = window.SCHOOL_CLASSES  || [];
+
+  // RBAC: determine visible classes for this user
+  const _cu      = window.CURRENT_USER;
+  const _roles   = _cu ? (_cu.roles || [_cu.role]) : [];
+  const isAdmin  = _roles.includes('ict_admin') || _roles.includes('head_teacher') || _roles.includes('proprietor');
+
+  function getVisibleClasses() {
+    if (isAdmin) return allClasses;
+    const formClass = _cu?.form_class;
+    if (formClass) return allClasses.filter(c => c === formClass);
+    const linked = _cu?.linked_classes || [];
+    return allClasses.filter(c => linked.includes(c));
+  }
+  const visibleClasses = getVisibleClasses();
 
   let currentClass = null;
 
@@ -66,9 +81,22 @@ document.addEventListener('DOMContentLoaded', () => {
   function getClassData(className) {
     const studentsInClass = allStudents.filter(s => s.class_name === className);
 
-    const classTeacher = allTeachers.find(t =>
-      (t.roles ? t.roles.includes('class_teacher') : t.legacy_role === 'Class Teacher') && t.assigned_classes.includes(className)
-    );
+    // Find the form teacher from SAMPLE_USERS (real names) first;
+    // fall back to SAMPLE_TEACHERS for extra detail fields (phone, subjects).
+    const userTeacher = allUsers.find(u => {
+      const roles = u.roles || [u.role];
+      if (!roles.includes('class_teacher')) return false;
+      if (u.form_class) return u.form_class === className;
+      return (u.linked_classes || []).includes(className);
+    });
+
+    const classTeacher = userTeacher
+      ? { ...(allTeachers.find(t => t.email === userTeacher.email) || {}), ...userTeacher,
+          full_name: userTeacher.full_name, staff_id: userTeacher.id }
+      : allTeachers.find(t =>
+          (t.roles ? t.roles.includes('class_teacher') : t.legacy_role === 'Class Teacher') &&
+          t.assigned_classes && t.assigned_classes.includes(className)
+        );
 
     // Specialist staff who teach THIS class but aren't ITS class teacher
     // (e.g. the ICT Administrator might teach Basic 1 AND four other classes)
@@ -94,9 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
      STEP 1: BUILD THE CLASS GRID
      -------------------------------------------- */
   function renderClassGrid() {
-    totalClassesPill.textContent = `${allClasses.length} classes`;
+    totalClassesPill.textContent = `${visibleClasses.length} ${visibleClasses.length === 1 ? 'class' : 'classes'}`;
 
-    allClasses.forEach(className => {
+    visibleClasses.forEach(className => {
       const data = getClassData(className);
 
       const card = document.createElement('div');

@@ -932,19 +932,20 @@ html, body { height: 100%; }
   .hide-mobile { display: none !important; }
 }
 
-/* Modals full screen on mobile */
+/* Modals full width on mobile — no height cap, overlay scrolls */
 @media (max-width: 600px) {
   .um-modal,
   .modal-card {
     max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
+    max-height: none;
+    border-radius: 12px;
     margin: 0;
   }
 
   .um-modal-overlay,
   .modal-overlay {
-    padding: 0;
+    padding: 16px 8px 32px;
+    align-items: flex-start;
   }
 }
 

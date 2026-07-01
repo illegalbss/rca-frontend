@@ -3,53 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ICT Lab & Curriculum | Royal Crystal Academy</title>
+  <title>School Programme of Events | Royal Crystal Academy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
-  <link rel="stylesheet" href="../assets/css/admin/communications.css">
-  <style>
-    /* Tab bar */
-    .ict-tab-bar {
-      display: flex;
-      gap: 4px;
-      background: #fff;
-      border-radius: 12px;
-      padding: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .ict-tab-btn {
-      padding: 8px 18px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      background: transparent;
-      color: #6b7280;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    .ict-tab-btn:hover { background: #f3f4f6; color: #374151; }
-    .ict-tab-btn.active { background: #7c3aed; color: #fff; }
-    .ict-tab-pane { display: none; }
-    .ict-tab-pane.active { display: block; }
-
-    @media print {
-      .admin-sidebar, .admin-topbar, .ict-tab-bar, .no-print { display: none !important; }
-      .admin-content { margin-left: 0 !important; }
-      .ict-tab-pane { display: block !important; }
-    }
-  </style>
 </head>
 <body>
 <div class="admin-shell">
+
   <aside class="admin-sidebar" id="adminSidebar">
-    <div class="sidebar-header"><img src="../assets/images/logo.png" alt="Royal Crystal Academy"><span>Royal Crystal Academy</span></div>
+    <div class="sidebar-header">
+      <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+      <span>Royal Crystal Academy</span>
+    </div>
     <div class="sidebar-profile">
       <div class="sidebar-avatar" id="sidebarAvatar">?</div>
       <div class="sidebar-profile-info">
@@ -81,10 +49,10 @@
       <p class="sidebar-section-label">Communications</p>
       <a href="announcements.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Announcements</a>
       <a href="announcements.html?tab=newsletter" class="sidebar-link" data-roles="all"><i class="icon">○</i> Newsletter</a>
-      <a href="school-programme.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Programme of Events</a>
+      <a href="school-programme.html" class="sidebar-link active" data-roles="all"><i class="icon">⊞</i> Programme of Events</a>
       <a href="school-calendar.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> School Calendar</a>
       <p class="sidebar-section-label">ICT Department</p>
-      <a href="ict-lab.html" class="sidebar-link active" data-roles="ict_admin,head_teacher"><i class="icon">⊞</i> ICT Lab & Curriculum</a>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
       <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
       <p class="sidebar-section-label">System</p>
       <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> User Management</a>
@@ -95,14 +63,15 @@
       <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">✕</i> Log out</a>
     </div>
   </aside>
+
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="admin-content">
     <header class="admin-topbar">
       <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
-      <h1 class="topbar-title">ICT Department</h1>
+      <h1 class="topbar-title">School Programme of Events</h1>
       <span class="topbar-session">Academic Session: 2025/2026</span>
-      <button class="topbar-bell">&#128276;<span class="topbar-bell-badge">4</span></button>
+      <button class="topbar-bell" title="Notifications">&#128276;<span class="topbar-bell-badge" id="topbarBellBadge">0</span></button>
       <div class="topbar-user">
         <span class="user-role-badge" id="userRoleBadge">Guest</span>
         <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
@@ -111,23 +80,34 @@
 
     <main class="admin-main">
 
-      <!-- Tab navigation -->
-      <div class="ict-tab-bar no-print">
-        <button class="ict-tab-btn active" data-tab="dashboard">📊 Dashboard</button>
-        <button class="ict-tab-btn" data-tab="curriculum">📚 Curriculum</button>
-        <button class="ict-tab-btn" data-tab="progress">📈 Student Progress</button>
-        <button class="ict-tab-btn" data-tab="lab">💻 Computer Lab</button>
-        <button class="ict-tab-btn" data-tab="reports">🖨 Reports</button>
+      <!-- Page header row -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+        <div>
+          <h2 style="font-size:1.1rem;font-weight:700;color:#1a3a5c;margin-bottom:4px">School Programme of Events</h2>
+          <p style="font-size:0.83rem;color:#6b7280">Official weekly event schedule for each term — visible to staff only.</p>
+        </div>
+        <button id="newProgBtn" class="btn btn-primary" style="display:none">
+          + New Programme
+        </button>
       </div>
 
-      <!-- Tab panes — populated by ict-lab.js -->
-      <div class="ict-tab-pane active" id="tab-dashboard">
-        <div style="text-align:center;padding:40px;color:#9ca3af">Loading dashboard...</div>
+      <!-- Info banner -->
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 16px;margin-bottom:22px;font-size:0.83rem;color:#1e40af;display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:1.1rem">📋</span>
+        <div>
+          <strong>For staff only.</strong> Create a weekly programme of events for each term and academic session.
+          Staff can view, print, and follow it to track holidays, exam weeks, sports days, and other activities.
+          Parents do not have access to this section.
+        </div>
       </div>
-      <div class="ict-tab-pane" id="tab-curriculum"></div>
-      <div class="ict-tab-pane" id="tab-progress"></div>
-      <div class="ict-tab-pane" id="tab-lab"></div>
-      <div class="ict-tab-pane" id="tab-reports"></div>
+
+      <!-- Dynamic content area -->
+      <div id="progContainer">
+        <div style="text-align:center;padding:48px;color:#9ca3af">
+          <div style="font-size:2rem;margin-bottom:10px">⏳</div>
+          <div>Loading...</div>
+        </div>
+      </div>
 
     </main>
   </div>
@@ -138,9 +118,8 @@
 <script src="../assets/js/admin/sample-students.js"></script>
 <script src="../assets/js/admin/sample-teachers.js"></script>
 <script src="../assets/js/admin/sample-users.js"></script>
-<script src="../assets/js/admin/ict-data.js"></script>
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
-<script src="../assets/js/admin/ict-lab.js"></script>
+<script src="../assets/js/admin/school-programme.js"></script>
 </body>
 </html>

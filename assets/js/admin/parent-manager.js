@@ -99,4 +99,18 @@ window.RCA_PARENTS = {
     this.saveAll(parents);
     return true;
   },
+
+  /* ---- Seed demo accounts on first load ---- */
+  _seedDemo() {
+    if (this.getAll().length > 0) return;
+    const demos = [
+      { full_name: 'Mrs. Ngozi Okonkwo',   email: 'ngozi.okonkwo@gmail.com',    phone: '08012345678', password: 'RCA@2026!', children: [] },
+      { full_name: 'Mr. Emeka Eze',         email: 'emeka.eze@gmail.com',         phone: '08087654321', password: 'RCA@2026!', children: [] },
+      { full_name: 'Mrs. Adaeze Nwachukwu', email: 'adaeze.nwachukwu@gmail.com',  phone: '08033445566', password: 'RCA@2026!', children: [] },
+    ];
+    demos.forEach(d => this.add(d));
+  },
 };
+
+/* Auto-seed demo parents if none exist yet */
+window.RCA_PARENTS._seedDemo();

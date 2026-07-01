@@ -408,11 +408,10 @@ document.addEventListener('DOMContentLoaded', () => {
         `, {label:'Finance Reports', href:'finance-reports.html'})}
 
         ${card('Upcoming Events', `
-          <div class="event-list">
-            ${eventItem('20','JUN','End of 2nd Term','Academic calendar — June 20, 2026')}
-            ${eventItem('27','JUN',"Teachers' Meeting",'All staff — June 27, 2026')}
-            ${eventItem('5', 'JUL','Parent-Teacher Meeting','All parents invited — July 5, 2026')}
-            ${eventItem('1', 'SEP','New Term Begins','3rd Term — September 1, 2026')}
+          <div style="text-align:center;padding:20px 12px;color:#9ca3af;font-size:0.82rem">
+            <div style="font-size:1.4rem;margin-bottom:8px">📅</div>
+            <div style="font-weight:600;color:#6b7280;margin-bottom:4px">No events scheduled</div>
+            <div>Add events via the <a href="school-calendar.html" style="color:#1d4ed8">School Calendar</a>.</div>
           </div>
         `)}
       </div>

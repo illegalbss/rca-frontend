@@ -72,12 +72,17 @@ window.SAMPLE_USERS = [
     "role": "class_teacher",
     "primary_role": "class_teacher",
     "roles": [
-      "class_teacher"
+      "class_teacher",
+      "subject_teacher"
     ],
-    "job_title": "Form Teacher \u2014 Basic 6",
+    "job_title": "Form Teacher \u2014 Basic 6 | Subject Teacher \u2014 History, Verbal Reasoning",
+    "form_class": "Basic 6",
     "password": "RCA@2026!",
     "status": "active",
     "linked_classes": [
+      "Basic 3",
+      "Basic 4",
+      "Basic 5",
       "Basic 6"
     ],
     "linked_subjects": [
@@ -283,9 +288,6 @@ window.SAMPLE_USERS = [
     "password": "RCA@2026!",
     "status": "active",
     "linked_classes": [
-      "Basic 1A",
-      "Basic 1B",
-      "Basic 2",
       "Basic 3",
       "Basic 4",
       "Basic 5",
@@ -327,13 +329,18 @@ window.SAMPLE_USERS = [
     "role": "class_teacher",
     "primary_role": "class_teacher",
     "roles": [
-      "class_teacher"
+      "class_teacher",
+      "subject_teacher"
     ],
-    "job_title": "Form Teacher \u2014 Basic 3",
+    "job_title": "Form Teacher \u2014 Basic 3 | Subject Teacher \u2014 Agric, Home Economics, Creative Arts",
+    "form_class": "Basic 3",
     "password": "RCA@2026!",
     "status": "active",
     "linked_classes": [
-      "Basic 3"
+      "Basic 3",
+      "Basic 4",
+      "Basic 5",
+      "Basic 6"
     ],
     "linked_subjects": [
       "agric",
@@ -348,12 +355,16 @@ window.SAMPLE_USERS = [
     "role": "class_teacher",
     "primary_role": "class_teacher",
     "roles": [
-      "class_teacher"
+      "class_teacher",
+      "subject_teacher"
     ],
-    "job_title": "Form Teacher \u2014 Basic 5 | Subject Teacher \u2014 English, Phonics, Igbo",
+    "job_title": "Form Teacher \u2014 Basic 5 | Subject Teacher \u2014 English, Phonics, Igbo (Basic 5 & 6)",
+    "form_class": "Basic 5",
     "password": "RCA@2026!",
     "status": "active",
     "linked_classes": [
+      "Basic 3",
+      "Basic 4",
       "Basic 5",
       "Basic 6"
     ],
@@ -370,14 +381,18 @@ window.SAMPLE_USERS = [
     "role": "class_teacher",
     "primary_role": "class_teacher",
     "roles": [
-      "class_teacher"
+      "class_teacher",
+      "subject_teacher"
     ],
-    "job_title": "Form Teacher \u2014 Basic 4 | Subject Teacher \u2014 Basic Science, PHE, Igbo",
+    "job_title": "Form Teacher \u2014 Basic 4 | Subject Teacher \u2014 Basic Science, PHE, Igbo (Basic 3 & 4)",
+    "form_class": "Basic 4",
     "password": "RCA@2026!",
     "status": "active",
     "linked_classes": [
       "Basic 3",
-      "Basic 4"
+      "Basic 4",
+      "Basic 5",
+      "Basic 6"
     ],
     "linked_subjects": [
       "sci",
@@ -533,7 +548,7 @@ window.SAMPLE_USERS = [
   },
   {
     "id": "RCA-STF-018",
-    "full_name": "Nonso Chukwuma",
+    "full_name": "Chukwuma Nonso",
     "email": "alibabachukwuma@gmail.com",
     "role": "accountant",
     "primary_role": "accountant",

@@ -90,7 +90,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---- Fallback: localStorage demo mode ----
     const allUsers = window.SAMPLE_USERS || [];
-    const user = allUsers.find(u => u.email.toLowerCase() === email);
+    let user = allUsers.find(u => u.email.toLowerCase() === email);
+
+    // If not found in staff accounts, check parent accounts
+    if (!user && window.RCA_PARENTS) {
+      user = window.RCA_PARENTS.getByEmail(email) || null;
+    }
 
     if (!user) {
       setLoading(false);
@@ -104,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Check password (default is RCA@2026! for all staff)
+    // Check password
     const defaultPwd = 'RCA@2026!';
     const userPwd = user.password || defaultPwd;
     if (pwd !== userPwd && pwd !== defaultPwd) {

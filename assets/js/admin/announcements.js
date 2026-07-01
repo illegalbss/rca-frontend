@@ -66,21 +66,30 @@ document.addEventListener('DOMContentLoaded', () => {
       // Toggle panels
       const annPanel = document.getElementById('announcementsPanel');
       const evtPanel = document.getElementById('eventsPanel');
+      const nlPanel  = document.getElementById('newsletterPanel');
       const addAnnBtn = document.getElementById('addAnnouncementBtn');
       const addEvtBtn = document.getElementById('addEventBtn');
+      const addNlBtn  = document.getElementById('addNewsletterBtn');
+
+      // Hide all panels / action buttons first
+      if (annPanel) annPanel.style.display = 'none';
+      if (evtPanel) evtPanel.style.display = 'none';
+      if (nlPanel)  nlPanel.style.display  = 'none';
+      if (addAnnBtn) addAnnBtn.style.display = 'none';
+      if (addEvtBtn) addEvtBtn.style.display = 'none';
+      if (addNlBtn)  addNlBtn.style.display  = 'none';
 
       if (activeTab === 'announcements') {
         if (annPanel) annPanel.style.display = 'block';
-        if (evtPanel) evtPanel.style.display = 'none';
         if (addAnnBtn) addAnnBtn.style.display = canManage ? 'inline-flex' : 'none';
-        if (addEvtBtn) addEvtBtn.style.display = 'none';
         renderAnnouncements();
-      } else {
-        if (annPanel) annPanel.style.display = 'none';
+      } else if (activeTab === 'events') {
         if (evtPanel) evtPanel.style.display = 'block';
-        if (addAnnBtn) addAnnBtn.style.display = 'none';
         if (addEvtBtn) addEvtBtn.style.display = canManage ? 'inline-flex' : 'none';
         renderEvents();
+      } else if (activeTab === 'newsletter') {
+        if (nlPanel) nlPanel.style.display = 'block';
+        if (window.initNewsletterTab) window.initNewsletterTab();
       }
     });
   });
@@ -432,6 +441,17 @@ document.addEventListener('DOMContentLoaded', () => {
      ============================================ */
   document.getElementById('addAnnouncementBtn')?.addEventListener('click', () => showAnnouncementModal());
   document.getElementById('addEventBtn')?.addEventListener('click', () => showEventModal());
+
+  /* ============================================
+     AUTO-ACTIVATE TAB FROM URL PARAM
+     ============================================
+     e.g. announcements.html?tab=newsletter opens the Newsletter tab directly */
+  (function autoActivateTab() {
+    const param = new URLSearchParams(window.location.search).get('tab');
+    if (!param) return;
+    const tabEl = document.querySelector(`.comm-tab[data-tab="${param}"]`);
+    if (tabEl) tabEl.click();
+  })();
 
   /* ============================================
      INIT — CLEAR OLD FAKE DATA & RENDER

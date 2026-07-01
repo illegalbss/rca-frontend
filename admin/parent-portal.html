@@ -17,7 +17,7 @@
   <!-- ========== SIDEBAR ========== -->
   <aside class="pp-sidebar" id="ppSidebar">
     <div class="pp-sidebar-logo">
-      <img src="../assets/images/logo.svg" alt="Royal Crystal">
+      <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
       <span>Royal Crystal Academy</span>
     </div>
 
@@ -43,13 +43,16 @@
       <a class="pp-nav-link" data-page="announcements" onclick="showPage('announcements',this)">
         <span class="pp-nav-icon">&#128227;</span> Announcements
       </a>
+      <a class="pp-nav-link" data-page="school-info" onclick="showPage('school-info',this)">
+        <span class="pp-nav-icon">&#8505;</span> School Information
+      </a>
     </nav>
 
     <div class="pp-sidebar-footer">
       <a class="pp-nav-link" data-page="profile" onclick="showPage('profile',this)">
         <span class="pp-nav-icon">&#128100;</span> Profile
       </a>
-      <a class="pp-nav-link" href="login.html" id="ppLogout">
+      <a class="pp-nav-link" href="parent-login.html" id="ppLogout">
         <span class="pp-nav-icon">&#10006;</span> Logout
       </a>
     </div>
@@ -230,6 +233,15 @@
         <div id="announcementsContent"></div>
       </section>
 
+      <!-- ===== SCHOOL INFORMATION PAGE ===== -->
+      <section class="pp-page" id="page-school-info">
+        <div class="pp-welcome">
+          <h2>School Information</h2>
+          <p>Important details every parent should know — timings, uniform, and termly requirements.</p>
+        </div>
+        <div id="schoolInfoContent"></div>
+      </section>
+
       <!-- ===== PROFILE PAGE ===== -->
       <section class="pp-page" id="page-profile">
         <div class="pp-welcome">
@@ -261,6 +273,7 @@
 <script src="../assets/js/admin/sample-users.js"></script>
 <script src="../assets/js/admin/finance-data.js"></script>
 <script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/newsletter.js"></script>
 <script src="../assets/js/admin/parent-portal.js"></script>
 </body>
 </html>

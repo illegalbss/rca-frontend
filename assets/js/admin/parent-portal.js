@@ -23,7 +23,8 @@ window.showPage = function(pageId, linkEl) {
   if (linkEl) linkEl.classList.add('active');
   const titles = {
     dashboard:'Dashboard', children:'My Children', payments:'Payments',
-    results:'Results', newsletter:'Newsletter', announcements:'Announcements', profile:'Profile'
+    results:'Results', newsletter:'Newsletter', announcements:'Announcements',
+    'school-info':'School Information', profile:'Profile'
   };
   document.getElementById('ppPageTitle').textContent = titles[pageId] || pageId;
   // Close mobile sidebar
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ---- Auth guard ---- */
   const role = sessionStorage.getItem('rca_demo_role');
-  if (!role) { window.location.href = 'login.html'; return; }
+  if (!role) { window.location.href = 'parent-login.html'; return; }
   if (role !== 'parent') { window.location.href = 'dashboard.html'; return; }
 
   /* ---- Data sources ---- */
@@ -53,18 +54,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ---- Current user ---- */
   const userId = sessionStorage.getItem('rca_user_id');
-  const parent = allUsers.find(u => u.id === userId);
-  if (!parent) { window.location.href = 'login.html'; return; }
+  // Check both SAMPLE_USERS (staff) and RCA_PARENTS (parent accounts)
+  const parent = allUsers.find(u => u.id === userId)
+    || (window.RCA_PARENTS ? window.RCA_PARENTS.getAll().find(p => p.id === userId) : null);
+  if (!parent) { window.location.href = 'parent-login.html'; return; }
 
-  const children = (parent.linked_students || [])
+  // Parent accounts use 'children'; legacy field was 'linked_students'
+  const children = (parent.children || parent.linked_students || [])
     .map(adm => allStudents.find(s => s.admission_no === adm))
     .filter(Boolean);
 
   /* ---- Set header info ---- */
   const firstName = parent.full_name.replace('Mr/Mrs ', '').split(' ')[0];
   document.getElementById('ppUserName').textContent = parent.full_name;
-  document.getElementById('ppAvatar').textContent =
-    parent.full_name.replace('Mr/Mrs ','').split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase();
+  const avatarEl = document.getElementById('ppAvatar');
+  avatarEl.innerHTML = '<img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:#fff;padding:2px;">';
+  avatarEl.style.background = 'transparent';
+  avatarEl.style.padding = '0';
+  avatarEl.title = parent.full_name;
   document.getElementById('dashWelcomeName').textContent = parent.full_name.replace('Mr/Mrs ','');
 
   /* ---- Logout ---- */
@@ -100,14 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
            : 'blue'
     }));
 
-  const NEWSLETTERS = (window.ANNOUNCEMENTS || [])
-    .filter(a => a.type === 'newsletter' && a.status === 'published')
-    .map(a => ({
-      icon:  '📰',
-      title: a.title,
-      date:  a.publishedAt ? new Date(a.publishedAt).toLocaleDateString('en-NG',{day:'numeric',month:'long',year:'numeric'}) : '',
-      desc:  a.body.split('\n').find(l => l.trim().length > 20) || a.body.substring(0,120) + '…'
-    }));
+  // Read ALL published newsletters from the permanent rca_newsletters store.
+  // This key is never wiped by DATA_VERSION bumps or RCA.reset(), so newsletters
+  // from previous terms and years remain available permanently.
+  const _rawNewsletters = (() => {
+    try { return JSON.parse(localStorage.getItem('rca_newsletters') || '[]'); } catch(e) { return []; }
+  })();
+  const NEWSLETTERS = _rawNewsletters
+    .filter(n => n.status === 'published' && (n.audience || ['staff','parents']).includes('parents'))
+    .sort((a, b) => new Date(b.published_at || b.created_at) - new Date(a.published_at || a.created_at));
 
   /* ================================================
      DASHBOARD PAGE
@@ -156,6 +164,22 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="pp-stat-link" onclick="showPage('announcements',document.querySelector('[data-page=announcements]'))">View All</button>
       </div>
     `;
+
+    // Compact school timings notice
+    const nurseryClasses = ['Pre-Nursery', 'Nursery 1', 'Nursery 2'];
+    const hasNursery  = children.some(c => nurseryClasses.includes(c.class_name));
+    const hasPrimary  = children.some(c => !nurseryClasses.includes(c.class_name));
+    const timingLines = [];
+    if (hasPrimary)  timingLines.push('Primary: Mon–Wed 3:30pm · Thu–Fri 2:00pm');
+    if (hasNursery)  timingLines.push('Nursery: Mon–Wed 2:00pm · Thu–Fri 12 Noon');
+    const noticeEl = document.createElement('div');
+    noticeEl.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;font-size:0.82rem;color:#1e40af';
+    noticeEl.innerHTML = `<span style="font-size:1rem;flex-shrink:0">🕐</span>
+      <div><strong>School Closing Times:</strong> ${timingLines.join(' &nbsp;|&nbsp; ')} &nbsp;·&nbsp; Assembly starts <strong>7:20 AM.</strong>
+      <span style="margin-left:8px;color:#92400e;font-weight:600">Late pickup: ₦500/child.</span>
+      <a href="#" onclick="showPage('school-info',document.querySelector('[data-page=school-info]'));return false" style="margin-left:8px;color:#2563eb;text-decoration:underline;font-size:0.78rem">View full info →</a></div>`;
+    const statsEl = document.getElementById('dashStats');
+    statsEl.parentNode.insertBefore(noticeEl, statsEl.nextSibling);
 
     // Announcements
     document.getElementById('dashAnnouncements').innerHTML = ANNOUNCEMENTS.slice(0,3).map(a => `
@@ -243,7 +267,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const allPayRows = [];
 
     ['term1','term2','term3'].forEach(term => {
-      const breakdown = window.computeFeeBreakdown ? window.computeFeeBreakdown(adm, term) : null;
       const rec = payRecords[`${adm}|${term}`];
       if (!rec) return;
       totalExpected += rec.amount_expected;
@@ -511,65 +534,165 @@ document.addEventListener('DOMContentLoaded', () => {
      NEWSLETTER PAGE
      ================================================ */
   function buildNewsletter() {
-    document.getElementById('newsletterGrid').innerHTML = NEWSLETTERS.map(n => `
-      <div class="pp-newsletter-card">
-        <div class="pp-newsletter-img">${n.icon}</div>
-        <div class="pp-newsletter-body">
-          <div class="pp-newsletter-title">${n.title}</div>
-          <div class="pp-newsletter-date">${n.date}</div>
-          <div class="pp-newsletter-desc">${n.desc}</div>
-          <button class="btn btn-outline btn-sm">Read More</button>
-        </div>
-      </div>
-    `).join('');
+    const wrap = document.getElementById('newsletterGrid');
+    if (!wrap) return;
+
+    // Store on window for the viewer function
+    window._PP_NEWSLETTERS = NEWSLETTERS;
+
+    if (NEWSLETTERS.length === 0) {
+      wrap.innerHTML = `
+        <div style="text-align:center;padding:56px 24px;color:#6b7280;grid-column:1/-1">
+          <div style="font-size:3rem;margin-bottom:14px">📰</div>
+          <div style="font-weight:600;color:#374151;margin-bottom:6px">No Newsletters Yet</div>
+          <div style="font-size:0.83rem">The school will publish newsletters here. Check back soon.</div>
+        </div>`;
+      return;
+    }
+
+    // Group by academic session, newest session first
+    const groups = {};
+    NEWSLETTERS.forEach(n => {
+      const s = n.session || '—';
+      if (!groups[s]) groups[s] = [];
+      groups[s].push(n);
+    });
+    const sessionOrder = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+    // Build HTML: each session gets a heading row then a card grid
+    wrap.style.display = 'block'; // override grid for section headings
+    wrap.innerHTML = sessionOrder.map(sess => {
+      const cards = groups[sess].map(n => {
+        const pubDate = (n.published_at || n.created_at)
+          ? new Date(n.published_at || n.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
+          : '';
+        const preview = (n.body || '').split('\n').filter(l => l.trim().length > 20)[0]
+          || (n.body || '').substring(0, 130) + '…';
+        const safeId = n.id.replace(/[^a-zA-Z0-9]/g, '_');
+        return `
+          <div class="pp-newsletter-card" style="cursor:default">
+            <div class="pp-newsletter-img" style="font-size:2.4rem;display:flex;align-items:center;justify-content:center;background:#f0fdf4;border-radius:10px 10px 0 0;padding:22px 16px">📰</div>
+            <div class="pp-newsletter-body">
+              <div class="pp-newsletter-title">${n.title}</div>
+              ${n.issue ? `<div style="font-size:0.73rem;color:#4b5563;margin-bottom:4px;font-weight:600">${n.issue}</div>` : ''}
+              <div class="pp-newsletter-date">${pubDate}</div>
+              <div class="pp-newsletter-desc">${preview}</div>
+              <button class="btn btn-outline btn-sm" onclick="ppViewNewsletter('${safeId}')" style="margin-top:10px;width:100%">Read Full Newsletter →</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      return `
+        <div style="margin-bottom:28px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <span style="font-size:0.73rem;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:#6b7280">
+              📅 Session ${sess}
+            </span>
+            <div style="flex:1;height:1px;background:#e5e7eb"></div>
+            <span style="font-size:0.72rem;color:#9ca3af">${groups[sess].length} newsletter${groups[sess].length !== 1 ? 's' : ''}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px">
+            ${cards}
+          </div>
+        </div>`;
+    }).join('');
   }
+
+  window.ppViewNewsletter = function(safeId) {
+    const nl = (window._PP_NEWSLETTERS || []).find(n => n.id.replace(/[^a-zA-Z0-9]/g, '_') === safeId);
+    if (!nl) return;
+    document.getElementById('ppNlViewOverlay')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'ppNlViewOverlay';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';
+    const pubDate = (nl.published_at || nl.created_at)
+      ? new Date(nl.published_at || nl.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:700px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="background:#1a3a5c;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:1">
+          <span style="color:#fff;font-weight:700">📰 Newsletter</span>
+          <button id="closePpNlView" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <div style="padding:32px">
+          <div style="text-align:center;border-bottom:2px solid #1a3a5c;padding-bottom:22px;margin-bottom:26px">
+            <div style="font-size:0.75rem;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">
+              Royal Crystal Academy${nl.session ? ' • Session ' + nl.session : ''}
+            </div>
+            <h2 style="font-size:1.4rem;color:#1a3a5c;font-weight:800;margin-bottom:6px">${nl.title}</h2>
+            ${nl.issue ? `<div style="font-size:0.85rem;color:#4b5563;margin-bottom:4px">${nl.issue}</div>` : ''}
+            <div style="font-size:0.8rem;color:#9ca3af">${pubDate}</div>
+          </div>
+          <div style="font-size:0.9rem;color:#374151;line-height:1.85;white-space:pre-wrap">${nl.body}</div>
+          <div style="margin-top:28px;padding-top:18px;border-top:1px solid #e5e7eb;font-size:0.78rem;color:#9ca3af;text-align:center">
+            — ${nl.author || 'The Administration'} • Royal Crystal Academy
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    document.getElementById('closePpNlView').onclick = () => modal.remove();
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
 
   /* ================================================
      ANNOUNCEMENTS PAGE
      ================================================ */
   function buildAnnouncements() {
-    const TYPE_ICONS = { announcement:'📢', newsletter:'📰', event:'📅', urgent:'🚨' };
-    const TYPE_COLORS = { announcement:'blue', newsletter:'green', event:'orange', urgent:'red' };
+    const TYPE_ICONS  = { announcement:'📢', newsletter:'📰', event:'📅', urgent:'🚨' };
+    const TYPE_BG     = { announcement:'#dbeafe', newsletter:'#d1fae5', event:'#fef3c7', urgent:'#fee2e2' };
     const pubAnns = ANNOUNCEMENTS;
+
+    const annHtml = pubAnns.length === 0
+      ? `<div style="text-align:center;padding:40px 24px;color:#94a3b8">
+           <div style="font-size:2rem;margin-bottom:10px">📭</div>
+           <div style="font-weight:600;color:#6b7280;margin-bottom:4px">No announcements yet</div>
+           <div style="font-size:0.82rem">The school will post important notices here. Check back soon.</div>
+         </div>`
+      : pubAnns.map(a => {
+          const icon = TYPE_ICONS[a.type] || '📢';
+          const bg   = TYPE_BG[a.type]   || '#dbeafe';
+          const date = a.publishedAt
+            ? new Date(a.publishedAt).toLocaleDateString('en-NG',{day:'numeric',month:'long',year:'numeric'})
+            : '';
+          const body = (a.body || '');
+          const preview = body.split('\n').filter(l=>l.trim()).slice(0,2).join(' ');
+          return `
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 18px;border-bottom:1px solid #f1f5f9;cursor:pointer"
+              onclick="const nx=this.nextElementSibling;nx.style.display=nx.style.display==='none'?'block':'none'">
+              <div style="width:38px;height:38px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">${icon}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:0.9rem;color:#111827;margin-bottom:3px">${a.title}</div>
+                <div style="font-size:0.72rem;color:#94a3b8;margin-bottom:4px">${date}${a.author ? ' · ' + a.author : ''}</div>
+                <div style="font-size:0.82rem;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview.substring(0,120)}</div>
+              </div>
+              <div style="font-size:0.72rem;color:#94a3b8;flex-shrink:0">▼</div>
+            </div>
+            <div style="display:none;padding:14px 18px 18px 70px;background:#f8fafc;border-bottom:1px solid #f1f5f9;font-size:0.83rem;color:#374151;line-height:1.8;white-space:pre-wrap">${body}</div>`;
+        }).join('');
+
+    const eventsHtml = EVENTS.length === 0
+      ? `<div style="text-align:center;padding:20px;color:#94a3b8;font-size:0.82rem">No upcoming events scheduled.</div>`
+      : EVENTS.map(e => `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;font-size:0.83rem">
+            <span style="min-width:100px;color:#94a3b8;font-size:0.75rem">${e.date}</span>
+            <span style="width:8px;height:8px;border-radius:50%;background:${e.color === 'green' ? '#16a34a' : e.color === 'red' ? '#dc2626' : e.color === 'orange' ? '#f59e0b' : '#1d4ed8'};flex-shrink:0"></span>
+            <span style="color:#374151;font-weight:500">${e.label}</span>
+          </div>`).join('');
+
     document.getElementById('announcementsContent').innerHTML = `
-      <div class="pp-table-card">
-        <div class="pp-table-card-header">School Announcements (${pubAnns.length})</div>
-        <div class="pp-card-body" style="padding:0">
-          ${pubAnns.length === 0
-            ? '<div style="text-align:center;padding:32px;color:#94a3b8">No announcements yet.</div>'
-            : pubAnns.map(a => {
-                const icon  = TYPE_ICONS[a.type] || '📢';
-                const color = TYPE_COLORS[a.type] || 'blue';
-                const date  = a.publishedAt
-                  ? new Date(a.publishedAt).toLocaleDateString('en-NG',{day:'numeric',month:'long',year:'numeric'})
-                  : '';
-                const preview = a.body.split('\n').filter(l=>l.trim()).slice(0,2).join(' ');
-                return `
-                  <div class="pp-announcement" style="padding:14px 18px;border-bottom:1px solid #f1f5f9;cursor:pointer"
-                    onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
-                    <div class="pp-ann-icon ${color}" style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${icon}</div>
-                    <div>
-                      <div class="pp-ann-title">${a.title}</div>
-                      <div class="pp-ann-date">${date} · ${a.author}</div>
-                      <div class="pp-ann-body">${preview.substring(0,120)}…</div>
-                    </div>
-                  </div>
-                  <div style="display:none;padding:14px 18px 18px;background:#f8fafc;border-bottom:1px solid #f1f5f9;font-size:0.82rem;color:#374151;line-height:1.8;white-space:pre-wrap">${a.body}</div>`;
-              }).join('')}
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:16px">
+        <div style="padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:700;font-size:0.95rem;color:#111827">📢 School Announcements</span>
+          <span style="font-size:0.75rem;background:#f3f4f6;padding:3px 10px;border-radius:20px;color:#6b7280">${pubAnns.length} posted</span>
         </div>
+        ${annHtml}
       </div>
 
-      <div class="pp-card" style="margin-top:16px">
-        <div class="pp-card-header"><span class="pp-card-title">Upcoming Events</span></div>
-        <div class="pp-card-body">
-          ${EVENTS.map(e => `
-            <div class="pp-event-row">
-              <span class="pp-event-date">${e.date}</span>
-              <span class="pp-event-dot ${e.color}"></span>
-              <span class="pp-event-label">${e.label}</span>
-            </div>
-          `).join('')}
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid #f1f5f9">
+          <span style="font-weight:700;font-size:0.95rem;color:#111827">📅 Upcoming Events</span>
         </div>
+        <div style="padding:4px 18px 8px">${eventsHtml}</div>
       </div>
     `;
   }
@@ -701,6 +824,94 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ================================================
+     SCHOOL INFORMATION PAGE
+     ================================================ */
+  function buildSchoolInfo() {
+    const el = document.getElementById('schoolInfoContent');
+    if (!el) return;
+
+    // Detect if parent has nursery or primary children (or both)
+    const nurseryClasses = ['Pre-Nursery', 'Nursery 1', 'Nursery 2'];
+    const hasNursery  = children.some(c => nurseryClasses.includes(c.class_name));
+    const hasPrimary  = children.some(c => !nurseryClasses.includes(c.class_name));
+
+    const card = (icon, title, body) => `
+      <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <span style="font-size:1.4rem">${icon}</span>
+          <h3 style="font-family:var(--font-heading);font-size:0.95rem;font-weight:700;color:#1a3a5c;margin:0">${title}</h3>
+        </div>
+        ${body}
+      </div>`;
+
+    const row = (label, value, highlight) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9">
+        <span style="font-size:0.82rem;color:#374151">${label}</span>
+        <span style="font-size:0.83rem;font-weight:700;color:${highlight || '#1a3a5c'}">${value}</span>
+      </div>`;
+
+    /* ---- 1. School Timings ---- */
+    const timingRows = [
+      row('Morning Assembly', '7:20 AM — All pupils must be seated', '#065f46'),
+    ];
+    if (hasPrimary) {
+      timingRows.push(
+        `<div style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;padding:10px 0 4px">Primary School</div>`,
+        row('Monday – Wednesday', 'Closing: 3:30 PM'),
+        row('Thursday – Friday', 'Closing: 2:00 PM'),
+      );
+    }
+    if (hasNursery) {
+      timingRows.push(
+        `<div style="font-size:0.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;padding:10px 0 4px">Nursery Section</div>`,
+        row('Monday – Wednesday', 'Closing: 2:00 PM'),
+        row('Thursday – Friday', 'Closing: 12:00 Noon'),
+      );
+    }
+
+    const timingCard = card('🕐', 'School Timings', `
+      <div style="border-top:1px solid #f1f5f9">${timingRows.join('')}</div>
+      <div style="margin-top:14px;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:0.82rem;color:#92400e;display:flex;gap:8px;align-items:flex-start">
+        <span style="font-size:1rem;flex-shrink:0">⚠️</span>
+        <span><strong>Late Pickup Fee:</strong> Parents who arrive after closing time will be charged <strong>₦500 per child per occurrence.</strong> Please endeavour to pick up your wards promptly.</span>
+      </div>
+    `);
+
+    /* ---- 2. Approved Uniform ---- */
+    const uniformCard = card('👕', 'Approved School Uniform', `
+      <div style="border-top:1px solid #f1f5f9">
+        ${row('Monday – Wednesday', 'School Uniform')}
+        ${row('Thursday – Friday', 'Sports Kit / P.E. Wear')}
+      </div>
+      <div style="margin-top:12px;font-size:0.8rem;color:#64748b;background:#f8fafc;border-radius:8px;padding:10px 14px;line-height:1.6">
+        All pupils must wear the correct uniform on the designated days. Pupils in unapproved attire may be sent home to change.
+      </div>
+    `);
+
+    /* ---- 3. Termly Requirements ---- */
+    const reqs = [
+      ['2 big tissues', '(for classroom hygiene)'],
+      ['1 Dettol or Bleach', '(disinfectant)'],
+      ['2 Table Soap', '(hand washing)'],
+      ['1 Detergent 280g', '(cleaning supplies)'],
+    ];
+    const reqCard = card('📦', 'Compulsory Termly Requirements', `
+      <p style="font-size:0.82rem;color:#374151;margin-bottom:12px">
+        The following items are required from every pupil at the <strong>start of each term.</strong>
+        Please ensure they are provided before the second week of resumption.
+      </p>
+      <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px">
+        ${reqs.map(([item, note]) => `
+          <li style="font-size:0.85rem;color:#1a3a5c">
+            <strong>${item}</strong> <span style="color:#64748b;font-size:0.78rem">${note}</span>
+          </li>`).join('')}
+      </ol>
+    `);
+
+    el.innerHTML = timingCard + uniformCard + reqCard;
+  }
+
+  /* ================================================
      INITIALIZE ALL PAGES
      ================================================ */
   buildDashboard();
@@ -712,6 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildAttendance();
   buildNewsletter();
   buildAnnouncements();
+  buildSchoolInfo();
   buildProfile();
 
 });

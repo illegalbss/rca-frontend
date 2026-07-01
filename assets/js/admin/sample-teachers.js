@@ -119,46 +119,46 @@
       { job_title: 'ICT Administrator',
         email: 'ictadmin@royalcrystalacademy.edu.ng' }),
 
-    staff('Miss Finance', ['accountant'], [], [],
+    staff('Chukwuma Nonso', ['accountant'], [], [],
       { job_title: 'Accountant',
-        email: 'accountant@royalcrystalacademy.edu.ng' }),
+        email: 'alibabachukwuma@gmail.com' }),
 
     /* ============================================
        BASIC 1A — Geraldine (Form Teacher, all subjects)
        ============================================ */
-    staff('Geraldine Okafor', ['class_teacher'], ['Basic 1A'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Basic 1A', email: 'geraldine.okafor@royalcrystalacademy.edu.ng' }),
+    staff('Ukaejiofor Ugochi', ['class_teacher'], ['Basic 1A'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Basic 1A', email: 'ugochichinaza93@gmail.com' }),
 
     /* ============================================
-       BASIC 1B — Amaka (Form Teacher, all subjects)
+       BASIC 1B — Geraldine (Form Teacher, all subjects)
        ============================================ */
-    staff('Amaka Chukwu', ['class_teacher'], ['Basic 1B'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Basic 1B', email: 'amaka.chukwu@royalcrystalacademy.edu.ng' }),
+    staff('Okoh Geraldine', ['class_teacher'], ['Basic 1B'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Basic 1B', email: 'onuohageraldine@gmail.com' }),
 
     /* ============================================
        BASIC 2 — Victoria (Form Teacher, all subjects)
        ============================================ */
-    staff('Victoria Eze', ['class_teacher'], ['Basic 2'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Basic 2', email: 'victoria.eze@royalcrystalacademy.edu.ng' }),
+    staff('Edeh Victoria O.', ['class_teacher'], ['Basic 2'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Basic 2', email: 'victoriannamani834@gmail.com' }),
 
     /* ============================================
        NURSERY / PRE-NURSERY — one Form Teacher per class
        Each teaches all subjects to their own class only
        ============================================ */
-    staff('Sister Blessing Adeyemi', ['class_teacher'], ['Nursery 1'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Nursery 1', email: 'blessing.adeyemi@royalcrystalacademy.edu.ng' }),
+    staff('Okenwa Jacinta Ebere', ['class_teacher'], ['Nursery 1'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Nursery 1', email: 'okenwaebere06@gmail.com' }),
 
-    staff('Sister Grace Bello', ['class_teacher'], ['Nursery 2'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Nursery 2', email: 'grace.bello@royalcrystalacademy.edu.ng' }),
+    staff('Agbo Christy', ['class_teacher'], ['Nursery 2'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Nursery 2', email: 'christykamemeodo@gmail.com' }),
 
-    staff('Sister Patience Nwosu', ['class_teacher'], ['Nursery 3'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Nursery 3', email: 'patience.nwosu@royalcrystalacademy.edu.ng' }),
+    staff('Kanu Ogechi', ['class_teacher'], ['Nursery 3'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Nursery 3', email: 'kanuogechi@gmail.com' }),
 
-    staff('Sister Joy Ibrahim', ['class_teacher'], ['Pre-Nursery 1'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Pre-Nursery 1', email: 'joy.ibrahim@royalcrystalacademy.edu.ng' }),
+    staff('Nwofoke Roseline', ['class_teacher'], ['Pre-Nursery 1'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Pre-Nursery 1', email: 'nwofokeroseline@gmail.com' }),
 
-    staff('Sister Esther Lawal', ['class_teacher'], ['Pre-Nursery 2'], ALL_SUBJECTS,
-      { job_title: 'Form Teacher — Pre-Nursery 2', email: 'esther.lawal@royalcrystalacademy.edu.ng' }),
+    staff('Obieze Ogechukwu', ['class_teacher'], ['Pre-Nursery 2'], ALL_SUBJECTS,
+      { job_title: 'Form Teacher — Pre-Nursery 2', email: 'blessogechukwu90@gmail.com' }),
 
     /* ============================================
        BASIC 3–6 SUBJECT TEACHERS
@@ -167,56 +167,60 @@
        Some are also Form Teachers for one of those classes.
 
        FORM TEACHER ASSIGNMENTS (Basic 3–6):
-         Basic 3 → Emmanuella
-         Basic 4 → Chiamaka
-         Basic 5 → Maths Uncle (Chinedu)
-         Basic 6 → Chidimma
+         Basic 3 → Ubabuko Emmanuella
+         Basic 4 → Ugwunnaji Celestina
+         Basic 5 → Okonkwo Chiamaka
+         Basic 6 → Nwaneri Chidimma
        ============================================ */
 
-    // Nkechinyere — Social Studies, Civic Education, CRK
-    // Subject teacher ONLY — cannot review results, cannot edit comments
-    staff('Nkechinyere Onuoha', ['subject_teacher'],
+    // Aleke Nkechi — Social Studies, Civic Education, CRK (subject teacher only)
+    staff('Aleke Nkechi', ['subject_teacher'],
       BASIC36_CLASSES,
       ['Social Studies','Civic Education','C.R.K'],
       { job_title: 'Subject Teacher (Social Studies, Civic Ed, CRK)',
+        email: 'nkechialeke13@gmail.com',
         note: 'Subject teacher only — no form teacher privileges' }),
 
-    // Emmanuella — Agric, Home Economics, Creative Arts + Basic 3 Form Teacher
-    staff('Emmanuella Obiora', ['class_teacher','subject_teacher'],
+    // Ubabuko Emmanuella — Agric, Home Economics, Creative Arts + Basic 3 Form Teacher
+    staff('Ubabuko Emmanuella', ['class_teacher','subject_teacher'],
       BASIC36_CLASSES,
       ['Agric Science','Home Economics','Creative Arts'],
       { job_title: 'Form Teacher (Basic 3) / Subject Teacher',
+        email: 'emmagod1992@gmail.com',
         form_class: 'Basic 3' }),
 
-    // Chiamaka — English, Phonics, Igbo + Basic 4 Form Teacher
-    staff('Chiamaka Nnaji', ['class_teacher','subject_teacher'],
+    // Okonkwo Chiamaka — English, Phonics, Igbo + Basic 5 Form Teacher
+    staff('Okonkwo Chiamaka', ['class_teacher','subject_teacher'],
       BASIC36_CLASSES,
       ['English Language','Phonics','Asusu Igbo'],
-      { job_title: 'Form Teacher (Basic 4) / Subject Teacher',
-        form_class: 'Basic 4' }),
+      { job_title: 'Form Teacher (Basic 5) / Subject Teacher',
+        email: 'chiamakajude93@gmail.com',
+        form_class: 'Basic 5' }),
 
-    // Maths Uncle — Mathematics, Quantitative Reasoning + Basic 5 Form Teacher
-    staff('Chinedu Okonkwo', ['class_teacher','subject_teacher'],
+    // Okoro William K. (Maths Uncle) — Mathematics, Quantitative Reasoning
+    staff('Okoro William K.', ['subject_teacher'],
       BASIC36_CLASSES,
       ['Mathematics','Quantitative Reasoning'],
-      { job_title: 'Form Teacher (Basic 5) / Subject Teacher',
-        form_class: 'Basic 5',
-        display_name: 'Maths Uncle (Chinedu)' }),
+      { job_title: 'Subject Teacher (Mathematics & Quantitative Reasoning)',
+        email: 'okorowilliams8@gmail.com',
+        display_name: 'Maths Uncle' }),
 
-    // Chidimma — History, Verbal Reasoning + Basic 6 Form Teacher
-    staff('Chidimma Eze', ['class_teacher','subject_teacher'],
+    // Nwaneri Chidimma — History, Verbal Reasoning + Basic 6 Form Teacher
+    staff('Nwaneri Chidimma', ['class_teacher','subject_teacher'],
       BASIC36_CLASSES,
       ['History','Verbal Reasoning'],
       { job_title: 'Form Teacher (Basic 6) / Subject Teacher',
+        email: 'nwanerichidimma2018@gmail.com',
         form_class: 'Basic 6' }),
 
-    // Celestina — Basic Science, Health Education (PHE)
-    // Subject teacher ONLY — no form teacher role for Basic 3–6
-    staff('Celestina Ugwu', ['subject_teacher'],
+    // Ugwunnaji Celestina — Basic Science, PHE + Igbo (Basic 3 & 4) — Basic 4 Form Teacher
+    staff('Ugwunnaji Celestina', ['class_teacher','subject_teacher'],
       BASIC36_CLASSES,
-      ['Basic Science','Health Education'],
-      { job_title: 'Subject Teacher (Basic Science & PHE)',
-        note: 'Subject teacher only — no form teacher privileges' }),
+      ['Basic Science','Health Education','Asusu Igbo'],
+      { job_title: 'Form Teacher (Basic 4) / Subject Teacher',
+        email: 'ugwuchinenye382@gmail.com',
+        form_class: 'Basic 4',
+        note: 'Teaches Igbo only for Basic 3 & 4; Basic Science & PHE for all Basic 3–6' }),
 
   ];
 

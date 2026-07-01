@@ -45,7 +45,7 @@
 
   const VERSION   = 'rca_v1';
   const META_KEY  = VERSION + '_meta';
-  const DATA_VERSION = '2.0.0'; // Phase 4 — all fake data removed // bump this to force a reset
+  const DATA_VERSION = '2.4.0'; // bumped to pick up accountant rename + parent modal fix
 
   /* ---- Safe JSON helpers ---- */
   function lsGet(key) {
@@ -96,7 +96,8 @@
 
   if (needsInit) {
     console.log('RCA localStorage: initializing fresh data (version', DATA_VERSION, ')');
-    // Clear all old rca keys
+    // Clear versioned keys only. rca_newsletters is excluded because newsletters are
+    // permanent school records that must survive version upgrades and resets.
     Object.keys(localStorage)
       .filter(k => k.startsWith(VERSION + '_'))
       .forEach(k => localStorage.removeItem(k));
@@ -278,6 +279,8 @@
     /* Clear all localStorage and start fresh (reset button in ICT Admin) */
     reset() {
       if (!confirm('⚠️ This will RESET ALL DATA to the original sample data. Are you sure?')) return;
+      // NOTE: rca_newsletters is intentionally excluded — newsletters are permanent records
+      // that must survive resets and version bumps. Delete them only via explicit admin action.
       Object.keys(localStorage)
         .filter(k => k.startsWith(VERSION + '_'))
         .forEach(k => localStorage.removeItem(k));

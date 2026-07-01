@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -43,6 +43,7 @@
         <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant">
           <i class="icon">&#9675;</i> Students
         </a>
+        <a href="admission-form.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Form</a>
         <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher">
           <i class="icon">&#9675;</i> Teachers
         </a>
@@ -78,6 +79,8 @@
 
         <p class="sidebar-section-label">Communications</p>
       <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="announcements.html?tab=newsletter" class="sidebar-link" data-roles="all"><i class="icon">○</i> Newsletter</a>
+      <a href="school-programme.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Programme of Events</a>
       <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
       <p class="sidebar-section-label">ICT Department</p>
       <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
@@ -185,55 +188,7 @@
     </div>
   </div>
 
-  <!-- ============ LOG INCIDENT MODAL ============ -->
-  <div class="modal-overlay" id="incidentModalOverlay">
-    <div class="modal-card">
-      <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
-      <h3>Log Discipline Incident</h3>
-
-      <form id="incidentForm" novalidate>
-        <div class="form-group">
-          <label for="incident_student">Pupil <span class="required">*</span></label>
-          <select id="incident_student" name="incident_student" class="form-control" required></select>
-        </div>
-
-        <div class="form-row two-cols">
-          <div class="form-group">
-            <label for="incident_date">Date <span class="required">*</span></label>
-            <input type="date" id="incident_date" name="incident_date" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label for="incident_severity">Severity <span class="required">*</span></label>
-            <select id="incident_severity" name="incident_severity" class="form-control" required>
-              <option value="">-- Select --</option>
-              <option value="minor">Minor</option>
-              <option value="moderate">Moderate</option>
-              <option value="major">Major</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="incident_description">Description <span class="required">*</span></label>
-          <textarea id="incident_description" name="incident_description" class="form-control" required placeholder="What happened?"></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="incident_action">Action Taken <span class="required">*</span></label>
-          <textarea id="incident_action" name="incident_action" class="form-control" required placeholder="e.g. Verbal warning given, parent informed..."></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="incident_parent_notified" name="incident_parent_notified">
-            Parent/Guardian has been notified
-          </label>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width:100%;">Save Incident</button>
-      </form>
-    </div>
-  </div>
+  <!-- Modal is created dynamically by discipline.js via document.body.appendChild -->
 
   <!--
     SCRIPT LOAD ORDER:
@@ -254,3 +209,5 @@
   <script src="../assets/js/admin/discipline.js"></script>
 </body>
 </html>
+
+

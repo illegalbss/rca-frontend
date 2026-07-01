@@ -60,12 +60,7 @@
     const fee = window.FEE_STRUCTURE[term];
     if (!fee) return 0;
 
-    // Check sibling discount
-    const siblings = (window.SAMPLE_STUDENTS || []).filter(
-      s => s.parent_phone && s.parent_phone === student.parent_phone
-    ).length;
-    const hasDiscount = siblings >= fee.sibling_threshold;
-    const schoolFees  = hasDiscount ? fee.school_fees_sibling : fee.school_fees;
+    const schoolFees = fee.school_fees;
 
     // Basic 6 gets special levy in term 3
     const isBasic6 = student.class_name === 'Basic 6';

@@ -23,19 +23,26 @@ document.addEventListener('DOMContentLoaded', () => {
   const user = window.CURRENT_USER;
   const userRoles = user ? (user.roles || [user.role, user.primary_role]) : [];
   const isFullAccess = userRoles.includes('ict_admin') || userRoles.includes('head_teacher') || userRoles.includes('proprietor');
-  const linkedClasses = user?.linked_classes || [];
+  const isFormTeacher = userRoles.includes('class_teacher');
 
-  // All classes (show all for full access, otherwise filter to assigned class only)
+  // Discipline is a form-teacher responsibility — only show their form class.
+  // Use form_class if set (dual-role teachers); fall back to linked_classes
+  // only for pure form teachers (who have exactly one class in linked_classes).
   let allClasses;
   if (isFullAccess) {
     allClasses = window.SCHOOL_CLASSES || [];
-  } else if (linkedClasses.length > 0) {
-    // Form teacher — only their assigned class
-    allClasses = (window.SCHOOL_CLASSES || []).filter(c =>
-      linkedClasses.some(lc => lc.trim().toLowerCase() === c.trim().toLowerCase())
-    );
+  } else if (isFormTeacher && user) {
+    const formClass = user.form_class;
+    if (formClass) {
+      allClasses = (window.SCHOOL_CLASSES || []).filter(c => c === formClass);
+    } else {
+      const linkedClasses = user.linked_classes || [];
+      allClasses = (window.SCHOOL_CLASSES || []).filter(c =>
+        linkedClasses.some(lc => lc.trim().toLowerCase() === c.trim().toLowerCase())
+      );
+    }
   } else {
-    // Subject teacher or no assignment — no access to discipline
+    // Subject teacher only — no access to discipline
     allClasses = [];
   }
 
@@ -65,10 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const topbarTitle         = document.getElementById('topbarTitle');
 
   const logIncidentBtn      = document.getElementById('logIncidentBtn');
-  const modalOverlay        = document.getElementById('incidentModalOverlay');
-  const modalCloseBtn       = document.getElementById('modalCloseBtn');
-  const incidentForm        = document.getElementById('incidentForm');
-  const incidentStudentSelect = document.getElementById('incident_student');
+  /* Modal is built dynamically and appended to body (same pattern as students.js) */
+  function _incidentModal()  { return document.getElementById('incidentModalOverlay'); }
+  function _incidentForm()   { return document.getElementById('incidentForm'); }
 
   /* --------------------------------------------
      HELPERS
@@ -240,95 +246,131 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
-     LOG INCIDENT MODAL
+     LOG INCIDENT — dynamic body-append modal (same pattern as students.js)
      -------------------------------------------- */
   function openIncidentModal() {
-    // Populate the pupil dropdown with only this class's students
-    // Only show active students in this class
+    document.getElementById('incidentModalOverlay')?.remove();
+
     const studentsInClass = allStudents.filter(s =>
       s.class_name === currentClass &&
-      s.status !== 'archived' &&
-      s.status !== 'inactive' &&
-      s.status !== 'removed'
+      s.status !== 'archived' && s.status !== 'inactive' && s.status !== 'removed'
     );
 
-    if (studentsInClass.length === 0) {
-      incidentStudentSelect.innerHTML = '<option value="">-- No pupils registered in this class yet --</option>';
-    } else {
-      incidentStudentSelect.innerHTML = '<option value="">-- Select pupil --</option>';
-    }
+    const pupilOptions = studentsInClass.length === 0
+      ? '<option value="">-- No pupils registered in this class yet --</option>'
+      : '<option value="">-- Select pupil --</option>' +
+        studentsInClass.map(s => `<option value="${s.admission_no}">${s.full_name}</option>`).join('');
 
-    if (studentsInClass.length > 0)
-    incidentStudentSelect.innerHTML = '<option value="">-- Select pupil --</option>' +
-      studentsInClass.map(s => `<option value="${s.admission_no}">${s.full_name}</option>`).join('');
+    const today = toDateInputValue(new Date());
+    const fs = 'width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem;background:#fff;color:#111';
+    const lbl = 'display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:5px';
 
-    // Default the date field to today
-    document.getElementById('incident_date').value = toDateInputValue(new Date());
+    const overlay = document.createElement('div');
+    overlay.id = 'incidentModalOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px 40px;overflow-y:auto';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;box-shadow:0 8px 40px rgba(0,0,0,0.22);position:relative;overflow:hidden">
+        <div style="padding:18px 24px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--font-heading);font-weight:700;font-size:1rem;color:#111827">Log Discipline Incident</span>
+          <button id="incidentCloseBtn" style="background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1.1rem;line-height:1">&times;</button>
+        </div>
+        <div style="padding:22px 24px">
+          <form id="incidentForm" novalidate>
+            <div style="margin-bottom:16px">
+              <label style="${lbl}">Pupil <span style="color:#dc2626">*</span></label>
+              <select id="incident_student" style="${fs}" required>${pupilOptions}</select>
+            </div>
 
-    incidentForm.reset();
-    document.getElementById('incident_date').value = toDateInputValue(new Date()); // reset() clears this too, so set again after
-    modalOverlay.classList.add('open');
-  }
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+              <div>
+                <label style="${lbl}">Date <span style="color:#dc2626">*</span></label>
+                <input type="date" id="incident_date" value="${today}" style="${fs}" required>
+              </div>
+              <div>
+                <label style="${lbl}">Severity <span style="color:#dc2626">*</span></label>
+                <select id="incident_severity" style="${fs}" required>
+                  <option value="">-- Select --</option>
+                  <option value="minor">Minor</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="major">Major</option>
+                </select>
+              </div>
+            </div>
 
-  function closeIncidentModal() {
-    modalOverlay.classList.remove('open');
+            <div style="margin-bottom:16px">
+              <label style="${lbl}">Description <span style="color:#dc2626">*</span></label>
+              <textarea id="incident_description" rows="3" style="${fs};resize:vertical" placeholder="What happened?" required></textarea>
+            </div>
+
+            <div style="margin-bottom:16px">
+              <label style="${lbl}">Action Taken <span style="color:#dc2626">*</span></label>
+              <textarea id="incident_action" rows="3" style="${fs};resize:vertical" placeholder="e.g. Verbal warning given, parent informed..." required></textarea>
+            </div>
+
+            <div style="margin-bottom:20px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:#374151">
+                <input type="checkbox" id="incident_parent_notified" style="width:16px;height:16px">
+                Parent/Guardian has been notified
+              </label>
+            </div>
+
+            <div id="incidentError" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:10px 13px;font-size:0.82rem;margin-bottom:14px"></div>
+
+            <button type="submit" style="width:100%;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.9rem;font-weight:700;cursor:pointer">Save Incident</button>
+          </form>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.getElementById('incidentCloseBtn').addEventListener('click', () => overlay.remove());
+
+    document.getElementById('incidentForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const admNo    = document.getElementById('incident_student').value;
+      const date     = document.getElementById('incident_date').value;
+      const severity = document.getElementById('incident_severity').value;
+      const desc     = document.getElementById('incident_description').value.trim();
+      const action   = document.getElementById('incident_action').value.trim();
+      const notified = document.getElementById('incident_parent_notified').checked;
+      const errEl    = document.getElementById('incidentError');
+
+      if (!admNo || !date || !severity || !desc || !action) {
+        errEl.textContent = 'Please fill in all required fields.';
+        errEl.style.display = 'block';
+        return;
+      }
+      errEl.style.display = 'none';
+
+      const student = allStudents.find(s => s.admission_no === admNo);
+      allIncidents.push({
+        id: nextIncidentId++,
+        student_admission_no: admNo,
+        student_name: student?.full_name || admNo,
+        class_name: currentClass,
+        date, severity, description: desc,
+        action_taken: action,
+        reported_by: 'You (current session)',
+        parent_notified: notified
+      });
+
+      overlay.remove();
+      renderIncidentTable();
+      renderClassCards();
+    });
   }
 
   logIncidentBtn.addEventListener('click', () => {
-    // Verify access before opening modal
-    if (!isFullAccess && !linkedClasses.some(lc => lc.trim().toLowerCase() === currentClass?.trim().toLowerCase())) {
+    if (!isFullAccess && !allClasses.includes(currentClass)) {
       alert('You can only log discipline incidents for your assigned class.');
       return;
     }
     openIncidentModal();
   });
-  modalCloseBtn.addEventListener('click', closeIncidentModal);
-  modalOverlay.addEventListener('click', (event) => {
-    if (event.target === modalOverlay) closeIncidentModal();
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && modalOverlay.classList.contains('open')) closeIncidentModal();
-  });
 
-  /* --------------------------------------------
-     HANDLE FORM SUBMIT: add a new incident
-     -------------------------------------------- 
-     Concept: this is the first page where we ADD a brand new
-     record to an in-memory array (allIncidents.push(...)), rather
-     than just editing existing sample data in place. The shape of
-     the object we build here matches sample-discipline.js exactly -
-     this consistency matters because the SAME rendering functions
-     (renderClassCards, renderIncidentTable) need to work whether
-     a record came from our generator or was just typed in by hand.
-  */
-  incidentForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-
-    if (!incidentForm.checkValidity()) {
-      incidentForm.reportValidity();
-      return;
-    }
-
-    const admissionNo = document.getElementById('incident_student').value;
-    const student = allStudents.find(s => s.admission_no === admissionNo);
-
-    const newIncident = {
-      id: nextIncidentId++,
-      student_admission_no: admissionNo,
-      student_name: student.full_name,
-      class_name: currentClass,
-      date: document.getElementById('incident_date').value,
-      severity: document.getElementById('incident_severity').value,
-      description: document.getElementById('incident_description').value.trim(),
-      action_taken: document.getElementById('incident_action').value.trim(),
-      reported_by: 'You (current session)',
-      parent_notified: document.getElementById('incident_parent_notified').checked
-    };
-
-    allIncidents.push(newIncident);
-
-    closeIncidentModal();
-    renderIncidentTable();
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('incidentModalOverlay')?.remove();
   });
 
   /* --------------------------------------------

@@ -94,20 +94,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const roles = user ? (user.roles || [user.role, user.primary_role]) : [];
     const isFullAccess = roles.includes('ict_admin') || roles.includes('head_teacher');
 
-    let permittedClasses = allClasses;
+    let permittedClasses;
 
-    if (!isFullAccess && user) {
-      // Form teacher or subject teacher — show only their class(es)
-      const linked = user.linked_classes || [];
-      if (linked.length > 0) {
+    if (isFullAccess || !user) {
+      permittedClasses = allClasses;
+    } else {
+      // For form teachers: only their form class (attendance is a form-teacher responsibility)
+      // Use form_class if set (dual-role teachers); otherwise use linked_classes (pure form teachers)
+      const formClass = user.form_class;
+      if (formClass) {
+        permittedClasses = allClasses.filter(c => c === formClass);
+      } else {
+        const linked = user.linked_classes || [];
         permittedClasses = allClasses.filter(cls =>
           linked.some(lc => lc.trim().toLowerCase() === cls.trim().toLowerCase())
         );
-      } else if (user.role === 'subject_teacher') {
-        // Subject teacher — show their assigned classes
-        permittedClasses = linked.length > 0
-          ? allClasses.filter(cls => linked.some(lc => lc.trim().toLowerCase() === cls.trim().toLowerCase()))
-          : allClasses;
       }
     }
 

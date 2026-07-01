@@ -24,9 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const totalPill         = document.getElementById('totalStaffPill');
   const noResultsMsg      = document.getElementById('noTeacherResults');
 
-  const modalOverlay      = document.getElementById('teacherModalOverlay');
-  const modalContent       = document.getElementById('teacherModalContent');
-  const modalCloseBtn      = document.getElementById('modalCloseBtn');
+  /* Modal is created dynamically and appended to body (same approach as students.js) */
+  function _teacherModalOverlay() { return document.getElementById('teacherModalOverlay'); }
 
   /* --------------------------------------------
      HELPER: initials for the avatar circle
@@ -124,80 +123,154 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
-     MODAL: show full teacher details
+     MODAL helpers — dynamic body-append (matches students.js pattern)
+     so there are zero stacking-context issues with the admin shell.
      -------------------------------------------- */
+  function _closeTeacherModal() {
+    document.getElementById('teacherModalOverlay')?.remove();
+  }
+
+  function _buildTeacherModal(innerHtml) {
+    document.getElementById('teacherModalOverlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'teacherModalOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px 40px;overflow-y:auto';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:520px;box-shadow:0 8px 40px rgba(0,0,0,0.22);position:relative;padding:0;overflow:hidden">
+        <button id="tmCloseBtn" style="position:absolute;top:14px;right:14px;background:#f3f4f6;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1.1rem;line-height:1;z-index:1">&times;</button>
+        <div style="padding:24px 26px" id="tmContent">${innerHtml}</div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) _closeTeacherModal(); });
+    document.getElementById('tmCloseBtn').addEventListener('click', _closeTeacherModal);
+  }
+
   function openTeacherModal(teacher) {
-    modalContent.innerHTML = `
-      <div class="modal-header">
-        <div class="modal-avatar">${getInitials(teacher.full_name)}</div>
+    _buildTeacherModal(`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #f1f5f9">
+        <div style="width:58px;height:58px;border-radius:50%;background:#6b1220;color:#fff;font-weight:700;font-size:1.2rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getInitials(teacher.full_name)}</div>
         <div>
-          <h3>${teacher.full_name}</h3>
-          <span class="modal-role-badge">${teacher.legacy_role || teacher.primary_role || ''}</span>
+          <div style="font-family:var(--font-heading);font-size:1.05rem;font-weight:700;color:#111827">${teacher.full_name}</div>
+          <span style="display:inline-block;background:rgba(107,18,32,0.1);color:#6b1220;font-size:0.75rem;font-weight:600;padding:2px 10px;border-radius:999px;margin-top:3px">${teacher.legacy_role || teacher.primary_role || ''}</span>
         </div>
       </div>
 
-      <div class="modal-section">
-        <div class="modal-section-label">Staff ID</div>
-        <div class="modal-section-value">${teacher.staff_id}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+        <div style="background:#f8fafc;border-radius:10px;padding:12px">
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Staff ID</div>
+          <div style="font-weight:600;color:#111827;font-size:0.88rem">${teacher.staff_id}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px">
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Date Joined</div>
+          <div style="font-weight:600;color:#111827;font-size:0.88rem">${formatDate(teacher.date_joined)}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px">
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Phone</div>
+          <div style="font-weight:600;color:#111827;font-size:0.88rem">${teacher.phone || '—'}</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:12px">
+          <div style="font-size:0.7rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Email</div>
+          <div style="font-weight:600;color:#111827;font-size:0.82rem;word-break:break-all">${teacher.email || '—'}</div>
+        </div>
       </div>
 
-      <div class="modal-section">
-        <div class="modal-section-label">Contact</div>
-        <div class="modal-section-value">${teacher.phone}</div>
-        <div class="modal-section-value">${teacher.email}</div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-label">Date Joined</div>
-        <div class="modal-section-value">${formatDate(teacher.date_joined)}</div>
-      </div>
-
-      <div class="modal-section">
-        <div class="modal-section-label">Subjects Taught</div>
-        <div class="modal-chips">
+      <div style="margin-bottom:14px">
+        <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Subjects Taught</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${teacher.subjects.length > 0
-            ? teacher.subjects.map(s => `<span class="modal-chip">${s}</span>`).join('')
-            : '<span class="modal-chip">None assigned</span>'}
+            ? teacher.subjects.map(s => `<span style="background:#eff6ff;color:#1e40af;font-size:0.78rem;font-weight:600;padding:3px 10px;border-radius:999px">${s}</span>`).join('')
+            : '<span style="color:#9ca3af;font-size:0.82rem">None assigned</span>'}
         </div>
       </div>
 
-      <div class="modal-section">
-        <div class="modal-section-label">Assigned Classes</div>
-        <div class="modal-chips">
+      <div style="margin-bottom:22px">
+        <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">Assigned Classes</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
           ${teacher.assigned_classes.length > 0
-            ? teacher.assigned_classes.map(c => `<span class="modal-chip">${c}</span>`).join('')
-            : '<span class="modal-chip">None assigned</span>'}
+            ? teacher.assigned_classes.map(c => `<span style="background:#f0fdf4;color:#166534;font-size:0.78rem;font-weight:600;padding:3px 10px;border-radius:999px">${c}</span>`).join('')
+            : '<span style="color:#9ca3af;font-size:0.82rem">None assigned</span>'}
         </div>
       </div>
 
-      <div class="modal-actions">
-        <button class="btn btn-outline" onclick="window._editStaffProfile(this)" data-id="${teacher.staff_id}">Edit Profile</button>
-        <button class="btn btn-primary" onclick="window.location.href='user-management.html'">Manage Accounts</button>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="window._editStaffProfile('${teacher.staff_id}')" style="padding:9px 20px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:0.85rem;font-weight:600;cursor:pointer">Edit Profile</button>
+        <button onclick="window.location.href='user-management.html'" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Manage Accounts</button>
       </div>
-    `;
-
-    modalOverlay.classList.add('open');
+    `);
   }
 
-  function closeTeacherModal() {
-    modalOverlay.classList.remove('open');
-  }
+  /* EDIT PROFILE — renders an edit form in a fresh modal */
+  window._editStaffProfile = function(staffId) {
+    if (typeof staffId === 'object') staffId = staffId.getAttribute('data-id');
+    const teacher = allTeachers.find(t => t.staff_id === staffId);
+    if (!teacher) return;
 
-  // Close modal via the X button, or by clicking the dark overlay
-  // outside the card (but NOT when clicking inside the card itself -
-  // that's why we check event.target === modalOverlay specifically)
-  modalCloseBtn.addEventListener('click', closeTeacherModal);
-  modalOverlay.addEventListener('click', (event) => {
-    if (event.target === modalOverlay) {
-      closeTeacherModal();
-    }
-  });
+    _buildTeacherModal(`
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #f1f5f9">
+        <div style="width:48px;height:48px;border-radius:50%;background:#6b1220;color:#fff;font-weight:700;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${getInitials(teacher.full_name)}</div>
+        <div>
+          <div style="font-family:var(--font-heading);font-size:0.95rem;font-weight:700;color:#111827">Edit Profile</div>
+          <div style="font-size:0.78rem;color:#9ca3af">${teacher.staff_id}</div>
+        </div>
+      </div>
 
-  // Allow closing the modal with the Escape key - good accessibility practice
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && modalOverlay.classList.contains('open')) {
-      closeTeacherModal();
+      <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:18px">
+        ${[['ep_name','text','Full Name',teacher.full_name],['ep_phone','tel','Phone',teacher.phone||''],['ep_email','email','Email',teacher.email||'']].map(([id,type,label,val])=>`
+          <div>
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:5px">${label}</label>
+            <input id="${id}" type="${type}" value="${val}" style="width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem;outline:none">
+          </div>`).join('')}
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:5px">Role</label>
+          <select id="ep_role" style="width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem">
+            ${['Head Teacher','ICT Administrator','Form Teacher','Subject Teacher','Accountant'].map(r =>
+              `<option value="${r}" ${(teacher.legacy_role||teacher.primary_role)===r?'selected':''}>${r}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:5px">Assigned Class(es)</label>
+          <input id="ep_class" type="text" value="${teacher.assigned_classes.join(', ')}" placeholder="e.g. Basic 3A, Basic 4B" style="width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem">
+        </div>
+      </div>
+
+      <div id="ep_msg" style="display:none;padding:9px 13px;border-radius:8px;font-size:0.82rem;margin-bottom:14px"></div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="window._cancelEditProfile('${staffId}')" style="padding:9px 20px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:0.85rem;font-weight:600;cursor:pointer">Cancel</button>
+        <button onclick="window._saveStaffProfile('${staffId}')" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Save Changes</button>
+      </div>
+    `);
+  };
+
+  window._saveStaffProfile = function(staffId) {
+    const teacher = allTeachers.find(t => t.staff_id === staffId);
+    if (!teacher) return;
+    const name  = document.getElementById('ep_name').value.trim();
+    const phone = document.getElementById('ep_phone').value.trim();
+    const email = document.getElementById('ep_email').value.trim();
+    const role  = document.getElementById('ep_role').value;
+    const cls   = document.getElementById('ep_class').value.split(',').map(s => s.trim()).filter(Boolean);
+    const msgEl = document.getElementById('ep_msg');
+    if (!name) {
+      msgEl.textContent = 'Full name is required.';
+      msgEl.style.cssText = 'display:block;padding:9px 13px;border-radius:8px;font-size:0.82rem;margin-bottom:14px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5';
+      return;
     }
+    teacher.full_name = name; teacher.phone = phone; teacher.email = email;
+    teacher.legacy_role = role; teacher.primary_role = role;
+    teacher.assigned_classes = cls;
+    msgEl.textContent = 'Profile updated successfully.';
+    msgEl.style.cssText = 'display:block;padding:9px 13px;border-radius:8px;font-size:0.82rem;margin-bottom:14px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7';
+    setTimeout(() => { openTeacherModal(teacher); renderTeacherCards(); }, 900);
+  };
+
+  window._cancelEditProfile = function(staffId) {
+    const teacher = allTeachers.find(t => t.staff_id === staffId);
+    if (teacher) openTeacherModal(teacher);
+  };
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') _closeTeacherModal();
   });
 
   /* --------------------------------------------
