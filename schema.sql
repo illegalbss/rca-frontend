@@ -591,6 +591,40 @@ JOIN classes  c ON c.id = a.class_id
 GROUP BY s.admission_no, s.full_name, c.name, a.session_id;
 
 
+CREATE TABLE IF NOT EXISTS applications (
+  id              SERIAL PRIMARY KEY,
+  ref             VARCHAR(30) UNIQUE NOT NULL,
+  pupil_name      VARCHAR(150) NOT NULL,
+  pupil_dob       DATE,
+  pupil_gender    VARCHAR(10),
+  class_applying  VARCHAR(50),
+  parent_name     VARCHAR(150),
+  parent_phone    VARCHAR(20),
+  parent_email    VARCHAR(150),
+  relationship    VARCHAR(50),
+  home_address    TEXT,
+  additional_info TEXT,
+  status          VARCHAR(20) DEFAULT 'pending',
+  submitted_at    TIMESTAMPTZ DEFAULT NOW(),
+  reviewed_at     TIMESTAMPTZ,
+  reviewed_by     INTEGER REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id        SERIAL PRIMARY KEY,
+  msg_id    VARCHAR(30) UNIQUE NOT NULL,
+  name      VARCHAR(150) NOT NULL,
+  email     VARCHAR(150) NOT NULL,
+  phone     VARCHAR(20),
+  subject   VARCHAR(100),
+  message   TEXT NOT NULL,
+  status    VARCHAR(20) DEFAULT 'unread',
+  sent_at   TIMESTAMPTZ DEFAULT NOW(),
+  read_at   TIMESTAMPTZ,
+  read_by   INTEGER REFERENCES users(id)
+);
+
+
 -- 1. Get a pupil's full result for a term
 SELECT * FROM v_pupil_results
 WHERE admission_no = 'RCA/2024/0042'
