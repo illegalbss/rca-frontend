@@ -313,25 +313,187 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
   }
 
-  // Pay Online button — shows "Coming Soon" notice
+  // Make a Payment — opens manual payment instructions modal
   document.getElementById('makePaymentBtn').addEventListener('click', () => {
     if (!activePayChild) return;
-    const hasBalance = ['term1','term2','term3'].some(t => {
-      const rec = payRecords[`${activePayChild.admission_no}|${t}`];
-      return rec && rec.balance > 0;
+    ppShowPaymentModal(activePayChild);
+  });
+
+  function ppShowPaymentModal(child) {
+    var existing = document.getElementById('ppPayModal');
+    if (existing) existing.remove();
+
+    var adm = child.admission_no;
+    var TERM_NAMES = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+    var outstanding = [];
+    var totalDue = 0;
+
+    ['term1','term2','term3'].forEach(function(t) {
+      var rec = payRecords[adm + '|' + t];
+      if (rec && rec.balance > 0) {
+        outstanding.push({ term: t, label: TERM_NAMES[t], balance: rec.balance, expected: rec.amount_expected, paid: rec.amount_paid });
+        totalDue += rec.balance;
+      }
     });
-    if (!hasBalance) {
-      ppShowNotice('No Outstanding Balance', 'There are no outstanding fees for ' + activePayChild.full_name + '. All terms are fully paid.', 'green');
+
+    if (outstanding.length === 0) {
+      ppShowNotice('All Fees Paid', 'There are no outstanding fees for ' + child.full_name + '. All terms are fully paid. Thank you!', 'green');
       return;
     }
-    ppShowNotice(
-      '🔒 Online Payments — Coming Soon',
-      'Online payment via Paystack is being set up and will be available very soon.<br><br>' +
-      '<strong>To pay now, please visit the school office.</strong><br>' +
-      'The accountant will record your payment and issue an official receipt.',
-      'blue'
+
+    var termRows = outstanding.map(function(o) {
+      return '<tr>' +
+        '<td style="padding:8px 6px;border-bottom:1px solid #f3f4f6;font-size:0.82rem">' + o.label + ' Fee</td>' +
+        '<td style="padding:8px 6px;border-bottom:1px solid #f3f4f6;font-size:0.82rem;text-align:right;color:#dc2626;font-weight:700">' + fmt(o.balance) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    var m = document.createElement('div');
+    m.id = 'ppPayModal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+    m.innerHTML =
+      '<div id="ppPayModalInner" style="background:#fff;border-radius:16px;max-width:480px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.2);overflow:hidden;max-height:90vh;overflow-y:auto">' +
+
+        // Header
+        '<div style="background:#1a3a5c;padding:18px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between">' +
+          '<div>' +
+            '<div style="font-family:Poppins,sans-serif;font-weight:700;font-size:0.95rem">Make a Payment</div>' +
+            '<div style="font-size:0.75rem;opacity:0.75;margin-top:2px">' + child.full_name + ' &mdash; ' + child.class_name + '</div>' +
+          '</div>' +
+          '<button onclick="document.getElementById(\'ppPayModal\').remove()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>' +
+        '</div>' +
+
+        '<div style="padding:20px 22px">' +
+
+          // Outstanding balance table
+          '<div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Outstanding Balance</div>' +
+          '<table style="width:100%;border-collapse:collapse;margin-bottom:4px">' +
+            '<tbody>' + termRows + '</tbody>' +
+            '<tfoot><tr>' +
+              '<td style="padding:8px 6px;font-weight:700;font-size:0.85rem">Total Due</td>' +
+              '<td style="padding:8px 6px;font-weight:700;font-size:0.9rem;color:#dc2626;text-align:right">' + fmt(totalDue) + '</td>' +
+            '</tr></tfoot>' +
+          '</table>' +
+
+          // Divider
+          '<hr style="border:none;border-top:1px solid #f3f4f6;margin:16px 0">' +
+
+          // How to pay
+          '<div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">How to Pay</div>' +
+
+          '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">' +
+            '<div style="display:flex;gap:10px;align-items:flex-start">' +
+              '<span style="background:#dbeafe;color:#1e40af;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">1</span>' +
+              '<div style="font-size:0.82rem;color:#374151">Visit the school office with the exact amount or your bank teller</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;align-items:flex-start">' +
+              '<span style="background:#dbeafe;color:#1e40af;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">2</span>' +
+              '<div style="font-size:0.82rem;color:#374151">Our accountant will record your payment and issue an <strong>official receipt</strong></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:10px;align-items:flex-start">' +
+              '<span style="background:#dbeafe;color:#1e40af;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">3</span>' +
+              '<div style="font-size:0.82rem;color:#374151">Your payment history will update here automatically</div>' +
+            '</div>' +
+          '</div>' +
+
+          // Payment methods
+          '<div style="background:#f8fafc;border-radius:10px;padding:12px 14px;margin-bottom:14px">' +
+            '<div style="font-size:0.72rem;font-weight:700;color:#64748b;margin-bottom:8px">Accepted Payment Methods</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+              '<span style="background:#d1fae5;color:#065f46;padding:3px 12px;border-radius:999px;font-size:0.75rem;font-weight:600">&#128181; Cash</span>' +
+              '<span style="background:#dbeafe;color:#1e40af;padding:3px 12px;border-radius:999px;font-size:0.75rem;font-weight:600">&#127984; Bank Transfer</span>' +
+              '<span style="background:#f3e8ff;color:#6b21a8;padding:3px 12px;border-radius:999px;font-size:0.75rem;font-weight:600">&#128179; POS</span>' +
+              '<span style="background:#fef9c3;color:#92400e;padding:3px 12px;border-radius:999px;font-size:0.75rem;font-weight:600">&#127381; Cheque</span>' +
+            '</div>' +
+          '</div>' +
+
+          // School address
+          '<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:12px 14px;margin-bottom:18px">' +
+            '<div style="font-size:0.72rem;font-weight:700;color:#92400e;margin-bottom:4px">&#128205; School Address</div>' +
+            '<div style="font-size:0.82rem;color:#374151;font-weight:600">Royal Crystal Academy</div>' +
+            '<div style="font-size:0.8rem;color:#6b7280">20/22 Amaigbo Lane, Uwani, Enugu State</div>' +
+            '<div style="font-size:0.8rem;color:#6b7280;margin-top:3px">&#128222; 08108419563 &nbsp;|&nbsp; 09026324650</div>' +
+          '</div>' +
+
+          // Action buttons
+          '<div style="display:flex;gap:10px">' +
+            '<button onclick="ppPrintAdviceSlip(' + JSON.stringify({adm: adm, name: child.full_name, cls: child.class_name, outstanding: outstanding, total: totalDue}) + ')" ' +
+              'style="flex:1;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.82rem;cursor:pointer">' +
+              '&#128424; Print Advice Slip' +
+            '</button>' +
+            '<button onclick="document.getElementById(\'ppPayModal\').remove()" ' +
+              'style="padding:11px 18px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-weight:600;font-size:0.82rem;cursor:pointer">' +
+              'Close' +
+            '</button>' +
+          '</div>' +
+
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(m);
+    m.addEventListener('click', function(e) { if (e.target === m) m.remove(); });
+  }
+
+  window.ppPrintAdviceSlip = function(data) {
+    var termNames = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+    var rows = data.outstanding.map(function(o) {
+      return '<tr><td style="padding:6px 8px;border:1px solid #ddd">' + termNames[o.term] + ' Fee</td>' +
+             '<td style="padding:6px 8px;border:1px solid #ddd;text-align:right;font-weight:700">' + fmt(o.balance) + '</td></tr>';
+    }).join('');
+
+    var today = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+    var slipWin = window.open('', '_blank', 'width=600,height=700');
+    slipWin.document.write(
+      '<!DOCTYPE html><html><head><title>Payment Advice Slip</title>' +
+      '<style>body{font-family:Arial,sans-serif;padding:30px;max-width:520px;margin:0 auto;color:#111}' +
+      '.header{text-align:center;border-bottom:3px solid #1a3a5c;padding-bottom:14px;margin-bottom:18px}' +
+      '.badge{width:64px;height:64px;margin:0 auto 8px}' +
+      '.badge img{width:64px;height:64px;object-fit:contain}' +
+      'h1{font-size:16pt;margin:4px 0;color:#1a3a5c}' +
+      '.meta{font-size:8pt;color:#555}' +
+      '.slip-title{background:#1a3a5c;color:#fff;text-align:center;padding:8px;font-weight:700;font-size:11pt;margin-bottom:16px;border-radius:4px}' +
+      '.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:16px}' +
+      '.info-box{background:#f8f8f8;border:1px solid #e5e7eb;border-radius:4px;padding:8px 10px}' +
+      '.info-label{font-size:7pt;color:#888;text-transform:uppercase;font-weight:700;margin-bottom:2px}' +
+      '.info-val{font-size:9pt;font-weight:700;color:#111}' +
+      'table{width:100%;border-collapse:collapse;margin-bottom:12px}' +
+      'th{background:#f3f4f6;padding:7px 8px;border:1px solid #ddd;text-align:left;font-size:9pt}' +
+      'td{font-size:9pt}.total-row td{font-weight:700;background:#fff3cd;padding:7px 8px;border:1px solid #ddd}' +
+      '.methods{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}' +
+      '.method{background:#e8f4fd;border:1px solid #bee3f8;padding:3px 10px;border-radius:4px;font-size:8pt;font-weight:600;color:#1a3a5c}' +
+      '.footer{border-top:1px dashed #ccc;margin-top:16px;padding-top:12px;font-size:8pt;color:#555;text-align:center}' +
+      '.notice{background:#fffbeb;border:1px solid #fde68a;border-radius:4px;padding:8px 12px;font-size:8pt;color:#92400e;margin-bottom:14px;text-align:center}' +
+      '@media print{body{padding:10px}button{display:none}}' +
+      '</style></head><body>' +
+      '<div class="header">' +
+        '<div class="badge"><img src="../assets/images/logo.png" alt="RCA"></div>' +
+        '<h1>Royal Crystal Academy</h1>' +
+        '<div class="meta">20/22 Amaigbo Lane, Uwani, Enugu State</div>' +
+        '<div class="meta">Tel: 08108419563 | 09026324650</div>' +
+      '</div>' +
+      '<div class="slip-title">PAYMENT ADVICE SLIP</div>' +
+      '<div class="notice">&#9432; Present this slip at the school office when making payment</div>' +
+      '<div class="info-grid">' +
+        '<div class="info-box"><div class="info-label">Pupil Name</div><div class="info-val">' + data.name + '</div></div>' +
+        '<div class="info-box"><div class="info-label">Admission No.</div><div class="info-val">' + data.adm + '</div></div>' +
+        '<div class="info-box"><div class="info-label">Class</div><div class="info-val">' + data.cls + '</div></div>' +
+        '<div class="info-box"><div class="info-label">Date Issued</div><div class="info-val">' + today + '</div></div>' +
+      '</div>' +
+      '<table><thead><tr><th>Description</th><th style="text-align:right">Amount Due</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '<tfoot><tr class="total-row"><td>TOTAL OUTSTANDING</td><td style="text-align:right">' + fmt(data.total) + '</td></tr></tfoot>' +
+      '</table>' +
+      '<div style="font-size:8pt;font-weight:700;color:#374151;margin-bottom:6px">Accepted Payment Methods:</div>' +
+      '<div class="methods"><span class="method">Cash</span><span class="method">Bank Transfer</span><span class="method">POS</span><span class="method">Cheque</span></div>' +
+      '<div class="footer">' +
+        'Academic Session: 2025/2026 &nbsp;|&nbsp; Royal Crystal Academy<br>' +
+        'This slip is valid for the current term only. Please pay promptly to avoid disruption.' +
+      '</div>' +
+      '<br><button onclick="window.print()" style="width:100%;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:6px;font-weight:700;font-size:10pt;cursor:pointer">&#128424; Print This Slip</button>' +
+      '</body></html>'
     );
-  });
+    slipWin.document.close();
+  };
 
   /* ── Simple notice modal for parent portal ── */
   function ppShowNotice(title, body, color) {
