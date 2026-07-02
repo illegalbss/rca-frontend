@@ -104,6 +104,12 @@
     const savedUsers         = lsGet('users');
     const savedAdmissions    = lsGet('admission_register');
     const savedPaySettings   = lsGet('payment_settings');
+    const savedResults       = lsGet('results');
+    const savedApprovals     = lsGet('approvals');
+    const savedBehavior      = lsGet('behavior');
+    const savedDiscipline    = lsGet('discipline');
+    const savedActivityLog   = lsGet('activity_log');
+    const savedParentPayments = lsGet('parent_payments');
 
     // Clear all versioned keys. rca_newsletters is excluded because newsletters are
     // permanent school records that must survive version upgrades and resets.
@@ -119,6 +125,13 @@
     if (savedAdmissions && savedAdmissions.length > 0) lsSet('admission_register', savedAdmissions);
     // Payment Settings is admin configuration (gateway mode, keys), not sample data — must survive too
     if (savedPaySettings) lsSet('payment_settings', savedPaySettings);
+    // Real academic/administrative records — must survive version bumps too
+    if (savedResults        && Object.keys(savedResults).length        > 0) lsSet('results',         savedResults);
+    if (savedApprovals      && Object.keys(savedApprovals).length      > 0) lsSet('approvals',       savedApprovals);
+    if (savedBehavior       && Object.keys(savedBehavior).length       > 0) lsSet('behavior',        savedBehavior);
+    if (savedDiscipline     && savedDiscipline.length                  > 0) lsSet('discipline',      savedDiscipline);
+    if (savedActivityLog    && savedActivityLog.length                 > 0) lsSet('activity_log',    savedActivityLog);
+    if (savedParentPayments && Object.keys(savedParentPayments).length > 0) lsSet('parent_payments',  savedParentPayments);
   }
 
   /* ---- LOAD OR GENERATE each data store ---- */
@@ -153,7 +166,7 @@
   window.SAMPLE_USERS = users;
 
   /* RESULTS */
-  let results = needsInit ? null : lsGet('results');
+  let results = lsGet('results');
   if (!results) {
     results = window.SAMPLE_RESULTS || {};
     lsSet('results', results);
@@ -161,7 +174,7 @@
   window.SAMPLE_RESULTS = results;
 
   /* APPROVALS */
-  let approvals = needsInit ? null : lsGet('approvals');
+  let approvals = lsGet('approvals');
   if (!approvals) {
     approvals = window.RESULT_APPROVALS || {};
     lsSet('approvals', approvals);
@@ -169,7 +182,7 @@
   window.RESULT_APPROVALS = approvals;
 
   /* BEHAVIOR RATINGS */
-  let behavior = needsInit ? null : lsGet('behavior');
+  let behavior = lsGet('behavior');
   if (!behavior) {
     behavior = window.BEHAVIOR_RATINGS || {};
     lsSet('behavior', behavior);
@@ -201,7 +214,7 @@
   window.SCHOOL_EVENTS = events;
 
   /* DISCIPLINE RECORDS */
-  let discipline = needsInit ? null : lsGet('discipline');
+  let discipline = lsGet('discipline');
   if (!discipline) {
     const cleanMode = lsGet('clean_mode');
     discipline = cleanMode ? [] : (window.SAMPLE_DISCIPLINE || []);
@@ -226,7 +239,7 @@
   window.ICT_MAINTENANCE = maintenance;
 
   /* ACTIVITY LOG */
-  let activityLog = needsInit ? null : lsGet('activity_log');
+  let activityLog = lsGet('activity_log');
   if (!activityLog) {
     activityLog = window.ACTIVITY_LOG || [];
     lsSet('activity_log', activityLog);
@@ -363,8 +376,8 @@
     window.RCA.saveAll();
   });
 
-  /* ---- Seed demo activity log on first init ---- */
-  if (needsInit && !lsGet('clean_mode')) {
+  /* ---- Seed demo activity log on first init only (never overwrite real logged activity) ---- */
+  if (needsInit && !lsGet('clean_mode') && (!window.ACTIVITY_LOG || window.ACTIVITY_LOG.length === 0)) {
     const now = Date.now();
     const ago = ms => new Date(now - ms).toISOString();
     const seedLogs = [
