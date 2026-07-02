@@ -226,11 +226,21 @@ document.addEventListener('DOMContentLoaded', () => {
       return _w(Math.floor(n/1000000)) + 'Million ' + _w(n%1000000);
     }
     const naira = Math.floor(amount);
-    const kobo  = Math.round((amount - naira) * 100);
-    let words = _w(naira).trim() + ' Naira';
-    if (kobo > 0) words += ' and ' + _w(kobo).trim() + ' Kobo';
-    return words + ' Only';
+    let words = _w(naira).trim() + ' Only';
+    return words;
   }
+
+  /* ---- Recreated St. Joseph's Institute globe + accessibility mark ---- */
+  const INSTITUTE_LOGO_SVG = `
+    <svg viewBox="0 0 100 100" width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="46" fill="none" stroke="#1a3a6b" stroke-width="3"/>
+      <ellipse cx="50" cy="50" rx="20" ry="46" fill="none" stroke="#1a3a6b" stroke-width="2"/>
+      <ellipse cx="50" cy="50" rx="46" ry="20" fill="none" stroke="#1a3a6b" stroke-width="2"/>
+      <line x1="4" y1="50" x2="96" y2="50" stroke="#1a3a6b" stroke-width="2"/>
+      <g transform="translate(29,31) scale(1.7)">
+        <path fill="#1a3a6b" d="M13 5.5c0 .83-.67 1.5-1.5 1.5S10 6.33 10 5.5 10.67 4 11.5 4s1.5.67 1.5 1.5zm-1.5 2.5c-1.2 0-2.05.65-2.5 1.5l-1.5 3H4v2h4.5l1.75-3.5.75 1.5-1.5 3H6v2h4.5l1.32-2.65L13 15.5V20h2v-5.5l-1.9-1.9.65-1.3c.75.9 1.9 1.7 3.25 1.7v-2c-1.1 0-2-.6-2.45-1.5l-.5-1c-.4-.8-1.2-1.3-2.1-1.3zM6 15c0 2.76 2.24 5 5 5 1.7 0 3.2-.85 4.1-2.15l-1.1-1.1C13.36 17.55 12.24 18 11 18c-1.65 0-3-1.35-3-3 0-1.03.53-1.94 1.32-2.48l-.86-1.72C7.15 11.51 6 13.12 6 15z"/>
+      </g>
+    </svg>`;
 
   /* ---- Build and display a single printable receipt ---- */
   window.showReceipt = function(admNo, term, receiptNo) {
@@ -242,93 +252,96 @@ document.addEventListener('DOMContentLoaded', () => {
     const payment = rec.payments.find(p => p.receipt_no === receiptNo);
     if (!payment) return;
 
-    const isPaid       = rec.balance <= 0;
     const naira        = Math.floor(payment.amount);
     const kobo         = String(Math.round((payment.amount - naira) * 100)).padStart(2, '0');
     const receivedFrom = payment.parent_name || ('Parent / Guardian of ' + student.full_name);
     const beingFor     = `${TERM_LABELS[term]} School Fees — 2025/2026 Academic Session — ${student.full_name} (${student.class_name})`;
-    const payMethod    = payment.payment_type === 'online'
-      ? `Online Transfer (${payment.gateway || 'Gateway'})`
-      : (payment.method || 'Cash / Bank');
 
     const card = document.getElementById('receiptCard');
     card.style.cssText = 'padding:0;background:transparent;border:none;box-shadow:none;border-radius:0';
     card.innerHTML = `
       <div class="receipt-physical">
-        <div class="receipt-physical-watermark">RCA</div>
-        ${isPaid ? '<div class="receipt-physical-paid-overlay">PAID</div>' : ''}
+        <div class="receipt-physical-watermark">${INSTITUTE_LOGO_SVG}</div>
 
         <div class="receipt-physical-header">
-          <img src="../assets/images/logo.png" alt="Royal Crystal Academy" class="receipt-physical-logo">
+          <div class="receipt-physical-logo">${INSTITUTE_LOGO_SVG}</div>
           <div>
-            <div class="receipt-physical-school-name">Royal Crystal Academy</div>
-            <div class="receipt-physical-school-addr">
-              20/22 Amaigbo Lane, Uwani, Enugu State<br>
-              Tel: 08108419563 &nbsp;|&nbsp; 09026324650
+            <div class="receipt-physical-org-name">St. Joseph's Institute</div>
+            <div class="receipt-physical-org-sub">Subsidiary of Development Projects Coordination</div>
+            <div class="receipt-physical-campuses">
+              St. Joseph Institute Agbani and Enugu Campuses<br>
+              St. Joseph Sc, Tech &amp; Voc College Agbani &amp; Enugu<br>
+              Royal Crystal Academy (Nursery And Primary School, Enugu)<br>
+              Chi's Ugbawka<br>
+              Voc Centre For Youths And Challenged<br>
+              Euro Hostel Independence Layout, Enugu.<br>
+              St. Joseph Hostel Independence Phase II, Enugu.<br>
+              www.st-joseph-enugu.com.ng
             </div>
+          </div>
+        </div>
+
+        <div class="receipt-physical-offices">
+          <div class="receipt-physical-office">
+            <strong>Agbani Office:</strong><br>
+            Over-rail, Enugu Road,<br>
+            Agbani, Nkanu West L.G.A<br>
+            Enugu State<br>
+            Tel: 09131386243<br>
+            Email: stjosephinstitute1@gmail.com
+          </div>
+          <div class="receipt-physical-office">
+            <strong>Enugu Office:</strong><br>
+            20/22 Amaigbo/Mgbemene Lane<br>
+            Uwani, Enugu.<br>
+            Email: stjosephinstitute1@gmail.com<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;stjosephinstitute01@gmail.com<br>
+            Tel: +234 813 369 7388
           </div>
         </div>
 
         <div class="receipt-physical-badge">
           <span class="receipt-physical-badge-title">Official Receipt</span>
-          <span class="receipt-physical-badge-no">No: ${receiptNo}</span>
         </div>
+        <div class="receipt-physical-serial">${receiptNo}</div>
 
         <div class="receipt-physical-body">
-          <div class="receipt-physical-field">
-            <span class="receipt-physical-label">Received from:</span>
-            <span class="receipt-physical-value">${receivedFrom}</span>
-          </div>
-          <div class="receipt-physical-field">
-            <span class="receipt-physical-label">Date:</span>
-            <span class="receipt-physical-value">${payment.date}</span>
+          <div class="receipt-physical-row">
+            <div class="receipt-physical-field-inline">
+              <span class="receipt-physical-label">Received from:</span>
+              <span class="receipt-physical-value">${receivedFrom}</span>
+            </div>
+            <div class="receipt-physical-field-inline receipt-physical-field-date">
+              <span class="receipt-physical-label">Date:</span>
+              <span class="receipt-physical-value">${payment.date}</span>
+            </div>
           </div>
           <div class="receipt-physical-field">
             <span class="receipt-physical-label">The sum of:</span>
             <span class="receipt-physical-value">${numberToWords(payment.amount)}</span>
+            <span class="receipt-physical-suffix">Naira</span>
           </div>
           <div class="receipt-physical-field">
             <span class="receipt-physical-label">Being payment for:</span>
             <span class="receipt-physical-value">${beingFor}</span>
+            <span class="receipt-physical-suffix">Kobo</span>
           </div>
-          <div class="receipt-physical-field">
-            <span class="receipt-physical-label">Payment method:</span>
-            <span class="receipt-physical-value">${payMethod}</span>
-          </div>
-          ${payment.notes ? `<div class="receipt-physical-field">
-            <span class="receipt-physical-label">Note:</span>
-            <span class="receipt-physical-value" style="font-style:italic">${payment.notes}</span>
-          </div>` : ''}
 
-          <div class="receipt-physical-amount-row">
-            <span class="receipt-physical-amount-label">Amount in figure:</span>
-            <span class="receipt-physical-amount-sym">&#8358;</span>
+          <div class="receipt-physical-amount-box">
+            <span class="receipt-physical-amount-caption">Amount in figure</span>
+            <span class="receipt-physical-hash">#</span>
             <span class="receipt-physical-amount-naira">${naira.toLocaleString()}</span>
             <span class="receipt-physical-kobo-sep">:</span>
-            <span style="font-size:0.82rem;font-weight:700;color:#333;margin-right:2px">K</span>
             <span class="receipt-physical-amount-kobo">${kobo}</span>
-          </div>
-
-          <div class="receipt-physical-balance">
-            Balance outstanding: <strong>${rec.balance > 0 ? fmt(rec.balance) : 'NIL — Fully Paid'}</strong>
-            &nbsp;|&nbsp; Total paid this term: <strong>${fmt(rec.amount_paid)}</strong>
+            <span class="receipt-physical-k">K</span>
           </div>
 
           <div class="receipt-physical-sig-row">
             <div class="receipt-physical-sig-block">
               <div class="receipt-physical-sig-line"></div>
               <div class="receipt-physical-sig-label">Receiver's Signature</div>
-              <div class="receipt-physical-sig-name">${payment.recorded_by}</div>
-            </div>
-            <div class="receipt-physical-meta">
-              Adm. No.: ${admNo}<br>
-              ${TERM_LABELS[term]} &nbsp;|&nbsp; 2025/2026
             </div>
           </div>
-        </div>
-
-        <div class="receipt-physical-footer">
-          This is an official receipt of Royal Crystal Academy. Please retain for your records.
         </div>
       </div>
     `;
