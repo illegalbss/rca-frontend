@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,64 +10,121 @@
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
   <link rel="stylesheet" href="../assets/css/admin/finance.css">
+  <style>
+    /* ── Coming Soon Banner ── */
+    .pay-coming-soon {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1.5px solid #bae6fd;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .pay-cs-icon { font-size: 2rem; flex-shrink: 0; }
+    .pay-cs-title { font-family: var(--font-heading); font-weight: 700; font-size: 1rem; color: #0369a1; margin-bottom: 4px; }
+    .pay-cs-body  { font-size: 0.83rem; color: #0c4a6e; line-height: 1.55; }
+    .pay-cs-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #0369a1; color: #fff; border-radius: 999px;
+      padding: 3px 12px; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .pay-cs-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc;
+      border-radius: 999px; padding: 7px 18px;
+      font-family: var(--font-heading); font-size: 0.78rem; font-weight: 700;
+      cursor: not-allowed; opacity: 0.7; margin-top: 10px;
+    }
+    /* ── Payment type badge in form ── */
+    .pay-type-tabs {
+      display: flex; gap: 10px; margin-bottom: 6px;
+    }
+    .pay-type-tab {
+      flex: 1; padding: 10px 14px; border-radius: 10px;
+      border: 2px solid #e5e7eb; background: #f9fafb;
+      font-family: var(--font-heading); font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; text-align: center; color: #6b7280;
+      transition: all 0.15s ease;
+    }
+    .pay-type-tab.active {
+      border-color: #1d4ed8; background: #eff6ff; color: #1d4ed8;
+    }
+    .pay-type-tab.disabled {
+      cursor: not-allowed; opacity: 0.5;
+    }
+    .pay-type-tab .pay-type-status {
+      display: block; font-size: 0.65rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;
+      color: #9ca3af;
+    }
+    .pay-type-tab.active .pay-type-status { color: #1d4ed8; }
+    /* ── Payment settings shortcut ── */
+    .pay-settings-note {
+      font-size: 0.75rem; color: #9ca3af;
+      text-align: right; margin-bottom: 10px;
+    }
+    .pay-settings-note a { color: #1d4ed8; text-decoration: none; font-weight: 600; }
+    .pay-settings-note a:hover { text-decoration: underline; }
+  </style>
 </head>
 <body>
 <div class="admin-shell">
 
   <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-header">
-      <img src="../assets/images/logo.svg" alt="logo">
+      <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
       <span>Royal Crystal Academy</span>
     </div>
-
-      <!-- User profile block -->
-      <div class="sidebar-profile">
-        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
-        <div class="sidebar-profile-info">
-          <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
-          <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
-          <div class="sidebar-online-dot">Online</div>
-        </div>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-profile-info">
+        <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+        <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-online-dot">Online</div>
       </div>
+    </div>
     <nav class="sidebar-nav">
       <p class="sidebar-section-label">Main</p>
-      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">&#9632;</i> Dashboard</a>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">⊞</i> Dashboard</a>
       <p class="sidebar-section-label">Administration</p>
-      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">&#9675;</i> Students</a>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">○</i> Students</a>
       <a href="admission-form.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Form</a>
       <a href="admission-register.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Register</a>
-      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Teachers</a>
-      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Classes</a>
-      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Attendance</a>
-      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Discipline</a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Teachers</a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Classes</a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Attendance</a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Discipline</a>
       <p class="sidebar-section-label">Results</p>
-      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Score Entry</a>
-      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">&#9675;</i> Class Review</a>
-      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Approvals</a>
-      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Report Cards</a>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Score Entry</a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">○</i> Class Review</a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Approvals</a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Report Cards</a>
       <p class="sidebar-section-label">Finance</p>
-      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
-      <a href="payments.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9632;</i> Record Payment</a>
-      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9675;</i> Receipts</a>
-      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">○</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Finance Reports</a>
+      <a href="payment-settings.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Payment Settings</a>
       <p class="sidebar-section-label">Communications</p>
       <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
       <a href="announcements.html?tab=newsletter" class="sidebar-link" data-roles="all"><i class="icon">○</i> Newsletter</a>
       <a href="school-programme.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Programme of Events</a>
       <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
       <p class="sidebar-section-label">ICT Department</p>
-      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
-      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab &amp; Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT &amp; Coding Clubs</a>
       <p class="sidebar-section-label">System</p>
-      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">&#9675;</i> User Management</a>
-      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">&#9675;</i> Activity Logs</a>
+      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> User Management</a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Activity Logs</a>
     </nav>
     <div class="sidebar-footer">
-      <a href="../index.html" class="sidebar-link"><i class="icon">&#8592;</i> Back to website</a>
-      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">&#10006;</i> Log out</a>
+      <a href="../index.html" class="sidebar-link"><i class="icon">←</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">✕</i> Log out</a>
     </div>
   </aside>
-
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="admin-content">
@@ -75,25 +132,56 @@
       <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
       <h1 class="topbar-title">Record Payment</h1>
       <span class="topbar-session">Academic Session: 2025/2026</span>
-        <button class="topbar-bell" title="Notifications">
-          &#128276;
-          <span class="topbar-bell-badge">4</span>
-        </button>
-        <div class="topbar-user">
+      <button class="topbar-bell" title="Notifications">&#128276;<span class="topbar-bell-badge">4</span></button>
+      <div class="topbar-user">
         <span class="user-role-badge" id="userRoleBadge">Guest</span>
-        <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+        <div class="user-avatar" id="userAvatar">
+          <img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;">
+        </div>
       </div>
     </header>
 
     <main class="admin-main">
 
-      <!-- ---- Step 1: Look up student ---- -->
+      <!-- ── Online Payment Coming Soon Banner ── -->
+      <div class="pay-coming-soon" id="onlineComingSoon">
+        <div class="pay-cs-icon">&#128179;</div>
+        <div>
+          <div class="pay-cs-badge">&#128100; Parent Information</div>
+          <div class="pay-cs-title">Online Payments — Coming Soon</div>
+          <div class="pay-cs-body">
+            Online payment via Paystack will be available in a future update.<br>
+            <strong>Please visit the school office to complete your payment.</strong>
+            All manual payments are recorded here by the Accountant and a receipt is issued immediately.
+          </div>
+          <button class="pay-cs-btn" disabled>&#128274; Pay Online (Coming Soon)</button>
+        </div>
+      </div>
+
+      <!-- ── Payment Mode Indicator ── -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="pay-type-tabs" style="max-width:420px;width:100%">
+          <div class="pay-type-tab active">
+            &#128179; Manual Payment
+            <span class="pay-type-status">&#10003; Active</span>
+          </div>
+          <div class="pay-type-tab disabled">
+            &#127760; Online Payment
+            <span class="pay-type-status">&#128274; Coming Soon</span>
+          </div>
+        </div>
+        <div class="pay-settings-note">
+          ICT Admin: <a href="payment-settings.html">Payment Settings &#8594;</a>
+        </div>
+      </div>
+
+      <!-- ── Step 1: Look up student ── -->
       <div class="payment-form-card">
         <div class="payment-form-title">&#128269; Step 1 — Look Up Student</div>
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap">
           <div class="form-group" style="margin:0">
             <label>Admission Number</label>
-            <input type="text" id="lookupAdmNo" class="form-control" placeholder="e.g. GP/2024/001" style="text-transform:uppercase">
+            <input type="text" id="lookupAdmNo" class="form-control" placeholder="e.g. RCA/2026/0001" style="text-transform:uppercase">
           </div>
           <div class="form-group" style="margin:0">
             <label>Term</label>
@@ -105,9 +193,8 @@
           </div>
           <button class="btn btn-primary no-print" id="lookupBtn">Look Up</button>
         </div>
-        <div id="lookupError" style="color:var(--color-danger);font-size:var(--fs-sm);margin-top:var(--space-sm);display:none"></div>
+        <div id="lookupError" style="color:var(--color-danger,#dc2626);font-size:var(--fs-sm);margin-top:var(--space-sm);display:none"></div>
 
-        <!-- Student info + balance panel -->
         <div class="payment-lookup-result" id="lookupResult">
           <div class="lookup-student-name" id="lookupName"></div>
           <div class="lookup-meta" id="lookupMeta"></div>
@@ -125,36 +212,37 @@
               <strong id="lookupBalance"></strong>
             </div>
           </div>
+          <div id="lookupBreakdown" style="margin-top:10px;font-size:0.78rem;color:#6b7280"></div>
           <div id="lookupDiscount" style="font-size:var(--fs-sm);margin-top:var(--space-sm);color:var(--color-primary)"></div>
         </div>
       </div>
 
-      <!-- ---- Step 2: Enter payment details ---- -->
+      <!-- ── Step 2: Enter payment details ── -->
       <div class="payment-form-card" id="paymentFormCard" style="display:none">
-        <div class="payment-form-title">&#128179; Step 2 — Enter Payment Details</div>
+        <div class="payment-form-title">&#128179; Step 2 — Enter Payment Details (Manual)</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)">
           <div class="form-group">
             <label>Student Name</label>
-            <input type="text" id="payStudentName" class="form-control" readonly style="background:var(--color-bg)">
+            <input type="text" id="payStudentName" class="form-control" readonly style="background:#f9fafb">
           </div>
           <div class="form-group">
             <label>Admission Number</label>
-            <input type="text" id="payAdmNo" class="form-control" readonly style="background:var(--color-bg)">
+            <input type="text" id="payAdmNo" class="form-control" readonly style="background:#f9fafb">
           </div>
           <div class="form-group">
             <label>Class</label>
-            <input type="text" id="payClass" class="form-control" readonly style="background:var(--color-bg)">
+            <input type="text" id="payClass" class="form-control" readonly style="background:#f9fafb">
           </div>
           <div class="form-group">
             <label>Term</label>
-            <input type="text" id="payTermLabel" class="form-control" readonly style="background:var(--color-bg)">
+            <input type="text" id="payTermLabel" class="form-control" readonly style="background:#f9fafb">
           </div>
           <div class="form-group">
-            <label>Amount Being Paid (₦)</label>
+            <label>Amount Being Paid (&#8358;) *</label>
             <input type="number" id="payAmount" class="form-control" placeholder="Enter amount" min="1">
           </div>
           <div class="form-group">
-            <label>Payment Method</label>
+            <label>Payment Method *</label>
             <select id="payMethod" class="form-control">
               <option value="Cash">Cash</option>
               <option value="Bank Transfer">Bank Transfer</option>
@@ -163,55 +251,68 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Payment Date</label>
+            <label>Payment Date *</label>
             <input type="date" id="payDate" class="form-control">
           </div>
           <div class="form-group">
-            <label>Receipt Number (optional — auto-generated if blank)</label>
-            <input type="text" id="payReceiptNo" class="form-control" placeholder="GP-RCP-XXXXX">
+            <label>Receipt Number <span style="font-weight:400;color:#9ca3af">(auto-generated if blank)</span></label>
+            <input type="text" id="payReceiptNo" class="form-control" placeholder="RCA-RCP-…">
           </div>
           <div class="form-group" style="grid-column:1/-1">
-            <label>Parent / Guardian Name</label>
-            <input type="text" id="payParentName" class="form-control" placeholder="Name of person making payment">
+            <label>Parent / Guardian Name (person making payment)</label>
+            <input type="text" id="payParentName" class="form-control" placeholder="Full name of parent or guardian making payment">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Notes <span style="font-weight:400;color:#9ca3af">(optional)</span></label>
+            <input type="text" id="payNotes" class="form-control" placeholder="e.g. Part payment — balance to be paid by end of term">
           </div>
         </div>
+
+        <!-- Future online fields (hidden — prepared for Phase 4) -->
+        <input type="hidden" id="payPaymentType"      value="manual">
+        <input type="hidden" id="payGateway"          value="">
+        <input type="hidden" id="payTransactionId"    value="">
+        <input type="hidden" id="payGatewayReference" value="">
+        <input type="hidden" id="payPaymentStatus"    value="success">
+
         <div style="display:flex;gap:var(--space-md);margin-top:var(--space-lg)">
           <button class="btn btn-primary" id="savePaymentBtn">&#10003; Save Payment &amp; Generate Receipt</button>
           <button class="btn btn-outline" id="cancelPaymentBtn">Cancel</button>
         </div>
-        <div id="paymentError" style="color:var(--color-danger);font-size:var(--fs-sm);margin-top:var(--space-sm);display:none"></div>
+        <div id="paymentError" style="color:var(--color-danger,#dc2626);font-size:var(--fs-sm);margin-top:var(--space-sm);display:none"></div>
       </div>
 
-      <!-- ---- Step 3: Success + receipt link ---- -->
+      <!-- ── Step 3: Success ── -->
       <div class="payment-form-card" id="successCard" style="display:none">
         <div style="text-align:center;padding:var(--space-xl) 0">
           <div style="font-size:3rem;margin-bottom:var(--space-md)">&#10004;&#65039;</div>
-          <h2 style="font-family:var(--font-heading);color:var(--color-success);margin-bottom:var(--space-sm)">Payment Recorded!</h2>
-          <p id="successMsg" style="color:var(--color-text-muted);margin-bottom:var(--space-xl)"></p>
+          <h2 style="font-family:var(--font-heading);color:#16a34a;margin-bottom:var(--space-sm)">Payment Recorded!</h2>
+          <p id="successMsg" style="color:#6b7280;margin-bottom:var(--space-xl)"></p>
           <div style="display:flex;gap:var(--space-md);justify-content:center;flex-wrap:wrap">
-            <a id="viewReceiptBtn" href="receipts.html" class="btn btn-primary">&#128231; View Receipt</a>
+            <a id="viewReceiptBtn" href="receipts.html" class="btn btn-primary">&#128231; View &amp; Print Receipt</a>
             <button id="recordAnotherBtn" class="btn btn-outline">Record Another Payment</button>
           </div>
         </div>
       </div>
 
-      <!-- ---- Recent payments today ---- -->
+      <!-- ── Recent payments this session ── -->
       <div class="finance-table-wrap no-print" style="margin-top:var(--space-xl)">
-        <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:center">
+        <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center">
           <h3 style="font-size:var(--fs-base);font-weight:700">Recent Payments (This Session)</h3>
-          <a href="receipts.html" class="btn btn-outline btn-sm">View All</a>
+          <a href="receipts.html" class="btn btn-outline btn-sm">View All Receipts</a>
         </div>
         <div style="overflow-x:auto">
           <table class="finance-table" id="recentPaymentsTable">
             <thead>
               <tr>
+                <th>Receipt No.</th>
                 <th>Admission No.</th>
                 <th>Student Name</th>
                 <th>Class</th>
                 <th>Term</th>
                 <th>Amount Paid</th>
                 <th>Method</th>
-                <th>Receipt No.</th>
+                <th>Parent / Guardian</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -233,33 +334,46 @@
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const allStudents = window.SAMPLE_STUDENTS || [];
-  const records     = window.PAYMENT_RECORDS || {};
-  const fmt         = window.formatNaira;
-  const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+document.addEventListener('DOMContentLoaded', function () {
+  var allStudents  = window.SAMPLE_STUDENTS || [];
+  var records      = window.PAYMENT_RECORDS || {};
+  var fmt          = window.formatNaira;
+  var TERM_LABELS  = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+  var currentAdmNo = '';
+  var currentTerm  = '';
 
-  // Track newly recorded payments this session (in-memory, Phase 4 → DB)
   if (!window.SESSION_PAYMENTS) window.SESSION_PAYMENTS = [];
 
-  let currentAdmNo = '';
-  let currentTerm  = '';
+  /* ── Role guard — only accountant / ict_admin can record ── */
+  var cu      = window.CURRENT_USER;
+  var cuRoles = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
+  var canRecord = cuRoles.some(function(r) { return r === 'ict_admin' || r === 'accountant'; });
+  if (!canRecord) {
+    document.getElementById('paymentFormCard') && (document.getElementById('paymentFormCard').style.display = 'none');
+    document.querySelector('.payment-form-card') && (document.querySelector('.payment-form-card').style.pointerEvents = 'none');
+  }
 
-  /* ---- Look up student ---- */
-  document.getElementById('lookupBtn').addEventListener('click', () => {
-    const raw  = document.getElementById('lookupAdmNo').value.trim().toUpperCase();
-    const term = document.getElementById('lookupTerm').value;
-    const errEl = document.getElementById('lookupError');
+  /* ── Online payments coming-soon visibility ── */
+  var settings = window.PAYMENT_SETTINGS || {};
+  if (settings.mode === 'manual_and_online') {
+    document.getElementById('onlineComingSoon').style.display = 'none';
+  }
+
+  /* ── Look up student ── */
+  document.getElementById('lookupBtn').addEventListener('click', function () {
+    var raw  = document.getElementById('lookupAdmNo').value.trim().toUpperCase();
+    var term = document.getElementById('lookupTerm').value;
+    var errEl = document.getElementById('lookupError');
     errEl.style.display = 'none';
 
     if (!raw) { errEl.textContent = 'Please enter an admission number.'; errEl.style.display = 'block'; return; }
 
-    const student = allStudents.find(s => s.admission_no.toUpperCase() === raw);
-    if (!student) { errEl.textContent = `No student found with admission number "${raw}".`; errEl.style.display = 'block'; return; }
+    var student = allStudents.find(function(s) { return s.admission_no.toUpperCase() === raw; });
+    if (!student) { errEl.textContent = 'No student found with admission number "' + raw + '".'; errEl.style.display = 'block'; return; }
 
-    const breakdown = window.computeFeeBreakdown(student.admission_no, term);
-    const key = `${student.admission_no}|${term}`;
-    let rec = records[key];
+    var breakdown = window.computeFeeBreakdown(student.admission_no, term);
+    var key = student.admission_no + '|' + term;
+    var rec = records[key];
     if (!rec) {
       rec = { amount_expected: breakdown.grand_total, amount_paid: 0, balance: breakdown.grand_total, status: 'unpaid', payments: [] };
       records[key] = rec;
@@ -269,12 +383,21 @@ document.addEventListener('DOMContentLoaded', () => {
     currentTerm  = term;
 
     document.getElementById('lookupName').textContent    = student.full_name;
-    document.getElementById('lookupMeta').textContent    = `${student.class_name} · ${student.admission_no} · ${TERM_LABELS[term]}`;
+    document.getElementById('lookupMeta').textContent    = student.class_name + ' · ' + student.admission_no + ' · ' + TERM_LABELS[term];
     document.getElementById('lookupTotal').textContent   = fmt(rec.amount_expected);
     document.getElementById('lookupPaid').textContent    = fmt(rec.amount_paid);
     document.getElementById('lookupBalance').textContent = fmt(rec.balance);
-    document.getElementById('lookupDiscount').textContent = breakdown.has_sibling_discount
-      ? `&#128106; Sibling discount applied (${breakdown.sibling_count} children enrolled) — school fees reduced to ₦15,000`
+
+    // Show fee breakdown lines
+    var bkd = document.getElementById('lookupBreakdown');
+    if (breakdown && breakdown.lines) {
+      bkd.innerHTML = breakdown.lines.map(function(l) {
+        return '<span style="margin-right:16px">' + l.label + ': <strong>' + fmt(l.amount) + '</strong></span>';
+      }).join('');
+    }
+
+    document.getElementById('lookupDiscount').innerHTML = breakdown && breakdown.has_sibling_discount
+      ? '&#128106; Sibling discount applied (' + breakdown.sibling_count + ' children enrolled) — school fees reduced to &#8358;15,000'
       : '';
 
     document.getElementById('lookupResult').classList.add('visible');
@@ -285,7 +408,6 @@ document.addEventListener('DOMContentLoaded', () => {
       errEl.textContent = 'This student has already paid in full for this term.';
       errEl.style.display = 'block';
     } else {
-      // Pre-fill payment form
       document.getElementById('payStudentName').value = student.full_name;
       document.getElementById('payAdmNo').value       = student.admission_no;
       document.getElementById('payClass').value       = student.class_name;
@@ -295,111 +417,119 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('payDate').value        = new Date().toISOString().split('T')[0];
       document.getElementById('payReceiptNo').value   = '';
       document.getElementById('payParentName').value  = '';
+      document.getElementById('payNotes').value       = '';
       document.getElementById('paymentFormCard').style.display = 'block';
     }
   });
 
-  /* ---- Save payment ---- */
-  document.getElementById('savePaymentBtn').addEventListener('click', () => {
-    const amount = parseFloat(document.getElementById('payAmount').value);
-    const errEl  = document.getElementById('paymentError');
+  /* ── Save payment ── */
+  document.getElementById('savePaymentBtn').addEventListener('click', function () {
+    var amount = parseFloat(document.getElementById('payAmount').value);
+    var errEl  = document.getElementById('paymentError');
     errEl.style.display = 'none';
 
-    const key = `${currentAdmNo}|${currentTerm}`;
-    const rec = records[key];
+    var key = currentAdmNo + '|' + currentTerm;
+    var rec = records[key];
 
     if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = 'block'; return; }
-    if (amount > rec.balance)   { errEl.textContent = `Amount cannot exceed balance of ${fmt(rec.balance)}.`; errEl.style.display = 'block'; return; }
+    if (amount > rec.balance)   { errEl.textContent = 'Amount cannot exceed balance of ' + fmt(rec.balance) + '.'; errEl.style.display = 'block'; return; }
 
-    const receiptNo = document.getElementById('payReceiptNo').value.trim() ||
-      'GP-RCP-' + String(Math.floor(Math.random() * 90000) + 10000);
-    const method  = document.getElementById('payMethod').value;
-    const date    = document.getElementById('payDate').value || new Date().toISOString().split('T')[0];
-    const recorder = (window.CURRENT_USER && window.CURRENT_USER.full_name) || 'Accountant';
+    // Use standardised receipt counter (RCA-RCP-XXXX)
+    var customReceipt = document.getElementById('payReceiptNo').value.trim();
+    var receiptNo     = customReceipt || window.nextReceiptNo();
 
-    const payment = { date, amount, method, receipt_no: receiptNo, recorded_by: recorder };
+    var method     = document.getElementById('payMethod').value;
+    var date       = document.getElementById('payDate').value || new Date().toISOString().split('T')[0];
+    var parentName = document.getElementById('payParentName').value.trim();
+    var notes      = document.getElementById('payNotes').value.trim();
+    var recorder   = (window.CURRENT_USER && window.CURRENT_USER.full_name) || 'Accountant';
+
+    var payment = {
+      date:              date,
+      amount:            amount,
+      method:            method,
+      payment_type:      'manual',
+      gateway:           null,
+      transaction_id:    null,
+      gateway_reference: null,
+      payment_status:    'success',
+      receipt_no:        receiptNo,
+      recorded_by:       recorder,
+      parent_name:       parentName,
+      notes:             notes
+    };
+
     rec.payments.push(payment);
     rec.amount_paid += amount;
     rec.balance     -= amount;
-    rec.status = rec.balance <= 0 ? 'paid' : 'partial';
-    if (window.RCA) window.RCA.save('payments'); // Phase 2: persist payment
+    rec.status       = rec.balance <= 0 ? 'paid' : 'partial';
+    if (window.RCA) window.RCA.save('payments');
+    if (window.logActivity) window.logActivity('payment', 'Recorded payment ' + receiptNo + ' — ' + fmt(amount) + ' for ' + currentAdmNo, 'payments');
 
-    // Phase 4: save payment to real database
-    if (window.RCA_API) {
-      window.RCA_API.recordPayment({
-        admission_no: studentAdmNo,
-        term:         selectedTerm,
-        amount:       amount,
-        method:       payMethod,
-        payment_date: new Date().toISOString().split('T')[0],
-        receipt_no:   receiptNo
-      }).catch(e => console.warn('Payment API failed:', e.message));
-    }
-
-    // Track in session list for "recent payments" table
-    const student = allStudents.find(s => s.admission_no === currentAdmNo);
+    var student = allStudents.find(function(s) { return s.admission_no === currentAdmNo; });
     window.SESSION_PAYMENTS.unshift({
-      admission_no: currentAdmNo,
-      student_name: student ? student.full_name : currentAdmNo,
-      class_name:   student ? student.class_name : '',
-      term:         currentTerm,
-      amount,
-      method,
-      receipt_no:   receiptNo,
-      status:       rec.status
+      admission_no:  currentAdmNo,
+      student_name:  student ? student.full_name : currentAdmNo,
+      class_name:    student ? student.class_name : '',
+      term:          currentTerm,
+      amount:        amount,
+      method:        method,
+      receipt_no:    receiptNo,
+      parent_name:   parentName,
+      status:        rec.status
     });
 
-    // Store last receipt for receipts.html
     sessionStorage.setItem('rca_last_receipt', JSON.stringify({
       admission_no: currentAdmNo,
-      term: currentTerm,
-      receipt_no: receiptNo,
-      payment
+      term:         currentTerm,
+      receipt_no:   receiptNo,
+      payment:      payment
     }));
 
+    var studentName = student ? student.full_name : currentAdmNo;
     document.getElementById('successMsg').textContent =
-      `${fmt(amount)} recorded for ${student ? student.full_name : currentAdmNo} — ${TERM_LABELS[currentTerm]}. Receipt: ${receiptNo}`;
+      fmt(amount) + ' recorded for ' + studentName + ' — ' + TERM_LABELS[currentTerm] + '. Receipt: ' + receiptNo;
     document.getElementById('paymentFormCard').style.display = 'none';
-    document.getElementById('successCard').style.display = 'block';
+    document.getElementById('successCard').style.display     = 'block';
     renderRecentPayments();
   });
 
-  document.getElementById('cancelPaymentBtn').addEventListener('click', () => {
+  document.getElementById('cancelPaymentBtn').addEventListener('click', function () {
     document.getElementById('paymentFormCard').style.display = 'none';
     document.getElementById('lookupResult').classList.remove('visible');
     document.getElementById('lookupAdmNo').value = '';
   });
 
-  document.getElementById('recordAnotherBtn').addEventListener('click', () => {
+  document.getElementById('recordAnotherBtn').addEventListener('click', function () {
     document.getElementById('successCard').style.display = 'none';
     document.getElementById('lookupResult').classList.remove('visible');
     document.getElementById('lookupAdmNo').value = '';
     document.getElementById('lookupError').style.display = 'none';
   });
 
-  /* ---- Recent payments table ---- */
+  /* ── Recent payments table ── */
   function renderRecentPayments() {
-    const BADGE = { paid: 'badge-paid', partial: 'badge-partial', unpaid: 'badge-unpaid' };
-    const tbody = document.getElementById('recentPaymentsBody');
-    const list  = window.SESSION_PAYMENTS.slice(0, 20);
+    var BADGE = { paid: 'badge-paid', partial: 'badge-partial', unpaid: 'badge-unpaid' };
+    var tbody = document.getElementById('recentPaymentsBody');
+    var list  = window.SESSION_PAYMENTS.slice(0, 25);
 
-    if (list.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:2rem">No payments recorded this session yet.</td></tr>';
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:2rem">No payments recorded this session yet.</td></tr>';
       return;
     }
-
-    tbody.innerHTML = list.map(p => `
-      <tr>
-        <td>${p.admission_no}</td>
-        <td>${p.student_name}</td>
-        <td>${p.class_name}</td>
-        <td>${TERM_LABELS[p.term]}</td>
-        <td class="amount-col">${fmt(p.amount)}</td>
-        <td>${p.method}</td>
-        <td style="font-size:0.75rem">${p.receipt_no}</td>
-        <td><span class="${BADGE[p.status]}">${p.status}</span></td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = list.map(function(p) {
+      return '<tr>' +
+        '<td style="font-size:0.75rem;font-weight:600">' + p.receipt_no + '</td>' +
+        '<td>' + p.admission_no + '</td>' +
+        '<td>' + p.student_name + '</td>' +
+        '<td>' + p.class_name + '</td>' +
+        '<td>' + (TERM_LABELS[p.term] || p.term) + '</td>' +
+        '<td class="amount-col">' + fmt(p.amount) + '</td>' +
+        '<td>' + p.method + '</td>' +
+        '<td style="font-size:0.78rem">' + (p.parent_name || '—') + '</td>' +
+        '<td><span class="' + (BADGE[p.status] || '') + '">' + p.status + '</span></td>' +
+      '</tr>';
+    }).join('');
   }
 
   renderRecentPayments();

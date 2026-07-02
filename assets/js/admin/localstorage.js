@@ -223,6 +223,17 @@
   let admissionRegister = lsGet('admission_register') || [];
   window.ADMISSION_REGISTER = admissionRegister;
 
+  /* PAYMENT SETTINGS (manual vs online mode, gateway config) */
+  const defaultPaymentSettings = {
+    mode: 'manual', online_gateway: 'paystack', online_public_key: '',
+    receipt_prefix: 'RCA-RCP', enable_result_unlock: true,
+    last_updated: null, last_updated_by: null
+  };
+  const savedPaySettings = lsGet('payment_settings');
+  window.PAYMENT_SETTINGS = savedPaySettings
+    ? Object.assign({}, defaultPaymentSettings, savedPaySettings)
+    : defaultPaymentSettings;
+
   /* ---- Write meta ---- */
   lsSet('meta', {
     dataVersion: DATA_VERSION,
@@ -260,7 +271,8 @@
         discipline:    () => lsSet('discipline',    window.SAMPLE_DISCIPLINE),
         activity_log:  () => lsSet('activity_log',  window.ACTIVITY_LOG),
         parent_payments:  () => lsSet('parent_payments',  window.PARENT_PAYMENTS),
-        admission_register: () => lsSet('admission_register', window.ADMISSION_REGISTER)
+        admission_register: () => lsSet('admission_register', window.ADMISSION_REGISTER),
+        payment_settings:   () => lsSet('payment_settings',   window.PAYMENT_SETTINGS)
       };
       if (MAP[storeName]) {
         MAP[storeName]();
@@ -277,7 +289,8 @@
     saveAll() {
       ['students','teachers','users','results','approvals','behavior',
        'payments','announcements','events','computers','maintenance',
-       'discipline','activity_log','parent_payments','admission_register'].forEach(s => this.save(s));
+       'discipline','activity_log','parent_payments','admission_register',
+       'payment_settings'].forEach(s => this.save(s));
     },
 
     /* Clear all localStorage and start fresh (reset button in ICT Admin) */

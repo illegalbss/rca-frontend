@@ -50,6 +50,7 @@
       <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Record Payment</a>
       <a href="receipts.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9632;</i> Receipts</a>
       <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
+      <a href="payment-settings.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Payment Settings</a>
       <p class="sidebar-section-label">Communications</p>
       <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
       <a href="announcements.html?tab=newsletter" class="sidebar-link" data-roles="all"><i class="icon">○</i> Newsletter</a>
@@ -259,8 +260,12 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="receipt-info-item">
           <span class="receipt-info-label">Payment Method</span>
-          <span class="receipt-info-value">${payment.method}</span>
+          <span class="receipt-info-value">${payment.payment_type === 'online' ? '&#127760; Online (' + (payment.gateway || 'Gateway') + ')' : '&#128179; Manual — ' + payment.method}</span>
         </div>
+        ${payment.parent_name ? `<div class="receipt-info-item" style="grid-column:1/-1">
+          <span class="receipt-info-label">Received From</span>
+          <span class="receipt-info-value" style="font-weight:600">${payment.parent_name}</span>
+        </div>` : ''}
       </div>
 
       <div class="receipt-lines">
@@ -277,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       ${isPaid ? '<div class="receipt-paid-stamp"><span class="receipt-stamp">PAID IN FULL</span></div>' : ''}
 
+      ${payment.notes ? `<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:0.78rem;color:#92400e"><strong>Note:</strong> ${payment.notes}</div>` : ''}
       <div class="receipt-footer">
         Issued by: ${payment.recorded_by} &nbsp;·&nbsp; Royal Crystal Academy &nbsp;·&nbsp; 2025/2026 Session<br>
         This is an official payment receipt. Please keep it for your records.

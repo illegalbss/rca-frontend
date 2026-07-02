@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td><span class="${BADGE[r.status]}">${r.status}</span></td>
             <td>
               <button style="font-size:0.75rem;color:#3b82f6;background:none;border:none;cursor:pointer;font-weight:500"
-                onclick="alert('Receipt ${r.receipt_no}\\nAmount: ${fmt(r.amount)}\\nDate: ${r.date}\\nMethod: ${r.method}')">
+                onclick="window.ppViewReceipt(${JSON.stringify(r)})">
                 View
               </button>
             </td>
@@ -313,30 +313,86 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
   }
 
-  // Make payment demo button
+  // Pay Online button — shows "Coming Soon" notice
   document.getElementById('makePaymentBtn').addEventListener('click', () => {
     if (!activePayChild) return;
-    const adm = activePayChild.admission_no;
-    // Find first term with a balance
-    const term = ['term1','term2','term3'].find(t => {
-      const rec = payRecords[`${adm}|${t}`];
+    const hasBalance = ['term1','term2','term3'].some(t => {
+      const rec = payRecords[`${activePayChild.admission_no}|${t}`];
       return rec && rec.balance > 0;
     });
-    if (!term) { alert('No outstanding balance for this child.'); return; }
-    const rec = payRecords[`${adm}|${term}`];
-    const bal = rec.balance;
-    if (confirm(`Demo Payment\n\nPay ${fmt(bal)} for ${activePayChild.full_name}?\n(${TERM_LABELS[term]})\n\nIn Phase 4 this will open a secure Paystack checkout.`)) {
-      const receiptNo = 'RCA-RCP-' + (Math.floor(Math.random()*90000)+10000);
-      rec.payments.push({ date: new Date().toISOString().split('T')[0], amount: bal, method:'Online (Demo)', receipt_no: receiptNo, recorded_by:'Parent (Demo)' });
-      rec.amount_paid += bal;
-      rec.balance = 0;
-      rec.status = 'paid';
-      if (window.RCA) window.RCA.save('payments');
-      recordParentPayment(userId, adm, term);
-      renderPayments();
-      alert(`Payment successful!\nReceipt: ${receiptNo}`);
+    if (!hasBalance) {
+      ppShowNotice('No Outstanding Balance', 'There are no outstanding fees for ' + activePayChild.full_name + '. All terms are fully paid.', 'green');
+      return;
     }
+    ppShowNotice(
+      '🔒 Online Payments — Coming Soon',
+      'Online payment via Paystack is being set up and will be available very soon.<br><br>' +
+      '<strong>To pay now, please visit the school office.</strong><br>' +
+      'The accountant will record your payment and issue an official receipt.',
+      'blue'
+    );
   });
+
+  /* ── Simple notice modal for parent portal ── */
+  function ppShowNotice(title, body, color) {
+    var existing = document.getElementById('ppNoticeModal');
+    if (existing) existing.remove();
+    var colors = { blue:'#1d4ed8', green:'#16a34a', orange:'#d97706' };
+    var m = document.createElement('div');
+    m.id = 'ppNoticeModal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.18);text-align:center">
+        <div style="width:52px;height:52px;border-radius:50%;background:${color==='green'?'#d1fae5':color==='blue'?'#dbeafe':'#fef3c7'};display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto 16px">
+          ${color==='green'?'✓':color==='blue'?'🔒':'ℹ️'}
+        </div>
+        <h3 style="font-family:Poppins,sans-serif;font-weight:700;font-size:1rem;color:#111827;margin:0 0 10px">${title}</h3>
+        <p style="font-size:0.85rem;color:#6b7280;line-height:1.6;margin:0 0 20px">${body}</p>
+        <button onclick="document.getElementById('ppNoticeModal').remove()" style="padding:10px 28px;background:${colors[color]||'#1d4ed8'};color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">
+          OK
+        </button>
+      </div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', function(e){ if(e.target===m) m.remove(); });
+  }
+
+  /* ── View receipt modal ── */
+  window.ppViewReceipt = function(pay) {
+    var existing = document.getElementById('ppReceiptModal');
+    if (existing) existing.remove();
+    var d = document.createElement('div');
+    d.id = 'ppReceiptModal';
+    d.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    var term = pay.term ? ({'term1':'First Term','term2':'Second Term','term3':'Third Term'}[pay.term] || pay.term) : '';
+    d.innerHTML = `
+      <div style="background:#fff;border-radius:16px;max-width:400px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.2);overflow:hidden">
+        <div style="background:#1a3a5c;padding:20px 24px;color:#fff">
+          <div style="font-family:Poppins,sans-serif;font-weight:700;font-size:1rem">Royal Crystal Academy</div>
+          <div style="font-size:0.75rem;opacity:0.75;margin-top:2px">Official Payment Receipt</div>
+        </div>
+        <div style="padding:24px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <span style="font-size:1.1rem;font-weight:700;color:#111827">₦${Number(pay.amount).toLocaleString('en-NG')}</span>
+            <span style="background:#d1fae5;color:#065f46;padding:3px 12px;border-radius:999px;font-size:0.72rem;font-weight:700">PAID</span>
+          </div>
+          <table style="width:100%;font-size:0.82rem;border-collapse:collapse">
+            ${[
+              ['Receipt No.', pay.receipt_no || '—'],
+              ['Date', pay.date || '—'],
+              ['Term', term || '—'],
+              ['Payment Method', pay.method || '—'],
+              ['Recorded By', pay.recorded_by || 'School Office'],
+            ].map(r=>`<tr><td style="color:#6b7280;padding:5px 0;border-bottom:1px solid #f3f4f6">${r[0]}</td><td style="font-weight:600;color:#111827;text-align:right;padding:5px 0;border-bottom:1px solid #f3f4f6">${r[1]}</td></tr>`).join('')}
+          </table>
+          ${pay.notes ? `<div style="margin-top:12px;background:#f9fafb;border-radius:8px;padding:10px 12px;font-size:0.78rem;color:#6b7280"><strong>Notes:</strong> ${pay.notes}</div>` : ''}
+          <button onclick="document.getElementById('ppReceiptModal').remove()" style="margin-top:18px;width:100%;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.85rem;cursor:pointer">
+            Close
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(d);
+    d.addEventListener('click', function(e){ if(e.target===d) d.remove(); });
+  };
 
   /* ================================================
      RESULTS PAGE

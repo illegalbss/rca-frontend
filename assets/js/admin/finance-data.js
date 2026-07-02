@@ -59,29 +59,66 @@
   window.calculateFee = function(student, term) {
     const fee = window.FEE_STRUCTURE[term];
     if (!fee) return 0;
-
     const schoolFees = fee.school_fees;
-
-    // Basic 6 gets special levy in term 3
-    const isBasic6 = student.class_name === 'Basic 6';
-    const levy = (isBasic6 && term === 'term3')
-      ? fee.levy_basic6_amount
-      : fee.levy_amount;
-
+    const isBasic6   = student.class_name === 'Basic 6';
+    const levy       = (isBasic6 && term === 'term3') ? fee.levy_basic6_amount : fee.levy_amount;
     return schoolFees + fee.utility_bill + fee.lesson_fee + levy;
   };
 
-  // Empty payment records — real data comes from API/localStorage
-  if (!window.PAYMENT_RECORDS) {
-    window.PAYMENT_RECORDS = {};
-  }
+  /* ---- Compute full itemised fee breakdown ---- */
+  window.computeFeeBreakdown = function(admNo, term) {
+    const student = (window.SAMPLE_STUDENTS || []).find(s => s.admission_no === admNo);
+    const fee     = window.FEE_STRUCTURE[term];
+    if (!fee) return null;
 
-  // Receipt counter
-  window.RECEIPT_COUNTER = parseInt(localStorage.getItem('rca_receipt_counter') || '1000');
+    // Sibling discount: count active students sharing the same parent_phone
+    let siblingCount = 1;
+    if (student && student.parent_phone) {
+      const active = (window.SAMPLE_STUDENTS || []).filter(
+        s => s.status !== 'archived' && s.status !== 'removed'
+      );
+      siblingCount = active.filter(s => s.parent_phone === student.parent_phone).length;
+    }
+    const hasDiscount = siblingCount >= (fee.sibling_threshold || 3);
+    const schoolFees  = hasDiscount ? fee.school_fees_sibling : fee.school_fees;
+    const isBasic6    = student && student.class_name === 'Basic 6';
+    const levy        = (isBasic6 && term === 'term3') ? fee.levy_basic6_amount : fee.levy_amount;
+    const levyLabel   = (isBasic6 && term === 'term3') ? fee.levy_basic6_label  : fee.levy_label;
+
+    const lines = [
+      { label: 'School Fees' + (hasDiscount ? ' (Sibling Discount)' : ''), amount: schoolFees },
+      { label: 'Utility Bill', amount: fee.utility_bill },
+      { label: 'Lesson Fee',   amount: fee.lesson_fee   },
+      { label: levyLabel,      amount: levy              }
+    ];
+    const grandTotal = lines.reduce((sum, l) => sum + l.amount, 0);
+    return { grand_total: grandTotal, lines, has_sibling_discount: hasDiscount, sibling_count: siblingCount, school_fees: schoolFees, levy };
+  };
+
+  // Empty payment records — real data comes from API/localStorage
+  if (!window.PAYMENT_RECORDS) window.PAYMENT_RECORDS = {};
+
+  // Receipt counter (always RCA-RCP-XXXX format)
+  window.RECEIPT_COUNTER = parseInt(localStorage.getItem('rca_receipt_counter') || '1000', 10);
   window.nextReceiptNo = function() {
     window.RECEIPT_COUNTER++;
     localStorage.setItem('rca_receipt_counter', window.RECEIPT_COUNTER);
-    return `RCA-RCP-${window.RECEIPT_COUNTER}`;
+    return 'RCA-RCP-' + window.RECEIPT_COUNTER;
   };
+
+  /* ---- Payment Settings (default: manual only) ----
+     Loaded from localStorage by localstorage.js.
+     Only initialised here if localstorage.js hasn't run yet. */
+  if (!window.PAYMENT_SETTINGS) {
+    window.PAYMENT_SETTINGS = {
+      mode:                 'manual',    // 'manual' | 'manual_and_online'
+      online_gateway:       'paystack',  // prepared: 'paystack' | 'flutterwave'
+      online_public_key:    '',
+      receipt_prefix:       'RCA-RCP',
+      enable_result_unlock: true,
+      last_updated:         null,
+      last_updated_by:      null
+    };
+  }
 
 })();

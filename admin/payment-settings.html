@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Settings | Royal Crystal Academy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/variables.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
+  <link rel="stylesheet" href="../assets/css/admin/finance.css">
+  <style>
+    /* ── Settings Page Styles ── */
+    .ps-page-header {
+      margin-bottom: 24px;
+    }
+    .ps-page-header h2 {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #111827;
+      margin: 0 0 4px;
+    }
+    .ps-page-header p { font-size: 0.83rem; color: #6b7280; margin: 0; }
+
+    .ps-section {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+    .ps-section-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .ps-section-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+    .ps-icon-blue   { background: #dbeafe; }
+    .ps-icon-green  { background: #d1fae5; }
+    .ps-icon-orange { background: #ffedd5; }
+    .ps-icon-purple { background: #ede9fe; }
+    .ps-section-title { font-family: var(--font-heading); font-weight: 700; font-size: 0.95rem; color: #111827; }
+    .ps-section-desc  { font-size: 0.78rem; color: #6b7280; margin-top: 2px; }
+    .ps-section-body  { padding: 20px 22px; }
+
+    /* ── Mode Toggle Cards ── */
+    .ps-mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 4px; }
+    .ps-mode-card {
+      border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px 18px;
+      cursor: pointer; transition: all 0.15s ease; position: relative;
+    }
+    .ps-mode-card.active   { border-color: #1d4ed8; background: #eff6ff; }
+    .ps-mode-card.disabled { cursor: not-allowed; opacity: 0.6; }
+    .ps-mode-card input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .ps-mode-icon  { font-size: 1.6rem; margin-bottom: 8px; }
+    .ps-mode-title { font-family: var(--font-heading); font-weight: 700; font-size: 0.9rem; color: #111827; margin-bottom: 3px; }
+    .ps-mode-desc  { font-size: 0.78rem; color: #6b7280; line-height: 1.45; }
+    .ps-mode-status {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 10px; border-radius: 999px;
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+      margin-top: 8px;
+    }
+    .ps-status-active  { background: #d1fae5; color: #065f46; }
+    .ps-status-soon    { background: #fef9c3; color: #92400e; }
+    .ps-status-off     { background: #f3f4f6; color: #6b7280; }
+
+    /* ── Setting Rows ── */
+    .ps-setting-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 20px; padding: 16px 0; border-bottom: 1px solid #f3f4f6;
+    }
+    .ps-setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .ps-setting-label { font-weight: 600; font-size: 0.85rem; color: #374151; margin-bottom: 3px; }
+    .ps-setting-hint  { font-size: 0.75rem; color: #9ca3af; line-height: 1.4; }
+    .ps-setting-control { flex-shrink: 0; min-width: 200px; text-align: right; }
+    .ps-toggle {
+      position: relative; display: inline-block; width: 46px; height: 26px;
+    }
+    .ps-toggle input { opacity: 0; width: 0; height: 0; }
+    .ps-toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background: #d1d5db; border-radius: 999px; transition: 0.2s;
+    }
+    .ps-toggle-slider:before {
+      content: ''; position: absolute;
+      height: 20px; width: 20px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+    .ps-toggle input:checked + .ps-toggle-slider { background: #1d4ed8; }
+    .ps-toggle input:checked + .ps-toggle-slider:before { transform: translateX(20px); }
+    .ps-toggle input:disabled + .ps-toggle-slider { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Future Gateway Config (greyed out) ── */
+    .ps-gateway-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ps-form-group { display: flex; flex-direction: column; gap: 5px; }
+    .ps-form-label { font-size: 0.78rem; font-weight: 600; color: #374151; }
+    .ps-form-input {
+      padding: 9px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px;
+      font-size: 0.82rem; font-family: inherit; color: #111827;
+      transition: border-color 0.15s;
+    }
+    .ps-form-input:focus { outline: none; border-color: #1d4ed8; box-shadow: 0 0 0 3px rgba(29,78,216,.1); }
+    .ps-form-input:disabled { background: #f9fafb; color: #9ca3af; cursor: not-allowed; }
+    .ps-form-hint { font-size: 0.7rem; color: #9ca3af; }
+    .ps-locked-notice {
+      background: #fef3c7; border: 1px solid #fde68a; border-radius: 10px;
+      padding: 12px 16px; font-size: 0.8rem; color: #92400e; margin-bottom: 14px;
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+
+    /* ── Save Bar ── */
+    .ps-save-bar {
+      background: #fff; border-radius: 12px; padding: 16px 22px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .ps-save-msg { font-size: 0.82rem; color: #6b7280; }
+    .ps-saved-badge { color: #16a34a; font-weight: 700; display: none; }
+
+    @media (max-width: 640px) {
+      .ps-mode-grid { grid-template-columns: 1fr; }
+      .ps-gateway-grid { grid-template-columns: 1fr; }
+      .ps-setting-row { flex-direction: column; gap: 10px; }
+      .ps-setting-control { text-align: left; min-width: unset; }
+    }
+  </style>
+</head>
+<body>
+<div class="admin-shell">
+
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+      <span>Royal Crystal Academy</span>
+    </div>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-profile-info">
+        <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+        <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-online-dot">Online</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <p class="sidebar-section-label">Main</p>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">⊞</i> Dashboard</a>
+      <p class="sidebar-section-label">Administration</p>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">○</i> Students</a>
+      <a href="admission-form.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Form</a>
+      <a href="admission-register.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Register</a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Teachers</a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Classes</a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Attendance</a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Discipline</a>
+      <p class="sidebar-section-label">Results</p>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Score Entry</a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">○</i> Class Review</a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Approvals</a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Report Cards</a>
+      <p class="sidebar-section-label">Finance</p>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">○</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Finance Reports</a>
+      <a href="payment-settings.html" class="sidebar-link active" data-roles="ict_admin"><i class="icon">○</i> Payment Settings</a>
+      <p class="sidebar-section-label">Communications</p>
+      <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
+      <a href="announcements.html?tab=newsletter" class="sidebar-link" data-roles="all"><i class="icon">○</i> Newsletter</a>
+      <a href="school-programme.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Programme of Events</a>
+      <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
+      <p class="sidebar-section-label">ICT Department</p>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab &amp; Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT &amp; Coding Clubs</a>
+      <p class="sidebar-section-label">System</p>
+      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> User Management</a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Activity Logs</a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="sidebar-link"><i class="icon">←</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">✕</i> Log out</a>
+    </div>
+  </aside>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div class="admin-content">
+    <header class="admin-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+      <h1 class="topbar-title">Payment Settings</h1>
+      <span class="topbar-session">Academic Session: 2025/2026</span>
+      <button class="topbar-bell" title="Notifications">&#128276;<span class="topbar-bell-badge">4</span></button>
+      <div class="topbar-user">
+        <span class="user-role-badge" id="userRoleBadge">Guest</span>
+        <div class="user-avatar" id="userAvatar">
+          <img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;">
+        </div>
+      </div>
+    </header>
+
+    <main class="admin-main">
+
+      <div class="ps-page-header">
+        <h2>&#9881; Payment System Settings</h2>
+        <p>Control how payments are processed. Only the ICT Administrator can change these settings.</p>
+      </div>
+
+      <!-- ── Section 1: Payment Mode ── -->
+      <div class="ps-section">
+        <div class="ps-section-header">
+          <div class="ps-section-icon ps-icon-blue">&#128179;</div>
+          <div>
+            <div class="ps-section-title">Payment Mode</div>
+            <div class="ps-section-desc">Choose how parents can make payments for school fees</div>
+          </div>
+        </div>
+        <div class="ps-section-body">
+          <div class="ps-mode-grid">
+            <!-- Manual Only (default active) -->
+            <label class="ps-mode-card active" id="modeManualCard">
+              <input type="radio" name="paymentMode" value="manual" id="modeManual" checked>
+              <div class="ps-mode-icon">&#128203;</div>
+              <div class="ps-mode-title">Manual Payments Only</div>
+              <div class="ps-mode-desc">Parents visit the school office. Accountant records payment and issues a receipt.</div>
+              <span class="ps-mode-status ps-status-active">&#10003; Currently Active</span>
+            </label>
+
+            <!-- Manual + Online (future) -->
+            <label class="ps-mode-card" id="modeOnlineCard">
+              <input type="radio" name="paymentMode" value="manual_and_online" id="modeOnline">
+              <div class="ps-mode-icon">&#127760;</div>
+              <div class="ps-mode-title">Manual + Online Payments</div>
+              <div class="ps-mode-desc">Parents can also pay online via Paystack. Receipts are generated automatically.</div>
+              <span class="ps-mode-status ps-status-soon">&#128274; Coming Soon</span>
+            </label>
+          </div>
+          <p style="font-size:0.75rem;color:#9ca3af;margin-top:10px">
+            When "Manual + Online" is enabled, a "Pay Online" button will appear in the Parent Portal and a Paystack integration will be activated.
+          </p>
+        </div>
+      </div>
+
+      <!-- ── Section 2: Manual Payment Settings ── -->
+      <div class="ps-section">
+        <div class="ps-section-header">
+          <div class="ps-section-icon ps-icon-green">&#128203;</div>
+          <div>
+            <div class="ps-section-title">Manual Payment Settings</div>
+            <div class="ps-section-desc">Configure how manual payments are recorded and receipts are issued</div>
+          </div>
+        </div>
+        <div class="ps-section-body">
+          <div class="ps-setting-row">
+            <div>
+              <div class="ps-setting-label">Receipt Number Prefix</div>
+              <div class="ps-setting-hint">All receipt numbers will use this prefix (e.g. RCA-RCP-1001)</div>
+            </div>
+            <div class="ps-setting-control">
+              <input type="text" id="receiptPrefix" class="ps-form-input" value="RCA-RCP" style="width:130px;text-align:center;font-weight:700;font-family:monospace">
+            </div>
+          </div>
+          <div class="ps-setting-row">
+            <div>
+              <div class="ps-setting-label">Unlock Results After Full Payment</div>
+              <div class="ps-setting-hint">When enabled, ICT Admin can unlock a student's report card once their fees are fully paid</div>
+            </div>
+            <div class="ps-setting-control">
+              <label class="ps-toggle">
+                <input type="checkbox" id="toggleResultUnlock" checked>
+                <span class="ps-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="ps-setting-row">
+            <div>
+              <div class="ps-setting-label">Who Can Record Payments</div>
+              <div class="ps-setting-hint">Only Accountant and ICT Administrator can record manual payments</div>
+            </div>
+            <div class="ps-setting-control">
+              <div style="font-size:0.8rem;color:#374151;text-align:right">
+                <span style="background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:700">Accountant</span>
+                &nbsp;
+                <span style="background:#dbeafe;color:#1e40af;padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:700">ICT Admin</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Section 3: Online Payment Gateway (locked) ── -->
+      <div class="ps-section">
+        <div class="ps-section-header">
+          <div class="ps-section-icon ps-icon-orange">&#127760;</div>
+          <div>
+            <div class="ps-section-title">Online Payment Gateway</div>
+            <div class="ps-section-desc">Configure Paystack integration for online payments — available in a future update</div>
+          </div>
+        </div>
+        <div class="ps-section-body">
+          <div class="ps-locked-notice">
+            <span>&#128274;</span>
+            <div>
+              <strong>Gateway not yet activated.</strong> Online payments are currently disabled. When you are ready to activate online payments,
+              contact your ICT team to integrate Paystack. Switch the Payment Mode above to "Manual + Online" to enable the gateway fields.
+            </div>
+          </div>
+
+          <div class="ps-gateway-grid" id="gatewayFields">
+            <div class="ps-form-group" style="grid-column:1/-1">
+              <label class="ps-form-label">Payment Gateway</label>
+              <select id="gatewaySelect" class="ps-form-input" disabled>
+                <option value="paystack">Paystack (Recommended for Nigeria)</option>
+                <option value="flutterwave">Flutterwave</option>
+              </select>
+              <span class="ps-form-hint">The payment provider parents will use to pay online</span>
+            </div>
+            <div class="ps-form-group">
+              <label class="ps-form-label">Public Key</label>
+              <input type="text" id="gatewayPublicKey" class="ps-form-input" placeholder="pk_live_xxxxxxxxxxxxxxxx" disabled>
+              <span class="ps-form-hint">Visible in your Paystack dashboard</span>
+            </div>
+            <div class="ps-form-group">
+              <label class="ps-form-label">Secret Key</label>
+              <input type="password" id="gatewaySecretKey" class="ps-form-input" placeholder="sk_live_xxxxxxxxxxxxxxxx" disabled>
+              <span class="ps-form-hint">Store securely — never share publicly</span>
+            </div>
+            <div class="ps-form-group" style="grid-column:1/-1">
+              <label class="ps-form-label">Webhook URL (auto-generated)</label>
+              <input type="text" id="webhookUrl" class="ps-form-input" placeholder="https://your-backend.onrender.com/api/payments/webhook" disabled style="font-family:monospace;font-size:0.75rem">
+              <span class="ps-form-hint">Add this URL to your Paystack webhook settings so payments are confirmed automatically</span>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;padding-top:14px;border-top:1px solid #f3f4f6">
+            <div style="font-weight:700;font-size:0.78rem;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Future Online Payment Workflow</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.8rem;color:#6b7280">
+                <span style="background:#e0f2fe;color:#0369a1;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">1</span>
+                Parent logs in to Parent Portal and clicks <strong style="color:#374151">"Pay Online"</strong>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.8rem;color:#6b7280">
+                <span style="background:#e0f2fe;color:#0369a1;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">2</span>
+                Parent is redirected to the Paystack checkout page
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.8rem;color:#6b7280">
+                <span style="background:#e0f2fe;color:#0369a1;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">3</span>
+                After successful payment, Paystack notifies the backend via webhook
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.8rem;color:#6b7280">
+                <span style="background:#e0f2fe;color:#0369a1;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">4</span>
+                System stores transaction, generates receipt, updates payment history and outstanding balance automatically
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:10px;font-size:0.8rem;color:#6b7280">
+                <span style="background:#e0f2fe;color:#0369a1;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0">5</span>
+                If payment qualifies, student's report card is automatically unlocked
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Section 4: Database Fields Summary ── -->
+      <div class="ps-section">
+        <div class="ps-section-header">
+          <div class="ps-section-icon ps-icon-purple">&#128209;</div>
+          <div>
+            <div class="ps-section-title">Payment Record Fields</div>
+            <div class="ps-section-desc">All payment records store these fields — ready for online payments when activated</div>
+          </div>
+        </div>
+        <div class="ps-section-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Date &amp; Time</div>
+              <div style="font-size:0.82rem;color:#374151">Payment date and time recorded</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Amount</div>
+              <div style="font-size:0.82rem;color:#374151">Amount paid (in Naira)</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Payment Method</div>
+              <div style="font-size:0.82rem;color:#374151">Cash / Bank Transfer / POS / Cheque</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Payment Type</div>
+              <div style="font-size:0.82rem;color:#374151">Manual or Online</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Payment Gateway</div>
+              <div style="font-size:0.82rem;color:#374151">Paystack / Flutterwave / null</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Transaction ID</div>
+              <div style="font-size:0.82rem;color:#374151">Gateway transaction reference</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Gateway Reference</div>
+              <div style="font-size:0.82rem;color:#374151">Paystack payment reference code</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Payment Status</div>
+              <div style="font-size:0.82rem;color:#374151">Success / Pending / Failed</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Receipt Number</div>
+              <div style="font-size:0.82rem;color:#374151">Unique receipt identifier (RCA-RCP-XXXX)</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Recorded By</div>
+              <div style="font-size:0.82rem;color:#374151">Staff member who recorded the payment</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Parent / Guardian</div>
+              <div style="font-size:0.82rem;color:#374151">Name of person who made payment</div>
+            </div>
+            <div style="background:#f9fafb;border-radius:8px;padding:10px 14px;border:1px solid #f3f4f6">
+              <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;margin-bottom:4px">Notes</div>
+              <div style="font-size:0.82rem;color:#374151">Optional notes (e.g. part payment)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Save Bar ── -->
+      <div class="ps-save-bar">
+        <div class="ps-save-msg">
+          Changes are saved to this browser's local storage and applied immediately.
+          <span class="ps-saved-badge" id="savedBadge">&#10003; Saved!</span>
+        </div>
+        <button class="btn btn-primary" id="saveSettingsBtn">&#10003; Save Settings</button>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/finance-data.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+  /* ── ICT Admin guard ── */
+  var cu      = window.CURRENT_USER;
+  var cuRoles = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
+  if (!cuRoles.includes('ict_admin')) {
+    document.querySelector('.admin-main').innerHTML =
+      '<div style="text-align:center;padding:60px 24px;color:#6b7280">' +
+      '<div style="font-size:2.5rem;margin-bottom:12px">&#128274;</div>' +
+      '<h3 style="font-family:var(--font-heading);color:#111827;margin-bottom:8px">Access Restricted</h3>' +
+      '<p>Only the ICT Administrator can access Payment Settings.</p></div>';
+    return;
+  }
+
+  var settings = window.PAYMENT_SETTINGS || {};
+
+  /* ── Load current settings into UI ── */
+  var modeVal = settings.mode || 'manual';
+  if (modeVal === 'manual_and_online') {
+    document.getElementById('modeOnline').checked = true;
+    document.getElementById('modeManualCard').classList.remove('active');
+    document.getElementById('modeOnlineCard').classList.add('active');
+    enableGatewayFields(true);
+  }
+
+  var prefix = settings.receipt_prefix || 'RCA-RCP';
+  document.getElementById('receiptPrefix').value = prefix;
+
+  document.getElementById('toggleResultUnlock').checked =
+    settings.enable_result_unlock !== false;
+
+  document.getElementById('gatewaySelect').value =
+    settings.online_gateway || 'paystack';
+
+  document.getElementById('gatewayPublicKey').value =
+    settings.online_public_key || '';
+
+  /* ── Mode toggle visual ── */
+  document.querySelectorAll('input[name="paymentMode"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      document.getElementById('modeManualCard').classList.toggle('active', this.value === 'manual');
+      document.getElementById('modeOnlineCard').classList.toggle('active', this.value === 'manual_and_online');
+      enableGatewayFields(this.value === 'manual_and_online');
+    });
+  });
+
+  function enableGatewayFields(enabled) {
+    ['gatewaySelect','gatewayPublicKey','gatewaySecretKey','webhookUrl'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.disabled = !enabled;
+    });
+    var notice = document.querySelector('.ps-locked-notice');
+    if (notice) notice.style.display = enabled ? 'none' : 'flex';
+  }
+
+  /* ── Save ── */
+  document.getElementById('saveSettingsBtn').addEventListener('click', function () {
+    var mode = document.querySelector('input[name="paymentMode"]:checked').value;
+
+    window.PAYMENT_SETTINGS = {
+      mode:                 mode,
+      online_gateway:       document.getElementById('gatewaySelect').value,
+      online_public_key:    document.getElementById('gatewayPublicKey').value.trim(),
+      receipt_prefix:       (document.getElementById('receiptPrefix').value.trim() || 'RCA-RCP').toUpperCase(),
+      enable_result_unlock: document.getElementById('toggleResultUnlock').checked,
+      last_updated:         new Date().toISOString(),
+      last_updated_by:      cu ? cu.full_name : 'ICT Admin'
+    };
+
+    if (window.RCA) window.RCA.save('payment_settings');
+    if (window.logActivity) window.logActivity('settings', 'Updated payment settings — mode: ' + mode, 'system');
+
+    var badge = document.getElementById('savedBadge');
+    badge.style.display = 'inline';
+    setTimeout(function () { badge.style.display = 'none'; }, 3000);
+  });
+
+  /* ── Webhook URL auto-populate ── */
+  var apiUrl = (window.RCA_CONFIG && window.RCA_CONFIG.API_URL) || 'https://your-backend.onrender.com/api';
+  document.getElementById('webhookUrl').value = apiUrl + '/payments/webhook';
+});
+</script>
+</body>
+</html>
