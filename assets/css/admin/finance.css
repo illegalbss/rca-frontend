@@ -246,7 +246,7 @@
 
 /* ---- Receipt ---- */
 .receipt-wrap {
-  max-width: 600px;
+  max-width: 720px;
   margin: 0 auto;
 }
 
@@ -425,13 +425,262 @@
 
 .outstanding-card-header h3 { font-size: var(--fs-base); font-weight: 700; color: var(--color-danger); }
 
+/* ---- Physical / traditional receipt layout ---- */
+.receipt-physical {
+  background: #fff;
+  border: 2px solid #1a3a6b;
+  max-width: 680px;
+  margin: 0 auto;
+  font-family: 'Times New Roman', Georgia, serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.receipt-physical-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 6rem;
+  font-weight: 900;
+  color: rgba(26, 58, 107, 0.05);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: 0.3em;
+  z-index: 0;
+}
+
+.receipt-physical-paid-overlay {
+  position: absolute;
+  top: 44%;
+  right: 32px;
+  transform: translateY(-50%) rotate(-22deg);
+  border: 4px solid rgba(22, 163, 74, 0.42);
+  color: rgba(22, 163, 74, 0.42);
+  font-size: 2.2rem;
+  font-weight: 900;
+  padding: 6px 18px;
+  letter-spacing: 0.15em;
+  pointer-events: none;
+  font-family: Impact, 'Arial Black', sans-serif;
+  border-radius: 4px;
+  z-index: 0;
+}
+
+.receipt-physical-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 3px solid #1a3a6b;
+  position: relative;
+  z-index: 1;
+}
+
+.receipt-physical-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.receipt-physical-school-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a3a6b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.receipt-physical-school-addr {
+  font-size: 0.78rem;
+  color: #444;
+  margin-top: 5px;
+  line-height: 1.65;
+}
+
+.receipt-physical-badge {
+  background: #1a3a6b;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.receipt-physical-badge-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.receipt-physical-badge-no {
+  font-family: 'Courier New', monospace;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.receipt-physical-body {
+  padding: 20px 28px 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.receipt-physical-field {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 13px;
+}
+
+.receipt-physical-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #222;
+  white-space: nowrap;
+  min-width: 148px;
+  flex-shrink: 0;
+}
+
+.receipt-physical-value {
+  flex: 1;
+  border-bottom: 1px solid #555;
+  padding-bottom: 2px;
+  font-size: 0.88rem;
+  color: #111;
+  min-height: 18px;
+  line-height: 1.4;
+}
+
+.receipt-physical-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 16px 0 8px;
+  padding: 10px 0;
+  border-top: 1px dashed #aaa;
+  border-bottom: 1px dashed #aaa;
+}
+
+.receipt-physical-amount-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #222;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-right: 4px;
+}
+
+.receipt-physical-amount-sym {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #1a3a6b;
+}
+
+.receipt-physical-amount-naira {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a3a6b;
+  border-bottom: 2px solid #1a3a6b;
+  padding: 0 12px 2px;
+  min-width: 130px;
+  letter-spacing: 0.03em;
+}
+
+.receipt-physical-kobo-sep {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 3px;
+}
+
+.receipt-physical-amount-kobo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-bottom: 2px solid #555;
+  padding: 0 10px 2px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.receipt-physical-balance {
+  font-size: 0.76rem;
+  color: #666;
+  margin-top: 6px;
+  padding-left: 2px;
+}
+
+.receipt-physical-sig-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 30px;
+}
+
+.receipt-physical-sig-block { text-align: center; }
+
+.receipt-physical-sig-line {
+  border-top: 1px solid #333;
+  width: 170px;
+  margin: 0 auto 4px;
+}
+
+.receipt-physical-sig-label {
+  font-size: 0.76rem;
+  color: #555;
+}
+
+.receipt-physical-sig-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #222;
+  margin-top: 2px;
+}
+
+.receipt-physical-meta {
+  text-align: right;
+  font-size: 0.74rem;
+  color: #888;
+  line-height: 1.7;
+}
+
+.receipt-physical-footer {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #666;
+  padding: 8px 24px 12px;
+  border-top: 1px dashed #bbb;
+  margin-top: 16px;
+  font-style: italic;
+  position: relative;
+  z-index: 1;
+}
+
 /* ---- Print styles for receipt ---- */
 @media print {
   .admin-sidebar, .no-print, .admin-topbar { display: none !important; }
   .admin-shell { display: block; }
   .admin-main { padding: 0; }
   body { background: #fff; }
-  .receipt-card { box-shadow: none; border: none; }
+  .receipt-card { box-shadow: none; border: none; padding: 0; }
+  .receipt-physical { border: 2px solid #1a3a6b !important; }
+  .receipt-physical-badge {
+    background: #1a3a6b !important;
+    color: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .receipt-physical-school-name { color: #1a3a6b !important; }
+  .receipt-physical-amount-naira { color: #1a3a6b !important; border-color: #1a3a6b !important; }
+  .receipt-physical-amount-sym   { color: #1a3a6b !important; }
+  .receipt-physical-paid-overlay { border-color: rgba(22,163,74,0.42) !important; color: rgba(22,163,74,0.42) !important; }
   @page { margin: 1cm; }
 }
 

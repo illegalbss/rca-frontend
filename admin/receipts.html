@@ -211,81 +211,125 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
+  /* ---- Number → words helper (for "The sum of:" line) ---- */
+  function numberToWords(amount) {
+    const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+      'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+      'Seventeen','Eighteen','Nineteen'];
+    const tns = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+    function _w(n) {
+      if (n === 0)     return '';
+      if (n < 20)      return ones[n] + ' ';
+      if (n < 100)     return tns[Math.floor(n/10)] + (n%10 ? '-'+ones[n%10] : '') + ' ';
+      if (n < 1000)    return ones[Math.floor(n/100)] + ' Hundred ' + _w(n%100);
+      if (n < 1000000) return _w(Math.floor(n/1000)) + 'Thousand ' + _w(n%1000);
+      return _w(Math.floor(n/1000000)) + 'Million ' + _w(n%1000000);
+    }
+    const naira = Math.floor(amount);
+    const kobo  = Math.round((amount - naira) * 100);
+    let words = _w(naira).trim() + ' Naira';
+    if (kobo > 0) words += ' and ' + _w(kobo).trim() + ' Kobo';
+    return words + ' Only';
+  }
+
   /* ---- Build and display a single printable receipt ---- */
   window.showReceipt = function(admNo, term, receiptNo) {
-    const student  = allStudents.find(s => s.admission_no === admNo);
-    const key      = `${admNo}|${term}`;
-    const rec      = records[key];
+    const student = allStudents.find(s => s.admission_no === admNo);
+    const key     = `${admNo}|${term}`;
+    const rec     = records[key];
     if (!rec || !student) return;
 
-    const payment  = rec.payments.find(p => p.receipt_no === receiptNo);
+    const payment = rec.payments.find(p => p.receipt_no === receiptNo);
     if (!payment) return;
 
-    const breakdown = window.computeFeeBreakdown(admNo, term);
+    const isPaid       = rec.balance <= 0;
+    const naira        = Math.floor(payment.amount);
+    const kobo         = String(Math.round((payment.amount - naira) * 100)).padStart(2, '0');
+    const receivedFrom = payment.parent_name || ('Parent / Guardian of ' + student.full_name);
+    const beingFor     = `${TERM_LABELS[term]} School Fees — 2025/2026 Academic Session — ${student.full_name} (${student.class_name})`;
+    const payMethod    = payment.payment_type === 'online'
+      ? `Online Transfer (${payment.gateway || 'Gateway'})`
+      : (payment.method || 'Cash / Bank');
 
-    const feeLines = breakdown ? breakdown.lines.map(l =>
-      `<div class="receipt-line"><span>${l.label}</span><span>${fmt(l.amount)}</span></div>`
-    ).join('') : '';
+    const card = document.getElementById('receiptCard');
+    card.style.cssText = 'padding:0;background:transparent;border:none;box-shadow:none;border-radius:0';
+    card.innerHTML = `
+      <div class="receipt-physical">
+        <div class="receipt-physical-watermark">RCA</div>
+        ${isPaid ? '<div class="receipt-physical-paid-overlay">PAID</div>' : ''}
 
-    const isPaid = rec.balance <= 0;
-
-    document.getElementById('receiptCard').innerHTML = `
-      <div class="receipt-header">
-        <img src="../assets/images/logo.svg" alt="logo">
-        <div class="receipt-school-name">Royal Crystal Academy</div>
-        <div class="receipt-subtitle">Official Payment Receipt</div>
-        <span class="receipt-no">${receiptNo}</span>
-      </div>
-
-      <div class="receipt-info-grid">
-        <div class="receipt-info-item">
-          <span class="receipt-info-label">Student Name</span>
-          <span class="receipt-info-value">${student.full_name}</span>
+        <div class="receipt-physical-header">
+          <img src="../assets/images/logo.png" alt="Royal Crystal Academy" class="receipt-physical-logo">
+          <div>
+            <div class="receipt-physical-school-name">Royal Crystal Academy</div>
+            <div class="receipt-physical-school-addr">
+              20/22 Amaigbo Lane, Uwani, Enugu State<br>
+              Tel: 08108419563 &nbsp;|&nbsp; 09026324650
+            </div>
+          </div>
         </div>
-        <div class="receipt-info-item">
-          <span class="receipt-info-label">Admission No.</span>
-          <span class="receipt-info-value">${admNo}</span>
-        </div>
-        <div class="receipt-info-item">
-          <span class="receipt-info-label">Class</span>
-          <span class="receipt-info-value">${student.class_name}</span>
-        </div>
-        <div class="receipt-info-item">
-          <span class="receipt-info-label">Term</span>
-          <span class="receipt-info-value">${TERM_LABELS[term]}</span>
-        </div>
-        <div class="receipt-info-item">
-          <span class="receipt-info-label">Payment Date</span>
-          <span class="receipt-info-value">${payment.date}</span>
-        </div>
-        <div class="receipt-info-item">
-          <span class="receipt-info-label">Payment Method</span>
-          <span class="receipt-info-value">${payment.payment_type === 'online' ? '&#127760; Online (' + (payment.gateway || 'Gateway') + ')' : '&#128179; Manual — ' + payment.method}</span>
-        </div>
-        ${payment.parent_name ? `<div class="receipt-info-item" style="grid-column:1/-1">
-          <span class="receipt-info-label">Received From</span>
-          <span class="receipt-info-value" style="font-weight:600">${payment.parent_name}</span>
-        </div>` : ''}
-      </div>
 
-      <div class="receipt-lines">
-        <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--space-sm);color:var(--color-text-muted);text-transform:uppercase;font-size:0.7rem;letter-spacing:0.04em">Fee Breakdown</div>
-        ${feeLines}
-        ${breakdown ? `<div class="receipt-total-row"><span>Term Total</span><span>${fmt(breakdown.grand_total)}</span></div>` : ''}
-      </div>
+        <div class="receipt-physical-badge">
+          <span class="receipt-physical-badge-title">Official Receipt</span>
+          <span class="receipt-physical-badge-no">No: ${receiptNo}</span>
+        </div>
 
-      <div style="background:var(--color-bg);border-radius:var(--radius);padding:var(--space-md);margin-bottom:var(--space-md)">
-        <div class="receipt-line"><span style="font-weight:600">Amount Paid (This Receipt)</span><span style="font-weight:700;color:var(--color-success)">${fmt(payment.amount)}</span></div>
-        <div class="receipt-line"><span>Total Paid (All Instalments)</span><span>${fmt(rec.amount_paid)}</span></div>
-        <div class="receipt-line"><span>Outstanding Balance</span><span style="color:${rec.balance > 0 ? 'var(--color-danger)' : 'var(--color-success)';}">${rec.balance > 0 ? fmt(rec.balance) : 'NIL'}</span></div>
-      </div>
+        <div class="receipt-physical-body">
+          <div class="receipt-physical-field">
+            <span class="receipt-physical-label">Received from:</span>
+            <span class="receipt-physical-value">${receivedFrom}</span>
+          </div>
+          <div class="receipt-physical-field">
+            <span class="receipt-physical-label">Date:</span>
+            <span class="receipt-physical-value">${payment.date}</span>
+          </div>
+          <div class="receipt-physical-field">
+            <span class="receipt-physical-label">The sum of:</span>
+            <span class="receipt-physical-value">${numberToWords(payment.amount)}</span>
+          </div>
+          <div class="receipt-physical-field">
+            <span class="receipt-physical-label">Being payment for:</span>
+            <span class="receipt-physical-value">${beingFor}</span>
+          </div>
+          <div class="receipt-physical-field">
+            <span class="receipt-physical-label">Payment method:</span>
+            <span class="receipt-physical-value">${payMethod}</span>
+          </div>
+          ${payment.notes ? `<div class="receipt-physical-field">
+            <span class="receipt-physical-label">Note:</span>
+            <span class="receipt-physical-value" style="font-style:italic">${payment.notes}</span>
+          </div>` : ''}
 
-      ${isPaid ? '<div class="receipt-paid-stamp"><span class="receipt-stamp">PAID IN FULL</span></div>' : ''}
+          <div class="receipt-physical-amount-row">
+            <span class="receipt-physical-amount-label">Amount in figure:</span>
+            <span class="receipt-physical-amount-sym">&#8358;</span>
+            <span class="receipt-physical-amount-naira">${naira.toLocaleString()}</span>
+            <span class="receipt-physical-kobo-sep">:</span>
+            <span style="font-size:0.82rem;font-weight:700;color:#333;margin-right:2px">K</span>
+            <span class="receipt-physical-amount-kobo">${kobo}</span>
+          </div>
 
-      ${payment.notes ? `<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:0.78rem;color:#92400e"><strong>Note:</strong> ${payment.notes}</div>` : ''}
-      <div class="receipt-footer">
-        Issued by: ${payment.recorded_by} &nbsp;·&nbsp; Royal Crystal Academy &nbsp;·&nbsp; 2025/2026 Session<br>
-        This is an official payment receipt. Please keep it for your records.
+          <div class="receipt-physical-balance">
+            Balance outstanding: <strong>${rec.balance > 0 ? fmt(rec.balance) : 'NIL — Fully Paid'}</strong>
+            &nbsp;|&nbsp; Total paid this term: <strong>${fmt(rec.amount_paid)}</strong>
+          </div>
+
+          <div class="receipt-physical-sig-row">
+            <div class="receipt-physical-sig-block">
+              <div class="receipt-physical-sig-line"></div>
+              <div class="receipt-physical-sig-label">Receiver's Signature</div>
+              <div class="receipt-physical-sig-name">${payment.recorded_by}</div>
+            </div>
+            <div class="receipt-physical-meta">
+              Adm. No.: ${admNo}<br>
+              ${TERM_LABELS[term]} &nbsp;|&nbsp; 2025/2026
+            </div>
+          </div>
+        </div>
+
+        <div class="receipt-physical-footer">
+          This is an official receipt of Royal Crystal Academy. Please retain for your records.
+        </div>
       </div>
     `;
 
