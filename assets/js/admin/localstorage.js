@@ -96,17 +96,29 @@
 
   if (needsInit) {
     console.log('RCA localStorage: initializing fresh data (version', DATA_VERSION, ')');
-    // Clear versioned keys only. rca_newsletters is excluded because newsletters are
+    // Preserve student, teacher, and user data across version bumps so that
+    // phone numbers, DOBs, and other admin edits are never lost when the
+    // version changes (e.g. fee structure update, payment reset).
+    const savedStudents = lsGet('students');
+    const savedTeachers = lsGet('teachers');
+    const savedUsers    = lsGet('users');
+
+    // Clear all versioned keys. rca_newsletters is excluded because newsletters are
     // permanent school records that must survive version upgrades and resets.
     Object.keys(localStorage)
       .filter(k => k.startsWith(VERSION + '_'))
       .forEach(k => localStorage.removeItem(k));
+
+    // Restore people data immediately so it is available to the load steps below
+    if (savedStudents && savedStudents.length > 0) lsSet('students', savedStudents);
+    if (savedTeachers && savedTeachers.length > 0) lsSet('teachers', savedTeachers);
+    if (savedUsers    && savedUsers.length    > 0) lsSet('users',    savedUsers);
   }
 
   /* ---- LOAD OR GENERATE each data store ---- */
 
   /* STUDENTS */
-  let students = needsInit ? null : lsGet('students');
+  let students = lsGet('students');
   if (!students) {
     students = window.SAMPLE_STUDENTS_SEED || [];
     lsSet('students', students);
@@ -119,7 +131,7 @@
   );
 
   /* TEACHERS */
-  let teachers = needsInit ? null : lsGet('teachers');
+  let teachers = lsGet('teachers');
   if (!teachers) {
     teachers = window.SAMPLE_TEACHERS || [];
     lsSet('teachers', teachers);
@@ -127,7 +139,7 @@
   window.SAMPLE_TEACHERS = teachers;
 
   /* USERS */
-  let users = needsInit ? null : lsGet('users');
+  let users = lsGet('users');
   if (!users) {
     users = window.SAMPLE_USERS || [];
     lsSet('users', users);

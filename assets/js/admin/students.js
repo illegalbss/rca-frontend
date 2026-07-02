@@ -223,6 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${student.full_name}</td>
         <td>${student.admission_no}</td>
         <td>${student.gender === 'male' ? 'Male' : 'Female'}</td>
+        <td style="font-size:0.78rem;color:#6b7280">${student.date_of_birth || '<span style="color:#d1d5db">—</span>'}</td>
+        <td style="font-size:0.78rem">${student.parent_phone
+          ? `<a href="tel:${student.parent_phone}" style="color:#1d4ed8;font-weight:600;text-decoration:none">${student.parent_phone}</a>`
+          : '<span style="color:#d1d5db">—</span>'}</td>
         <td>
           <span class="badge ${student.status === 'active' ? 'badge-success' : 'badge-danger'}">
             ${student.status === 'active' ? 'Active' : 'Inactive'}
@@ -439,18 +443,61 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // VIEW student
+  // VIEW student — proper modal
   window._viewStudent = function(admNo) {
-    const student = allStudents.find(s => s.admission_no === admNo);
-    if (!student) return;
-    alert(`
-Name:         ${student.full_name}
-Admission No: ${student.admission_no}
-Class:        ${student.class_name}
-Gender:       ${student.gender}
-Parent Phone: ${student.parent_phone || '—'}
-Status:       ${student.status}
-    `.trim());
+    const s = allStudents.find(st => st.admission_no === admNo);
+    if (!s) return;
+    document.getElementById('studentViewModal')?.remove();
+
+    const formatDob = (dob) => {
+      if (!dob) return '—';
+      try {
+        const d = new Date(dob);
+        const diff = Date.now() - d.getTime();
+        const age  = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
+        return dob + ' (Age ' + age + ')';
+      } catch(e) { return dob; }
+    };
+
+    const row = (label, value) =>
+      `<tr>
+        <td style="padding:9px 12px;font-size:0.78rem;font-weight:600;color:#6b7280;width:40%;border-bottom:1px solid #f3f4f6">${label}</td>
+        <td style="padding:9px 12px;font-size:0.82rem;color:#111827;border-bottom:1px solid #f3f4f6;font-weight:500">${value}</td>
+      </tr>`;
+
+    const modal = document.createElement('div');
+    modal.id = 'studentViewModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,0.2);overflow:hidden">
+        <div style="background:#1a3a5c;padding:18px 22px;display:flex;align-items:center;gap:14px">
+          <div style="width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-family:Poppins,sans-serif;font-weight:700;font-size:1rem;color:#1a3a5c;flex-shrink:0">${getInitials(s.full_name)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:Poppins,sans-serif;font-weight:700;font-size:0.95rem;color:#fff">${s.full_name}</div>
+            <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);margin-top:2px">${s.class_name} &bull; ${s.admission_no}</div>
+          </div>
+          <button onclick="document.getElementById('studentViewModal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer">&times;</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse">
+            ${row('Full Name',      s.full_name)}
+            ${row('Admission No.', s.admission_no)}
+            ${row('Class',         s.class_name)}
+            ${row('Gender',        s.gender === 'male' ? 'Male' : 'Female')}
+            ${row('Date of Birth', formatDob(s.date_of_birth))}
+            ${row('Parent Phone',  s.parent_phone
+              ? `<a href="tel:${s.parent_phone}" style="color:#1d4ed8;font-weight:600">${s.parent_phone}</a>`
+              : '<span style="color:#9ca3af">Not recorded</span>')}
+            ${row('Status',        `<span style="background:${s.status==='active'?'#d1fae5':'#fee2e2'};color:${s.status==='active'?'#065f46':'#991b1b'};padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;text-transform:uppercase">${s.status}</span>`)}
+          </table>
+        </div>
+        <div style="padding:14px 22px;border-top:1px solid #f3f4f6;display:flex;gap:10px;justify-content:flex-end">
+          ${isAdmin ? `<button onclick="document.getElementById('studentViewModal').remove();window._editStudent('${s.admission_no}')" class="btn btn-outline" style="font-size:0.82rem">Edit</button>` : ''}
+          <button onclick="document.getElementById('studentViewModal').remove()" class="btn btn-primary" style="font-size:0.82rem">Close</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   };
 
   // ADD student
@@ -519,8 +566,8 @@ Status:       ${student.status}
       student.full_name     = `${firstName} ${lastName}`;
       student.gender        = gender;
       student.class_name    = cls;
-      student.date_of_birth = dob || student.date_of_birth;
-      student.parent_phone  = phone || student.parent_phone;
+      student.date_of_birth = dob  || null;
+      student.parent_phone  = phone || null;
 
       if (window.RCA) window.RCA.save('students');
       if (window.logActivity) window.logActivity('update', `Student record updated: ${student.full_name} (${cls})`, 'students');
