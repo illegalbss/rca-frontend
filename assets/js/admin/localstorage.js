@@ -99,9 +99,10 @@
     // Preserve student, teacher, and user data across version bumps so that
     // phone numbers, DOBs, and other admin edits are never lost when the
     // version changes (e.g. fee structure update, payment reset).
-    const savedStudents = lsGet('students');
-    const savedTeachers = lsGet('teachers');
-    const savedUsers    = lsGet('users');
+    const savedStudents    = lsGet('students');
+    const savedTeachers    = lsGet('teachers');
+    const savedUsers       = lsGet('users');
+    const savedAdmissions  = lsGet('admission_register');
 
     // Clear all versioned keys. rca_newsletters is excluded because newsletters are
     // permanent school records that must survive version upgrades and resets.
@@ -110,9 +111,11 @@
       .forEach(k => localStorage.removeItem(k));
 
     // Restore people data immediately so it is available to the load steps below
-    if (savedStudents && savedStudents.length > 0) lsSet('students', savedStudents);
-    if (savedTeachers && savedTeachers.length > 0) lsSet('teachers', savedTeachers);
-    if (savedUsers    && savedUsers.length    > 0) lsSet('users',    savedUsers);
+    if (savedStudents  && savedStudents.length  > 0) lsSet('students', savedStudents);
+    if (savedTeachers  && savedTeachers.length  > 0) lsSet('teachers', savedTeachers);
+    if (savedUsers     && savedUsers.length     > 0) lsSet('users',    savedUsers);
+    // Admission Register holds permanent official records — must survive version bumps too
+    if (savedAdmissions && savedAdmissions.length > 0) lsSet('admission_register', savedAdmissions);
   }
 
   /* ---- LOAD OR GENERATE each data store ---- */
