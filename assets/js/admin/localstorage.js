@@ -99,10 +99,11 @@
     // Preserve student, teacher, and user data across version bumps so that
     // phone numbers, DOBs, and other admin edits are never lost when the
     // version changes (e.g. fee structure update, payment reset).
-    const savedStudents    = lsGet('students');
-    const savedTeachers    = lsGet('teachers');
-    const savedUsers       = lsGet('users');
-    const savedAdmissions  = lsGet('admission_register');
+    const savedStudents      = lsGet('students');
+    const savedTeachers      = lsGet('teachers');
+    const savedUsers         = lsGet('users');
+    const savedAdmissions    = lsGet('admission_register');
+    const savedPaySettings   = lsGet('payment_settings');
 
     // Clear all versioned keys. rca_newsletters is excluded because newsletters are
     // permanent school records that must survive version upgrades and resets.
@@ -116,6 +117,8 @@
     if (savedUsers     && savedUsers.length     > 0) lsSet('users',    savedUsers);
     // Admission Register holds permanent official records — must survive version bumps too
     if (savedAdmissions && savedAdmissions.length > 0) lsSet('admission_register', savedAdmissions);
+    // Payment Settings is admin configuration (gateway mode, keys), not sample data — must survive too
+    if (savedPaySettings) lsSet('payment_settings', savedPaySettings);
   }
 
   /* ---- LOAD OR GENERATE each data store ---- */
