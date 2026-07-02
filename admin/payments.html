@@ -741,6 +741,21 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   renderRecentPayments();
+
+  /* ── Auto-lookup if URL contains ?adm=&term= (from debtors table) ── */
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlAdm    = urlParams.get('adm');
+  var urlTerm   = urlParams.get('term');
+  if (urlAdm) {
+    // Switch to admission number tab and pre-fill
+    window.switchLookupTab('adm');
+    document.getElementById('lookupAdmNo').value = urlAdm.toUpperCase();
+    if (urlTerm && document.getElementById('lookupTerm').querySelector('[value="' + urlTerm + '"]')) {
+      document.getElementById('lookupTerm').value = urlTerm;
+    }
+    // Trigger lookup automatically
+    setTimeout(function() { doLookup(urlAdm, document.getElementById('lookupTerm').value); }, 100);
+  }
 });
 </script>
 </body>

@@ -259,19 +259,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const adm = activePayChild.admission_no;
     let totalExpected = 0, totalPaid = 0, totalBalance = 0;
     const allPayRows = [];
+    const termStatusRows = [];
+    const TERM_SHORT = { term1:'First Term', term2:'Second Term', term3:'Third Term' };
 
     ['term1','term2','term3'].forEach(term => {
-      const rec = payRecords[`${adm}|${term}`];
-      if (!rec) return;
+      // Always compute the expected fee, even if no record exists yet
+      const breakdown = window.computeFeeBreakdown ? window.computeFeeBreakdown(adm, term) : null;
+      const expected  = breakdown ? breakdown.grand_total : 0;
+      let rec = payRecords[`${adm}|${term}`];
+      if (!rec) {
+        // No payment recorded yet — show as fully unpaid
+        rec = { amount_expected: expected, amount_paid: 0, balance: expected, status: 'unpaid', payments: [] };
+      }
       totalExpected += rec.amount_expected;
       totalPaid     += rec.amount_paid;
       totalBalance  += rec.balance;
+      termStatusRows.push({ term, label: TERM_SHORT[term], rec });
       (rec.payments || []).forEach(pay => {
         allPayRows.push({ term, ...pay, expected: rec.amount_expected, status: rec.status });
       });
     });
 
     // Summary cards
+    const lastPay = allPayRows.sort((a,b) => (b.date||'').localeCompare(a.date||''))[0];
     document.getElementById('paySummaryCards').innerHTML = `
       <div class="pp-pay-stat">
         <div class="pp-pay-stat-label">Outstanding Balance</div>
@@ -281,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="pp-pay-stat">
         <div class="pp-pay-stat-label">Total Paid</div>
         <div class="pp-pay-stat-value green">${fmt(totalPaid)}</div>
-        <div class="pp-pay-stat-sub">Last: ${allPayRows.length ? allPayRows[allPayRows.length-1].date : '—'}</div>
+        <div class="pp-pay-stat-sub">${lastPay ? 'Last: ' + lastPay.date : 'No payments yet'}</div>
       </div>
       <div class="pp-pay-stat">
         <div class="pp-pay-stat-label">Total Fee (Session)</div>
@@ -290,16 +300,46 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    // History table
+    // Per-term progress bars
     const BADGE = { paid:'pp-badge-paid', partial:'pp-badge-partial', unpaid:'pp-badge-unpaid' };
-    const rows = allPayRows.sort((a,b) => (b.date||'').localeCompare(a.date||''));
+    const PROGRESS_COLOR = { paid:'#16a34a', partial:'#d97706', unpaid:'#dc2626' };
+    const termProgressHtml = termStatusRows.map(({ label, rec }) => {
+      const pct = rec.amount_expected > 0 ? Math.round(rec.amount_paid / rec.amount_expected * 100) : 0;
+      return `
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:0.82rem;font-weight:600;color:#374151">${label}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:0.78rem;color:#6b7280">${fmt(rec.amount_paid)} / ${fmt(rec.amount_expected)}</span>
+              <span class="${BADGE[rec.status]}">${rec.status}</span>
+            </div>
+          </div>
+          <div style="height:8px;background:#f3f4f6;border-radius:999px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${PROGRESS_COLOR[rec.status]};border-radius:999px;transition:width 0.4s"></div>
+          </div>
+          <div style="font-size:0.7rem;color:#9ca3af;margin-top:2px;text-align:right">${pct}% paid — Balance: ${fmt(rec.balance)}</div>
+        </div>`;
+    }).join('');
 
+    // Inject progress bars above the history table (create container if needed)
+    let progressEl = document.getElementById('ppTermProgress');
+    if (!progressEl) {
+      progressEl = document.createElement('div');
+      progressEl.id = 'ppTermProgress';
+      progressEl.style.cssText = 'background:#fff;border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.06)';
+      const historyCard = document.querySelector('#page-payments .pp-table-card');
+      historyCard.parentNode.insertBefore(progressEl, historyCard);
+    }
+    progressEl.innerHTML = '<div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Payment Progress by Term</div>' + termProgressHtml;
+
+    // History table — actual payment transactions
+    const rows = allPayRows.sort((a,b) => (b.date||'').localeCompare(a.date||''));
     document.getElementById('payHistoryBody').innerHTML = rows.length === 0
-      ? '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">No payment records found.</td></tr>'
+      ? '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:24px">No payment transactions recorded yet. Visit the school office to make a payment.</td></tr>'
       : rows.map(r => `
           <tr>
             <td>${r.date}</td>
-            <td>${TERM_LABELS[r.term] || r.term} Fee</td>
+            <td>${TERM_SHORT[r.term] || r.term} Fee</td>
             <td style="font-weight:600">${fmt(r.amount)}</td>
             <td>${r.method}</td>
             <td><span class="${BADGE[r.status]}">${r.status}</span></td>

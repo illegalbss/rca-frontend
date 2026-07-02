@@ -45,7 +45,7 @@
 
   const VERSION   = 'rca_v1';
   const META_KEY  = VERSION + '_meta';
-  const DATA_VERSION = '2.5.0'; // bumped: logActivity moved here + seed activity log
+  const DATA_VERSION = '2.6.0'; // bumped: Christmas Party levy removed; payment records reset so fees recalculate
 
   /* ---- Safe JSON helpers ---- */
   function lsGet(key) {

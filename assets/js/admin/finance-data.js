@@ -19,10 +19,10 @@
       sibling_threshold: 3,
       utility_bill:     5000,
       lesson_fee:       5000,
-      levy_label:       'Christmas Party',
-      levy_amount:      5000,
-      levy_basic6_label:  'Christmas Party',
-      levy_basic6_amount: 5000
+      levy_label:       null,   // Christmas Party levy removed by government directive
+      levy_amount:      0,
+      levy_basic6_label:  null,
+      levy_basic6_amount: 0
     },
     term2: {
       label:            'Second Term',
@@ -85,12 +85,13 @@
     const levy        = (isBasic6 && term === 'term3') ? fee.levy_basic6_amount : fee.levy_amount;
     const levyLabel   = (isBasic6 && term === 'term3') ? fee.levy_basic6_label  : fee.levy_label;
 
-    const lines = [
+    const allLines = [
       { label: 'School Fees' + (hasDiscount ? ' (Sibling Discount)' : ''), amount: schoolFees },
       { label: 'Utility Bill', amount: fee.utility_bill },
       { label: 'Lesson Fee',   amount: fee.lesson_fee   },
       { label: levyLabel,      amount: levy              }
     ];
+    const lines = allLines.filter(l => l.amount > 0 && l.label);
     const grandTotal = lines.reduce((sum, l) => sum + l.amount, 0);
     return { grand_total: grandTotal, lines, has_sibling_discount: hasDiscount, sibling_count: siblingCount, school_fees: schoolFees, levy };
   };

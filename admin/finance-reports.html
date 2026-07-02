@@ -115,12 +115,45 @@
       <!-- Charts row -->
       <div class="reports-grid" id="reportsGrid"></div>
 
-      <!-- Outstanding balances table -->
+      <!-- Outstanding balances / Debtors search -->
       <div class="outstanding-card">
         <div class="outstanding-card-header">
-          <h3>&#9888; Outstanding Balances</h3>
+          <h3>&#9888; Who is Owing?</h3>
           <span id="outstandingCount" style="font-size:var(--fs-sm);color:var(--color-text-muted)"></span>
         </div>
+
+        <!-- Debtors search toolbar -->
+        <div style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div class="form-group" style="margin:0;flex:1;min-width:160px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Search by Name</label>
+            <input type="text" id="debtorSearch" class="form-control" placeholder="Type student name…" style="padding:7px 10px;font-size:0.82rem">
+          </div>
+          <div class="form-group" style="margin:0;min-width:140px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Class</label>
+            <select id="debtorClass" class="form-control" style="padding:7px 10px;font-size:0.82rem">
+              <option value="">All Classes</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;min-width:130px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Status</label>
+            <select id="debtorStatus" class="form-control" style="padding:7px 10px;font-size:0.82rem">
+              <option value="">All Owing</option>
+              <option value="unpaid">Not Paid At All</option>
+              <option value="partial">Part Payment</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;min-width:120px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Term</label>
+            <select id="debtorTerm" class="form-control" style="padding:7px 10px;font-size:0.82rem">
+              <option value="all">All Terms</option>
+              <option value="term1">First Term</option>
+              <option value="term2" selected>Second Term</option>
+              <option value="term3">Third Term</option>
+            </select>
+          </div>
+          <button class="btn btn-outline btn-sm" id="exportDebtorsCSV" style="flex-shrink:0">&#8595; Export CSV</button>
+        </div>
+
         <div style="overflow-x:auto">
           <table class="finance-table" id="outstandingTable">
             <thead>
@@ -131,8 +164,9 @@
                 <th>Term</th>
                 <th>Expected</th>
                 <th>Paid</th>
-                <th>Balance</th>
+                <th>Balance Owed</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody id="outstandingBody"></tbody>
@@ -287,29 +321,98 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    /* Outstanding table */
-    const outstanding = data
-      .filter(r => r.status !== 'paid')
-      .sort((a,b) => b.balance - a.balance);
+    /* Outstanding table — handled by renderDebtors() */
+    renderDebtors();
+  }
 
+  /* ── Debtors table: includes ALL students even if no record exists yet ── */
+  // Populate debtor class filter
+  const debtorClassSel = document.getElementById('debtorClass');
+  allClasses.forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c;
+    debtorClassSel.appendChild(o);
+  });
+
+  function buildDebtorRows() {
+    const termFilter   = document.getElementById('debtorTerm').value;
+    const classFilter  = document.getElementById('debtorClass').value;
+    const statusFilter = document.getElementById('debtorStatus').value;
+    const nameQ        = (document.getElementById('debtorSearch').value || '').trim().toLowerCase();
+    const terms        = termFilter === 'all' ? ['term1','term2','term3'] : [termFilter];
+
+    const rows = [];
+    allStudents.forEach(st => {
+      if (classFilter && st.class_name !== classFilter) return;
+      if (nameQ && !st.full_name.toLowerCase().includes(nameQ)) return;
+      terms.forEach(term => {
+        let rec = records[`${st.admission_no}|${term}`];
+        if (!rec) {
+          // No record yet — compute expected fee and show as fully unpaid
+          const bd = window.computeFeeBreakdown(st.admission_no, term);
+          if (!bd) return;
+          rec = { amount_expected: bd.grand_total, amount_paid: 0, balance: bd.grand_total, status: 'unpaid' };
+        }
+        if (rec.status === 'paid') return; // skip fully paid
+        if (statusFilter && rec.status !== statusFilter) return;
+        rows.push({
+          admission_no: st.admission_no,
+          student_name: st.full_name,
+          class_name:   st.class_name,
+          term, rec
+        });
+      });
+    });
+
+    return rows.sort((a,b) => b.rec.balance - a.rec.balance);
+  }
+
+  function renderDebtors() {
+    const rows = buildDebtorRows();
     document.getElementById('outstandingCount').textContent =
-      `${outstanding.length} account${outstanding.length !== 1 ? 's' : ''} with balances`;
+      `${rows.length} student-term${rows.length !== 1 ? 's' : ''} with outstanding balance`;
 
-    document.getElementById('outstandingBody').innerHTML = outstanding.length === 0
-      ? '<tr><td colspan="8" style="text-align:center;color:var(--color-success);padding:2rem">&#10004; All accounts fully paid for this filter!</td></tr>'
-      : outstanding.map(r => `
+    document.getElementById('outstandingBody').innerHTML = rows.length === 0
+      ? '<tr><td colspan="9" style="text-align:center;color:var(--color-success);padding:2rem">&#10004; No outstanding balances for the selected filter.</td></tr>'
+      : rows.map(r => `
         <tr>
-          <td>${r.admission_no}</td>
-          <td>${r.student_name}</td>
+          <td style="font-size:0.78rem">${r.admission_no}</td>
+          <td style="font-weight:600">${r.student_name}</td>
           <td>${r.class_name}</td>
           <td>${TERM_LABELS[r.term] || r.term}</td>
-          <td class="amount-col">${fmt(r.amount_expected)}</td>
-          <td class="amount-col">${fmt(r.amount_paid)}</td>
-          <td class="amount-col balance-col">${fmt(r.balance)}</td>
-          <td><span class="${BADGE[r.status]}">${r.status}</span></td>
+          <td class="amount-col">${fmt(r.rec.amount_expected)}</td>
+          <td class="amount-col">${fmt(r.rec.amount_paid)}</td>
+          <td class="amount-col balance-col" style="color:#dc2626;font-weight:700">${fmt(r.rec.balance)}</td>
+          <td><span class="${BADGE[r.rec.status]}">${r.rec.status === 'unpaid' ? 'Not Paid' : 'Part Paid'}</span></td>
+          <td>
+            <a href="payments.html?adm=${encodeURIComponent(r.admission_no)}&term=${r.term}"
+               class="btn btn-outline btn-sm" style="font-size:0.72rem;padding:3px 10px">
+              Record Payment
+            </a>
+          </td>
         </tr>
       `).join('');
   }
+
+  // Live search
+  ['debtorSearch','debtorClass','debtorStatus','debtorTerm'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderDebtors);
+    document.getElementById(id).addEventListener('change', renderDebtors);
+  });
+
+  // CSV export
+  document.getElementById('exportDebtorsCSV').addEventListener('click', () => {
+    const rows = buildDebtorRows();
+    const header = ['Admission No.','Student Name','Class','Term','Expected','Paid','Balance','Status'];
+    const lines  = rows.map(r => [
+      r.admission_no, '"' + r.student_name + '"', r.class_name,
+      TERM_LABELS[r.term], r.rec.amount_expected, r.rec.amount_paid, r.rec.balance, r.rec.status
+    ].join(','));
+    const csv  = [header.join(','), ...lines].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: 'debtors_' + new Date().toISOString().slice(0,10) + '.csv' });
+    a.click(); URL.revokeObjectURL(url);
+  });
 
   document.getElementById('applyReportFilter').addEventListener('click', render);
   render();
