@@ -208,6 +208,15 @@
   margin-bottom: var(--space-xs);
 }
 
+/* Head Teacher's comment box */
+.rc-ht-remarks {
+  background: #f8f9fa;
+  border-left: 3px solid var(--color-primary);
+  padding: 8px 12px;
+  border-radius: 0 6px 6px 0;
+  margin-top: -8px;
+}
+
 /* --- Grade Legend --- */
 .rc-grade-legend {
   margin-bottom: var(--space-xl);
@@ -417,6 +426,11 @@
   .rc-remarks {
     font-size: 9px;
     margin-bottom: 5px;
+  }
+
+  .rc-ht-remarks {
+    padding: 4px 8px;
+    margin-top: 3px;
   }
 
   .rc-remarks-label {

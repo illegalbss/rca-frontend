@@ -142,6 +142,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return REMARKS_BY_GRADE[grade] || REMARKS_BY_GRADE.F;
   }
 
+  function generateHtComment(average) {
+    const grade = scoreToGrade(average);
+    const HT_COMMENTS = {
+      A: 'An outstanding performance. This pupil is a credit to the school. Keep it up!',
+      B: 'A commendable result. I encourage this pupil to sustain the momentum.',
+      C: 'A satisfactory result. With greater dedication, much more can be achieved.',
+      D: 'There is potential here that has not yet been fully realised. More effort is needed.',
+      F: 'I urge this pupil and their parents/guardians to take academics more seriously next term.'
+    };
+    return HT_COMMENTS[grade] || HT_COMMENTS.F;
+  }
+
   function ordinal(n) {
     const suffixes = ['th', 'st', 'nd', 'rd'];
     const lastTwo = n % 100;
@@ -184,9 +196,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     reportCardEl.innerHTML = `
       <div class="rc-header">
-        <img src="../assets/images/logo.svg" alt="Royal Crystal Academy logo">
+        <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
         <div class="rc-school-name">Royal Crystal Academy</div>
-        <div class="rc-school-meta">123 School Road, Lagos, Nigeria</div>
+        <div class="rc-school-meta">20/22 Amaigbo Lane, Uwani, Enugu State</div>
+        <div class="rc-school-meta">Tel: 08108419563, 09026324650</div>
         <span class="rc-title">${termLabel} Report Card — 2025/2026 Session</span>
       </div>
 
@@ -267,6 +280,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       </div>
 
+      <div class="rc-remarks rc-ht-remarks">
+        <span class="rc-remarks-label">Head Teacher's Comment</span>
+        ${ratings.ht_comment
+          ? `"${ratings.ht_comment}"`
+          : generateHtComment(summary.average)
+        }
+      </div>
+
       <div class="rc-behavior-section">
         <div class="rc-behavior-title">Behavioural &amp; Affective Assessment</div>
         <div class="rc-behavior-grid">
@@ -291,8 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <div class="rc-signatures">
         <div class="rc-signature-line">Class Teacher's Signature</div>
-        <div class="rc-signature-line">Head Teacher's Signature</div>
-        <div class="rc-signature-line">Date</div>
+        <div class="rc-signature-line">Head Teacher's Signature<br><span style="font-size:0.68rem;color:#555;font-style:italic">Mrs. Ada Nwankwo</span></div>
+        <div class="rc-signature-line">Next Term Begins<br><span style="font-size:0.68rem;color:#555;font-style:italic">See School Calendar</span></div>
       </div>
     `;
   }
