@@ -45,7 +45,7 @@
 
   const VERSION   = 'rca_v1';
   const META_KEY  = VERSION + '_meta';
-  const DATA_VERSION = '2.6.0'; // bumped: Christmas Party levy removed; payment records reset so fees recalculate
+  const DATA_VERSION = '2.0.0'; // Phase 4 — all fake data removed // bump this to force a reset
 
   /* ---- Safe JSON helpers ---- */
   function lsGet(key) {
@@ -96,50 +96,19 @@
 
   if (needsInit) {
     console.log('RCA localStorage: initializing fresh data (version', DATA_VERSION, ')');
-    // Preserve student, teacher, and user data across version bumps so that
-    // phone numbers, DOBs, and other admin edits are never lost when the
-    // version changes (e.g. fee structure update, payment reset).
-    const savedStudents      = lsGet('students');
-    const savedTeachers      = lsGet('teachers');
-    const savedUsers         = lsGet('users');
-    const savedAdmissions    = lsGet('admission_register');
-    const savedPaySettings   = lsGet('payment_settings');
-    const savedResults       = lsGet('results');
-    const savedApprovals     = lsGet('approvals');
-    const savedBehavior      = lsGet('behavior');
-    const savedDiscipline    = lsGet('discipline');
-    const savedActivityLog   = lsGet('activity_log');
-    const savedParentPayments = lsGet('parent_payments');
-
-    // Clear all versioned keys. rca_newsletters is excluded because newsletters are
-    // permanent school records that must survive version upgrades and resets.
+    // Clear all old rca keys
     Object.keys(localStorage)
       .filter(k => k.startsWith(VERSION + '_'))
       .forEach(k => localStorage.removeItem(k));
-
-    // Restore people data immediately so it is available to the load steps below
-    if (savedStudents  && savedStudents.length  > 0) lsSet('students', savedStudents);
-    if (savedTeachers  && savedTeachers.length  > 0) lsSet('teachers', savedTeachers);
-    if (savedUsers     && savedUsers.length     > 0) lsSet('users',    savedUsers);
-    // Admission Register holds permanent official records — must survive version bumps too
-    if (savedAdmissions && savedAdmissions.length > 0) lsSet('admission_register', savedAdmissions);
-    // Payment Settings is admin configuration (gateway mode, keys), not sample data — must survive too
-    if (savedPaySettings) lsSet('payment_settings', savedPaySettings);
-    // Real academic/administrative records — must survive version bumps too
-    if (savedResults        && Object.keys(savedResults).length        > 0) lsSet('results',         savedResults);
-    if (savedApprovals      && Object.keys(savedApprovals).length      > 0) lsSet('approvals',       savedApprovals);
-    if (savedBehavior       && Object.keys(savedBehavior).length       > 0) lsSet('behavior',        savedBehavior);
-    if (savedDiscipline     && savedDiscipline.length                  > 0) lsSet('discipline',      savedDiscipline);
-    if (savedActivityLog    && savedActivityLog.length                 > 0) lsSet('activity_log',    savedActivityLog);
-    if (savedParentPayments && Object.keys(savedParentPayments).length > 0) lsSet('parent_payments',  savedParentPayments);
   }
 
   /* ---- LOAD OR GENERATE each data store ---- */
 
   /* STUDENTS */
-  let students = lsGet('students');
+  let students = needsInit ? null : lsGet('students');
   if (!students) {
-    students = window.SAMPLE_STUDENTS_SEED || [];
+    // Start empty — real students come from API or manual entry
+    students = [];
     lsSet('students', students);
   }
   // Filter out any archived/inactive students on load
@@ -150,7 +119,7 @@
   );
 
   /* TEACHERS */
-  let teachers = lsGet('teachers');
+  let teachers = needsInit ? null : lsGet('teachers');
   if (!teachers) {
     teachers = window.SAMPLE_TEACHERS || [];
     lsSet('teachers', teachers);
@@ -158,7 +127,7 @@
   window.SAMPLE_TEACHERS = teachers;
 
   /* USERS */
-  let users = lsGet('users');
+  let users = needsInit ? null : lsGet('users');
   if (!users) {
     users = window.SAMPLE_USERS || [];
     lsSet('users', users);
@@ -166,7 +135,7 @@
   window.SAMPLE_USERS = users;
 
   /* RESULTS */
-  let results = lsGet('results');
+  let results = needsInit ? null : lsGet('results');
   if (!results) {
     results = window.SAMPLE_RESULTS || {};
     lsSet('results', results);
@@ -174,7 +143,7 @@
   window.SAMPLE_RESULTS = results;
 
   /* APPROVALS */
-  let approvals = lsGet('approvals');
+  let approvals = needsInit ? null : lsGet('approvals');
   if (!approvals) {
     approvals = window.RESULT_APPROVALS || {};
     lsSet('approvals', approvals);
@@ -182,7 +151,7 @@
   window.RESULT_APPROVALS = approvals;
 
   /* BEHAVIOR RATINGS */
-  let behavior = lsGet('behavior');
+  let behavior = needsInit ? null : lsGet('behavior');
   if (!behavior) {
     behavior = window.BEHAVIOR_RATINGS || {};
     lsSet('behavior', behavior);
@@ -214,7 +183,7 @@
   window.SCHOOL_EVENTS = events;
 
   /* DISCIPLINE RECORDS */
-  let discipline = lsGet('discipline');
+  let discipline = needsInit ? null : lsGet('discipline');
   if (!discipline) {
     const cleanMode = lsGet('clean_mode');
     discipline = cleanMode ? [] : (window.SAMPLE_DISCIPLINE || []);
@@ -239,7 +208,7 @@
   window.ICT_MAINTENANCE = maintenance;
 
   /* ACTIVITY LOG */
-  let activityLog = lsGet('activity_log');
+  let activityLog = needsInit ? null : lsGet('activity_log');
   if (!activityLog) {
     activityLog = window.ACTIVITY_LOG || [];
     lsSet('activity_log', activityLog);
@@ -249,44 +218,6 @@
   /* PARENT PAYMENTS (result access fees) */
   let parentPayments = lsGet('parent_payments') || {};
   window.PARENT_PAYMENTS = parentPayments;
-
-  /* ADMISSION REGISTER (permanent official student records) */
-  let admissionRegister = lsGet('admission_register') || [];
-  window.ADMISSION_REGISTER = admissionRegister;
-
-  /* ---- Persistent admission number counter ----
-     Generating admission numbers from the CURRENT active-student count
-     (e.g. "RCA/2026/" + (activeCount + 1)) breaks the moment anyone is
-     ever archived/removed: the count shrinks, so a later "next" number
-     can collide with one already issued to an existing student. A real
-     counter that only ever increments — seeded once from the highest
-     number seen across the full (unfiltered) roster and register —
-     can never hand out the same number twice. */
-  if (!lsGet('admission_counter')) {
-    let maxSeen = 0;
-    students.concat(admissionRegister).forEach(r => {
-      const m = (r && r.admission_no || '').match(/RCA\/\d+\/(\d+)/);
-      if (m) maxSeen = Math.max(maxSeen, parseInt(m[1], 10));
-    });
-    lsSet('admission_counter', maxSeen);
-  }
-  window.nextAdmissionNo = function () {
-    const year = new Date().getFullYear();
-    const next = (lsGet('admission_counter') || 0) + 1;
-    lsSet('admission_counter', next);
-    return 'RCA/' + year + '/' + String(next).padStart(4, '0');
-  };
-
-  /* PAYMENT SETTINGS (manual vs online mode, gateway config) */
-  const defaultPaymentSettings = {
-    mode: 'manual', online_gateway: 'paystack', online_public_key: '',
-    receipt_prefix: 'RCA-RCP', enable_result_unlock: true,
-    last_updated: null, last_updated_by: null
-  };
-  const savedPaySettings = lsGet('payment_settings');
-  window.PAYMENT_SETTINGS = savedPaySettings
-    ? Object.assign({}, defaultPaymentSettings, savedPaySettings)
-    : defaultPaymentSettings;
 
   /* ---- Write meta ---- */
   lsSet('meta', {
@@ -324,9 +255,7 @@
         maintenance:   () => lsSet('maintenance',   window.ICT_MAINTENANCE),
         discipline:    () => lsSet('discipline',    window.SAMPLE_DISCIPLINE),
         activity_log:  () => lsSet('activity_log',  window.ACTIVITY_LOG),
-        parent_payments:  () => lsSet('parent_payments',  window.PARENT_PAYMENTS),
-        admission_register: () => lsSet('admission_register', window.ADMISSION_REGISTER),
-        payment_settings:   () => lsSet('payment_settings',   window.PAYMENT_SETTINGS)
+        parent_payments:()=> lsSet('parent_payments',window.PARENT_PAYMENTS)
       };
       if (MAP[storeName]) {
         MAP[storeName]();
@@ -343,15 +272,12 @@
     saveAll() {
       ['students','teachers','users','results','approvals','behavior',
        'payments','announcements','events','computers','maintenance',
-       'discipline','activity_log','parent_payments','admission_register',
-       'payment_settings'].forEach(s => this.save(s));
+       'discipline','activity_log','parent_payments'].forEach(s => this.save(s));
     },
 
     /* Clear all localStorage and start fresh (reset button in ICT Admin) */
     reset() {
       if (!confirm('⚠️ This will RESET ALL DATA to the original sample data. Are you sure?')) return;
-      // NOTE: rca_newsletters is intentionally excluded — newsletters are permanent records
-      // that must survive resets and version bumps. Delete them only via explicit admin action.
       Object.keys(localStorage)
         .filter(k => k.startsWith(VERSION + '_'))
         .forEach(k => localStorage.removeItem(k));
@@ -399,27 +325,6 @@
     window.RCA.saveAll();
   });
 
-  /* ---- Seed demo activity log on first init only (never overwrite real logged activity) ---- */
-  if (needsInit && !lsGet('clean_mode') && (!window.ACTIVITY_LOG || window.ACTIVITY_LOG.length === 0)) {
-    const now = Date.now();
-    const ago = ms => new Date(now - ms).toISOString();
-    const seedLogs = [
-      { user:'Ada Nwankwo',         role:'head_teacher',    action:'login',   category:'login',     target:'Admin portal',                              timestamp: ago(7200000)   },
-      { user:'Chukwuma Izuchukwu',  role:'ict_admin',       action:'login',   category:'login',     target:'Admin portal',                              timestamp: ago(5400000)   },
-      { user:'Ada Nwankwo',         role:'head_teacher',    action:'approve', category:'approvals', target:'Basic 4 — Term 2 results approved',          timestamp: ago(5100000)   },
-      { user:'Ada Nwankwo',         role:'head_teacher',    action:'publish', category:'results',   target:'Basic 4 — Term 2 report cards published',    timestamp: ago(4900000)   },
-      { user:'Chukwuma Izuchukwu',  role:'ict_admin',       action:'create',  category:'users',     target:'New staff account created: Mrs. Amaka Obi',  timestamp: ago(3600000)   },
-      { user:'Nnamdi Eze',          role:'accountant',      action:'payment', category:'payments',  target:'₦30,000 payment recorded — Basic 3 pupil',   timestamp: ago(3300000)   },
-      { user:'Chioma Okafor',       role:'class_teacher',   action:'create',  category:'scores',    target:'Scores entered for Basic 5 — Mathematics',   timestamp: ago(2700000)   },
-      { user:'Nnamdi Eze',          role:'accountant',      action:'payment', category:'payments',  target:'₦30,000 payment recorded — Nursery 2 pupil', timestamp: ago(2400000)   },
-      { user:'Chioma Okafor',       role:'class_teacher',   action:'create',  category:'scores',    target:'Scores entered for Basic 5 — English Language', timestamp: ago(1800000) },
-      { user:'Ada Nwankwo',         role:'head_teacher',    action:'create',  category:'review',    target:'Class review completed — Basic 5',            timestamp: ago(900000)    },
-      { user:'Chukwuma Izuchukwu',  role:'ict_admin',       action:'system',  category:'system',    target:'Data version upgraded to 2.5.0',              timestamp: ago(60000)     },
-    ];
-    lsSet('activity_log', seedLogs);
-    window.ACTIVITY_LOG = seedLogs;
-  }
-
   /* ---- Log the init result ---- */
   const usage = window.RCA.usage();
   console.log(
@@ -430,24 +335,129 @@
 
 })();
 
+
 /* ============================================
-   GLOBAL LOG HELPER
-   Available to every admin page that loads localstorage.js.
-   Call: window.logActivity('create', 'Student added: John Doe', 'students')
+   SYNC TO API — pushes local data to Supabase
+   Called after every save operation
    ============================================ */
-window.logActivity = function(action, target, category) {
-  if (!window.ACTIVITY_LOG) window.ACTIVITY_LOG = [];
-  const user = window.CURRENT_USER;
-  window.ACTIVITY_LOG.unshift({
-    user:      user ? user.full_name : 'System',
-    role:      user ? (user.primary_role || user.role) : 'system',
-    action:    action,
-    category:  category || 'general',
-    target:    target || '',
-    timestamp: new Date().toISOString()
-  });
-  // Persist immediately
-  try {
-    localStorage.setItem('rca_v1_activity_log', JSON.stringify(window.ACTIVITY_LOG));
-  } catch(e) {}
+window.RCA_SYNC = {
+
+  SUPABASE_URL: 'https://sftrchflhgxzenkkbqpl.supabase.co',
+  SUPABASE_KEY: 'sb_publishable_tV5CjyAQRFCYuHk8_hF6zQ_JX9a7fKn',
+
+  headers() {
+    return {
+      'Content-Type':  'application/json',
+      'apikey':        this.SUPABASE_KEY,
+      'Authorization': `Bearer ${this.SUPABASE_KEY}`,
+      'Prefer':        'return=representation'
+    };
+  },
+
+  async saveStudent(student) {
+    try {
+      // Format for Supabase students table
+      const record = {
+        admission_no:  student.admission_no,
+        first_name:    student.full_name?.split(' ')[0] || student.first_name || '',
+        last_name:     student.full_name?.split(' ').slice(1).join(' ') || student.last_name || '',
+        full_name:     student.full_name || `${student.first_name} ${student.last_name}`,
+        gender:        student.gender || 'male',
+        class_name:    student.class_name,
+        date_of_birth: student.dob || student.date_of_birth || null,
+        parent_name:   student.parent_name || '',
+        parent_phone:  student.parent_phone || '',
+        parent_email:  student.parent_email || '',
+        home_address:  student.home_address || '',
+        status:        student.status || 'active',
+        session_label: '2025/2026'
+      };
+
+      const res = await fetch(`${this.SUPABASE_URL}/rest/v1/students`, {
+        method:  'POST',
+        headers: this.headers(),
+        body:    JSON.stringify(record)
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        console.log('✅ Student saved to Supabase:', data);
+        return Array.isArray(data) ? data[0] : data;
+      } else {
+        const err = await res.json();
+        console.warn('⚠ Supabase save error:', err);
+      }
+    } catch(e) {
+      console.warn('⚠ Supabase save failed:', e.message);
+    }
+    return null;
+  },
+
+  async loadStudents() {
+    try {
+      const res = await fetch(
+        `${this.SUPABASE_URL}/rest/v1/students?status=eq.active&order=full_name.asc`,
+        { headers: this.headers() }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          // Merge with localStorage
+          const local = JSON.parse(localStorage.getItem('rca_v1_students') || '[]');
+          const dbNos = data.map(s => s.admission_no);
+          const localOnly = local.filter(s => !dbNos.includes(s.admission_no));
+          const merged = [...data, ...localOnly].filter(
+            s => s.status !== 'archived' && s.status !== 'inactive'
+          );
+          localStorage.setItem('rca_v1_students', JSON.stringify(merged));
+          window.SAMPLE_STUDENTS = merged;
+          console.log(`✅ Loaded ${data.length} students from Supabase`);
+          return merged;
+        }
+      }
+    } catch(e) {
+      console.warn('⚠ Could not load from Supabase:', e.message);
+    }
+    return null;
+  },
+
+  async deleteStudent(admissionNo) {
+    try {
+      await fetch(
+        `${this.SUPABASE_URL}/rest/v1/students?admission_no=eq.${admissionNo}`,
+        { method: 'DELETE', headers: this.headers() }
+      );
+      console.log('✅ Student deleted from Supabase');
+    } catch(e) {
+      console.warn('⚠ Supabase delete failed:', e.message);
+    }
+  },
+
+  async updateStudent(admissionNo, data) {
+    try {
+      await fetch(
+        `${this.SUPABASE_URL}/rest/v1/students?admission_no=eq.${admissionNo}`,
+        { method: 'PATCH', headers: this.headers(), body: JSON.stringify(data) }
+      );
+      console.log('✅ Student updated in Supabase');
+    } catch(e) {
+      console.warn('⚠ Supabase update failed:', e.message);
+    }
+  }
 };
+
+// Auto-load students from API when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('rca_token') || sessionStorage.getItem('rca_user_data')) {
+    setTimeout(() => {
+      window.RCA_SYNC.loadStudents().then(students => {
+        if (students) {
+          // Refresh page data if on students page
+          if (typeof renderClassCards === 'function') renderClassCards();
+          if (typeof renderStudentTable === 'function') renderStudentTable();
+        }
+      });
+    }, 1000);
+  }
+});

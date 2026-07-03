@@ -1,188 +1,88 @@
 /* ============================================
-   LOGIN — login.js
+   CONFIG — config.js
    Royal Crystal Academy
-   ============================================
-   Phase 4: Calls real backend API for authentication.
-   Stores JWT token + user data in sessionStorage.
-   Falls back to localStorage demo mode if API is unreachable.
-*/
+   Powered by Supabase — no backend server needed
+   ============================================ */
 
-document.addEventListener('DOMContentLoaded', () => {
+(function () {
 
-  const form     = document.getElementById('loginForm');
-  const errorBox = document.getElementById('loginError');
-  const loginBtn = document.querySelector('.login-btn');
+  const SUPABASE_URL = 'https://sftrchflhgxzenkkbqpl.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_tV5CjyAQRFCYuHk8_hF6zQ_JX9a7fKn';
 
-  function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.style.display = 'block';
-  }
+  // Helper: call Supabase REST API directly
+  async function supabaseCall(table, method = 'GET', body = null, filter = '') {
+    const token = sessionStorage.getItem('rca_token');
+    const url   = `${SUPABASE_URL}/rest/v1/${table}${filter}`;
 
-  function hideError() { errorBox.style.display = 'none'; }
+    const headers = {
+      'Content-Type':  'application/json',
+      'apikey':        SUPABASE_KEY,
+      'Authorization': `Bearer ${token || SUPABASE_KEY}`,
+      'Prefer':        method === 'POST' ? 'return=representation' : ''
+    };
 
-  function setLoading(loading) {
-    if (loginBtn) {
-      loginBtn.textContent = loading ? 'Signing in…' : 'Sign In →';
-      loginBtn.disabled = loading;
-    }
-  }
-
-  /* ---- Core login function — stores session ---- */
-  function storeSession(user, token) {
-    // Phase 4: store real JWT token
-    if (token) sessionStorage.setItem('rca_token', token);
-
-    // Store user data for dashboard-shell.js to read
-    sessionStorage.setItem('rca_user_id',   user.id);
-    sessionStorage.setItem('rca_demo_role', user.primary_role || user.role);
-    sessionStorage.setItem('rca_demo_email', user.email);
-    sessionStorage.setItem('rca_demo_name',  user.full_name);
-
-    // Store full user object for pages that need linked_classes etc.
-    sessionStorage.setItem('rca_user_data', JSON.stringify(user));
-
-    sessionStorage.setItem('rca_log_login', '1');
-    window.location.href = 'dashboard.html';
-  }
-
-  /* ---- Form submit ---- */
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    hideError();
-
-    const email = document.getElementById('login_email').value.trim().toLowerCase();
-    const pwd   = document.getElementById('login_password').value;
-
-    if (!email) { showError('Please enter your email address.'); return; }
-    if (!pwd)   { showError('Please enter your password.'); return; }
-
-    setLoading(true);
-
-    // ---- Try real API first ----
-    try {
-      const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
-      const res = await fetch(`${apiUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pwd })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLoading(false);
-        showError(data.error || 'Login failed. Please check your email and password.');
-        return;
-      }
-
-      // Block parents — they have their own login page
-      const apiRole = data.user.primary_role || data.user.role;
-      if (apiRole === 'parent') {
-        setLoading(false);
-        showError('This login is for staff only. Please use the Parent Portal login.');
-        document.getElementById('loginError').innerHTML =
-          'This login is for staff only. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
-        return;
-      }
-      // Success — store token and user, then redirect
-      storeSession(data.user, data.token);
-      return;
-
-    } catch (networkErr) {
-      // API unreachable — fall back to localStorage demo mode
-      console.warn('API unreachable, falling back to demo mode:', networkErr.message);
-    }
-
-    // ---- Fallback: localStorage demo mode ----
-    const allUsers = window.SAMPLE_USERS || [];
-    let user = allUsers.find(u => u.email.toLowerCase() === email);
-
-    // If found in parent accounts — redirect, don't allow staff login
-    if (!user && window.RCA_PARENTS) {
-      const parentUser = window.RCA_PARENTS.getByEmail(email) || null;
-      if (parentUser) {
-        setLoading(false);
-        errorBox.style.display = 'block';
-        errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
-        return;
-      }
-    }
-
-    if (!user) {
-      setLoading(false);
-      showError('No staff account found with that email address.');
-      return;
-    }
-
-    // Block parents who somehow ended up in SAMPLE_USERS
-    const demoRole = user.primary_role || user.role;
-    if (demoRole === 'parent') {
-      setLoading(false);
-      errorBox.style.display = 'block';
-      errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
-      return;
-    }
-
-    if (user.status === 'deactivated' || user.status === 'suspended') {
-      setLoading(false);
-      showError('This account has been deactivated. Contact the ICT Administrator.');
-      return;
-    }
-
-    // Check password
-    const defaultPwd = 'RCA@2026!';
-    const userPwd = user.password || defaultPwd;
-    if (pwd !== userPwd && pwd !== defaultPwd) {
-      setLoading(false);
-      showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
-      return;
-    }
-
-    storeSession(user, null);
-  });
-
-  /* ---- Password show/hide toggle ---- */
-  const toggleBtn = document.getElementById('togglePassword');
-  const pwdInput  = document.getElementById('login_password');
-  if (toggleBtn && pwdInput) {
-    toggleBtn.addEventListener('click', () => {
-      const isHidden = pwdInput.type === 'password';
-      pwdInput.type  = isHidden ? 'text' : 'password';
-      toggleBtn.textContent = isHidden ? '🙈' : '👁';
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined
     });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Supabase error: ${res.status}`);
+    }
+
+    if (res.status === 204) return null;
+    return res.json();
   }
 
-  /* ---- Parent login hint ---- */
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('role') === 'parent') {
-    const emailInput = document.getElementById('login_email');
-    if (emailInput) emailInput.focus();
-    const note = document.createElement('div');
-    note.style.cssText = 'background:#dbeafe;border:1px solid #93c5fd;color:#1e40af;border-radius:8px;padding:10px 14px;font-size:0.8rem;margin-bottom:14px';
-    note.innerHTML = '👨‍👩‍👧 <strong>Parent Portal:</strong> Use the email address linked to your child\'s account.';
-    form.insertBefore(note, form.firstChild);
-  }
+  window.RCA_CONFIG = {
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    SCHOOL_NAME:   'Royal Crystal Academy',
+    SCHOOL_DOMAIN: 'royalcrystalacademy.edu.ng',
+    SESSION:       '2025/2026',
+    CURRENT_TERM:  'term2',
 
-  /* ---- Forgot password modal ---- */
-  const forgotLink    = document.getElementById('forgotPasswordLink');
-  const forgotOverlay = document.getElementById('forgotModalOverlay');
-  const forgotClose   = document.getElementById('forgotModalClose');
-  const sendResetBtn  = document.getElementById('sendResetBtn');
-  const resetSuccess  = document.getElementById('resetSuccess');
+    // Supabase direct calls
+    async db(table, method, body, filter) {
+      return supabaseCall(table, method, body, filter);
+    },
 
-  forgotLink?.addEventListener('click', e => {
-    e.preventDefault();
-    document.getElementById('reset_email').value = document.getElementById('login_email').value;
-    resetSuccess.style.display = 'none';
-    forgotOverlay.classList.add('open');
-  });
+    // GET records
+    async getAll(table, filter = '') {
+      return supabaseCall(table, 'GET', null, filter);
+    },
 
-  forgotClose?.addEventListener('click', () => forgotOverlay.classList.remove('open'));
-  forgotOverlay?.addEventListener('click', e => {
-    if (e.target === forgotOverlay) forgotOverlay.classList.remove('open');
-  });
-  sendResetBtn?.addEventListener('click', () => {
-    resetSuccess.style.display = 'block';
-  });
+    // INSERT record
+    async insert(table, data) {
+      return supabaseCall(table, 'POST', data);
+    },
 
-});
+    // UPDATE record
+    async update(table, data, filter) {
+      return supabaseCall(table, 'PATCH', data, filter);
+    },
+
+    // DELETE record
+    async delete(table, filter) {
+      return supabaseCall(table, 'DELETE', null, filter);
+    },
+
+    // Keep old API_URL for backward compatibility
+    API_URL: 'https://rca-backend-3r1c.onrender.com/api',
+
+    // Old fetch method — now uses Supabase
+    async fetch(endpoint, options = {}) {
+      console.log('Using Supabase directly for:', endpoint);
+    },
+
+    setToken(token)  { sessionStorage.setItem('rca_token', token); },
+    getToken()       { return sessionStorage.getItem('rca_token'); },
+    clearToken()     { sessionStorage.removeItem('rca_token'); },
+    isLoggedIn()     { return !!sessionStorage.getItem('rca_token'); }
+  };
+
+  console.log('RCA Config loaded — Supabase direct connection');
+
+})();

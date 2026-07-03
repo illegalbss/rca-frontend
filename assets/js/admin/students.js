@@ -44,15 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToClassesBtn   = document.getElementById('backToClasses');
   const topbarTitle        = document.getElementById('topbarTitle');
 
-  // RBAC: only admins can add, edit, or remove pupils
-  const _cu       = window.CURRENT_USER;
-  const _roles    = _cu ? (_cu.roles || [_cu.role]) : [];
-  const isAdmin   = _roles.includes('ict_admin') || _roles.includes('head_teacher') || _roles.includes('proprietor');
-
-  // Hide the "+ Add Pupil" button entirely for non-admins
-  const addPupilBtn = document.getElementById('addPupilBtn');
-  if (!isAdmin && addPupilBtn) addPupilBtn.style.display = 'none';
-
   /* --------------------------------------------
      HELPER: get a 2-letter initials string from a name
      -------------------------------------------- 
@@ -77,34 +68,20 @@ document.addEventListener('DOMContentLoaded', () => {
      one card showing that count + a male/female breakdown.
   */
   function renderClassCards() {
+    // Filter classes visible to this user
+    const currentUser = window.CURRENT_USER;
+    const currentRoles = currentUser ? (currentUser.roles || [currentUser.role]) : [];
+    const isAdmin = currentRoles.includes('ict_admin') || currentRoles.includes('head_teacher') || currentRoles.includes('proprietor');
+    const myClasses = currentUser?.linked_classes || [];
+    const visibleClasses = isAdmin ? allClasses :
+      allClasses.filter(cls => myClasses.some(mc => mc.trim().toLowerCase() === cls.trim().toLowerCase()));
     totalPupilsPill.textContent = `${allStudents.length} pupils total`;
-
-    // Determine which classes this user can see in the Students view.
-    // Admins see all classes; teachers see only their form class.
-    // For dual-role (form+subject) teachers, form_class narrows it to the
-    // one class they are actually responsible for as form teacher.
-    // Pure form teachers (e.g. nursery, Basic 1-2) only have one class in
-    // linked_classes so that is used directly.
-    let visibleClasses;
-    if (isAdmin) {
-      visibleClasses = allClasses;
-    } else {
-      const formClass = _cu?.form_class;
-      if (formClass) {
-        visibleClasses = allClasses.filter(cls => cls === formClass);
-      } else {
-        const myLinked = _cu?.linked_classes || [];
-        visibleClasses = allClasses.filter(cls =>
-          myLinked.some(mc => mc.trim().toLowerCase() === cls.trim().toLowerCase())
-        );
-      }
-    }
 
     // Clear existing cards to prevent duplicates on re-render
     nurseryCardsWrap.innerHTML = '';
     primaryCardsWrap.innerHTML = '';
 
-    visibleClasses.forEach(className => {
+    allClasses.forEach(className => {
       // .filter() returns a NEW array containing only students
       // whose class_name matches this one
       const studentsInClass = allStudents.filter(s =>
@@ -223,10 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${student.full_name}</td>
         <td>${student.admission_no}</td>
         <td>${student.gender === 'male' ? 'Male' : 'Female'}</td>
-        <td style="font-size:0.78rem;color:#6b7280">${student.date_of_birth || '<span style="color:#d1d5db">—</span>'}</td>
-        <td style="font-size:0.78rem">${student.parent_phone
-          ? `<a href="tel:${student.parent_phone}" style="color:#1d4ed8;font-weight:600;text-decoration:none">${student.parent_phone}</a>`
-          : '<span style="color:#d1d5db">—</span>'}</td>
         <td>
           <span class="badge ${student.status === 'active' ? 'badge-success' : 'badge-danger'}">
             ${student.status === 'active' ? 'Active' : 'Inactive'}
@@ -235,10 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <td class="col-actions">
           <div class="row-actions">
             <button class="row-action-btn" onclick="window._viewStudent('${student.admission_no}')">View</button>
-            ${isAdmin ? `
             <button class="row-action-btn" onclick="window._editStudent('${student.admission_no}')">Edit</button>
             <button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="window._deleteStudent('${student.admission_no}')">Remove</button>
-            ` : ''}
           </div>
         </td>
       </tr>
@@ -443,71 +414,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // VIEW student — proper modal
+  // VIEW student
   window._viewStudent = function(admNo) {
-    const s = allStudents.find(st => st.admission_no === admNo);
-    if (!s) return;
-    document.getElementById('studentViewModal')?.remove();
-
-    const formatDob = (dob) => {
-      if (!dob) return '—';
-      try {
-        const d = new Date(dob);
-        const diff = Date.now() - d.getTime();
-        const age  = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-        return dob + ' (Age ' + age + ')';
-      } catch(e) { return dob; }
-    };
-
-    const row = (label, value) =>
-      `<tr>
-        <td style="padding:9px 12px;font-size:0.78rem;font-weight:600;color:#6b7280;width:40%;border-bottom:1px solid #f3f4f6">${label}</td>
-        <td style="padding:9px 12px;font-size:0.82rem;color:#111827;border-bottom:1px solid #f3f4f6;font-weight:500">${value}</td>
-      </tr>`;
-
-    const modal = document.createElement('div');
-    modal.id = 'studentViewModal';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML = `
-      <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(0,0,0,0.2);overflow:hidden">
-        <div style="background:#1a3a5c;padding:18px 22px;display:flex;align-items:center;gap:14px">
-          <div style="width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-family:Poppins,sans-serif;font-weight:700;font-size:1rem;color:#1a3a5c;flex-shrink:0">${getInitials(s.full_name)}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-family:Poppins,sans-serif;font-weight:700;font-size:0.95rem;color:#fff">${s.full_name}</div>
-            <div style="font-size:0.75rem;color:rgba(255,255,255,0.7);margin-top:2px">${s.class_name} &bull; ${s.admission_no}</div>
-          </div>
-          <button onclick="document.getElementById('studentViewModal').remove()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer">&times;</button>
-        </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse">
-            ${row('Full Name',      s.full_name)}
-            ${row('Admission No.', s.admission_no)}
-            ${row('Class',         s.class_name)}
-            ${row('Gender',        s.gender === 'male' ? 'Male' : 'Female')}
-            ${row('Date of Birth', formatDob(s.date_of_birth))}
-            ${row('Parent Phone',  s.parent_phone
-              ? `<a href="tel:${s.parent_phone}" style="color:#1d4ed8;font-weight:600">${s.parent_phone}</a>`
-              : '<span style="color:#9ca3af">Not recorded</span>')}
-            ${row('Status',        `<span style="background:${s.status==='active'?'#d1fae5':'#fee2e2'};color:${s.status==='active'?'#065f46':'#991b1b'};padding:2px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;text-transform:uppercase">${s.status}</span>`)}
-          </table>
-        </div>
-        <div style="padding:14px 22px;border-top:1px solid #f3f4f6;display:flex;gap:10px;justify-content:flex-end">
-          ${isAdmin ? `<button onclick="document.getElementById('studentViewModal').remove();window._editStudent('${s.admission_no}')" class="btn btn-outline" style="font-size:0.82rem">Edit</button>` : ''}
-          <button onclick="document.getElementById('studentViewModal').remove()" class="btn btn-primary" style="font-size:0.82rem">Close</button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    const student = allStudents.find(s => s.admission_no === admNo);
+    if (!student) return;
+    alert(`
+Name:         ${student.full_name}
+Admission No: ${student.admission_no}
+Class:        ${student.class_name}
+Gender:       ${student.gender}
+Parent Phone: ${student.parent_phone || '—'}
+Status:       ${student.status}
+    `.trim());
   };
 
   // ADD student
   window._addStudent = function(className) {
     showStudentModal('+ Add New Pupil', null, ({ firstName, lastName, gender, className: cls, dob, phone }) => {
-      // Generate admission number from the persistent counter — never
-      // re-derived from the current roster size, so archiving/removing
-      // students can't cause a later number to collide with one already issued.
-      const admNo = window.nextAdmissionNo ? window.nextAdmissionNo()
-        : `RCA/${new Date().getFullYear()}/${String(allStudents.length + 1).padStart(4,'0')}`;
+      // Generate admission number
+      const year  = new Date().getFullYear();
+      const count = allStudents.length + 1;
+      const admNo = `RCA/${year}/${String(count).padStart(4,'0')}`;
 
       const newStudent = {
         id:            admNo,
@@ -524,7 +451,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       allStudents.push(newStudent);
       if (window.RCA) window.RCA.save('students');
-      if (window.logActivity) window.logActivity('create', `Student enrolled: ${newStudent.full_name} (${newStudent.class_name})`, 'students');
+
+      // Save to Supabase via API
+      if (window.RCA_SYNC) {
+        window.RCA_SYNC.saveStudent(newStudent).then(saved => {
+          if (saved?.admission_no) {
+            newStudent.admission_no = saved.admission_no;
+          }
+        });
+      }
 
       // Phase 4: save to real database
       if (window.RCA_API) {
@@ -567,11 +502,10 @@ document.addEventListener('DOMContentLoaded', () => {
       student.full_name     = `${firstName} ${lastName}`;
       student.gender        = gender;
       student.class_name    = cls;
-      student.date_of_birth = dob  || null;
-      student.parent_phone  = phone || null;
+      student.date_of_birth = dob || student.date_of_birth;
+      student.parent_phone  = phone || student.parent_phone;
 
       if (window.RCA) window.RCA.save('students');
-      if (window.logActivity) window.logActivity('update', `Student record updated: ${student.full_name} (${cls})`, 'students');
 
       // Phase 4: update in real database
       if (window.RCA_API) {
@@ -596,7 +530,6 @@ This will archive the record. You can restore it from User Management if needed.
 
     student.status = 'archived';
     if (window.RCA) window.RCA.save('students');
-    if (window.logActivity) window.logActivity('delete', `Student archived: ${student.full_name} (${student.class_name})`, 'students');
 
     // Phase 4: update in real database
     if (window.RCA_API) {
