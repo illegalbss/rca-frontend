@@ -389,6 +389,46 @@
       size: A4;
       margin: 10mm 12mm;
     }
+
+    /* ========== MOBILE SCREEN STYLES ==========
+       This is a printable paper form, so it was only ever designed
+       for print + a wide desktop screen. On a phone, long nowrap
+       labels and the fixed 3-column header forced the whole page to
+       overflow sideways. Below 600px: stack the header, let labels
+       wrap normally, and put every field on its own full-width row. */
+    @media screen and (max-width: 600px) {
+      body { padding: 10px; }
+
+      .form-paper { padding: 16px 14px; }
+
+      .form-header {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .form-header-center { flex: 1 1 100%; order: 1; }
+      .form-logo { order: 0; margin: 0 auto; }
+      .passport-box { order: 2; margin: 8px auto 0; }
+
+      .form-title { font-size: 1.1rem; padding: 4px 14px; letter-spacing: 1px; }
+      .school-name { font-size: 1.05rem; }
+
+      .field-label { white-space: normal; }
+
+      .field-group.w-third,
+      .field-group.w-half,
+      .field-group.w-small,
+      .field-group.w-med {
+        flex: 1 1 100%;
+      }
+
+      .checkbox-q { min-width: 0; }
+
+      .signature-row { gap: 20px; }
+      .sig-group { flex: 1 1 100%; min-width: 0; }
+      .sig-line { width: 100%; max-width: 260px; }
+    }
   </style>
 </head>
 <body>

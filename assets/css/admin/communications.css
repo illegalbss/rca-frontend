@@ -579,3 +579,13 @@
   .comm-stats { grid-template-columns: 1fr; }
   .ict-stats  { grid-template-columns: 1fr; }
 }
+
+/* Announcements/Newsletter tab bar — the 3 tabs (with inline
+   padding:8px 18px) don't fit narrow phones on one line and forced
+   the whole page to overflow sideways. Shrink and let them wrap. */
+@media (max-width: 400px) {
+  .comm-tab {
+    padding: 7px 10px !important;
+    font-size: 0.78rem !important;
+  }
+}
