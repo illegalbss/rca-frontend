@@ -1,84 +1,188 @@
 /* ============================================
-   API CONFIG — config.js
+   LOGIN — login.js
    Royal Crystal Academy
    ============================================
-   This file controls which backend URL the
-   frontend talks to.
+   Phase 4: Calls real backend API for authentication.
+   Stores JWT token + user data in sessionStorage.
+   Falls back to localStorage demo mode if API is unreachable.
+*/
 
-   Development:  http://localhost:3000
-   Production:   https://rca-backend.onrender.com
+document.addEventListener('DOMContentLoaded', () => {
 
-   It switches automatically based on whether
-   you are running on localhost or on Netlify.
-   ============================================ */
+  const form     = document.getElementById('loginForm');
+  const errorBox = document.getElementById('loginError');
+  const loginBtn = document.querySelector('.login-btn');
 
-(function () {
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = 'block';
+  }
 
-  const isLocalhost = (
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname === ''
-  );
+  function hideError() { errorBox.style.display = 'none'; }
 
-  window.RCA_CONFIG = {
-    // Backend API base URL
-    API_URL: isLocalhost
-      ? 'http://localhost:3000/api'
-      : 'https://rca-backend-3r1c.onrender.com/api',
+  function setLoading(loading) {
+    if (loginBtn) {
+      loginBtn.textContent = loading ? 'Signing in…' : 'Sign In →';
+      loginBtn.disabled = loading;
+    }
+  }
 
-    // School info
-    SCHOOL_NAME:   'Royal Crystal Academy',
-    SCHOOL_DOMAIN: 'royalcrystalacademy.edu.ng',
-    SESSION:       '2025/2026',
-    CURRENT_TERM:  'term2',
+  /* ---- Core login function — stores session ---- */
+  function storeSession(user, token) {
+    // Phase 4: store real JWT token
+    if (token) sessionStorage.setItem('rca_token', token);
 
-    // Helper: make an authenticated API call
-    // Usage: await window.RCA_CONFIG.fetch('/students')
-    //        await window.RCA_CONFIG.fetch('/payments', { method:'POST', body: data })
-    async fetch(endpoint, options = {}) {
-      const token = sessionStorage.getItem('rca_token');
-      const url   = this.API_URL + endpoint;
+    // Store user data for dashboard-shell.js to read
+    sessionStorage.setItem('rca_user_id',   user.id);
+    sessionStorage.setItem('rca_demo_role', user.primary_role || user.role);
+    sessionStorage.setItem('rca_demo_email', user.email);
+    sessionStorage.setItem('rca_demo_name',  user.full_name);
 
-      const response = await window.fetch(url, {
-        ...options,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-          ...(options.headers || {})
-        },
-        body: options.body ? JSON.stringify(options.body) : undefined
+    // Store full user object for pages that need linked_classes etc.
+    sessionStorage.setItem('rca_user_data', JSON.stringify(user));
+
+    sessionStorage.setItem('rca_log_login', '1');
+    window.location.href = 'dashboard.html';
+  }
+
+  /* ---- Form submit ---- */
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    hideError();
+
+    const email = document.getElementById('login_email').value.trim().toLowerCase();
+    const pwd   = document.getElementById('login_password').value;
+
+    if (!email) { showError('Please enter your email address.'); return; }
+    if (!pwd)   { showError('Please enter your password.'); return; }
+
+    setLoading(true);
+
+    // ---- Try real API first ----
+    try {
+      const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
+      const res = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pwd })
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || `Request failed: ${response.status}`);
+      if (!res.ok) {
+        setLoading(false);
+        showError(data.error || 'Login failed. Please check your email and password.');
+        return;
       }
 
-      return data;
-    },
+      // Block parents — they have their own login page
+      const apiRole = data.user.primary_role || data.user.role;
+      if (apiRole === 'parent') {
+        setLoading(false);
+        showError('This login is for staff only. Please use the Parent Portal login.');
+        document.getElementById('loginError').innerHTML =
+          'This login is for staff only. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
+        return;
+      }
+      // Success — store token and user, then redirect
+      storeSession(data.user, data.token);
+      return;
 
-    // Save token after login
-    setToken(token) {
-      sessionStorage.setItem('rca_token', token);
-    },
-
-    // Get current token
-    getToken() {
-      return sessionStorage.getItem('rca_token');
-    },
-
-    // Clear token on logout
-    clearToken() {
-      sessionStorage.removeItem('rca_token');
-    },
-
-    // Check if user is logged in
-    isLoggedIn() {
-      return !!sessionStorage.getItem('rca_token');
+    } catch (networkErr) {
+      // API unreachable — fall back to localStorage demo mode
+      console.warn('API unreachable, falling back to demo mode:', networkErr.message);
     }
-  };
 
-  console.log(`RCA Config loaded — API: ${window.RCA_CONFIG.API_URL}`);
+    // ---- Fallback: localStorage demo mode ----
+    const allUsers = window.SAMPLE_USERS || [];
+    let user = allUsers.find(u => u.email.toLowerCase() === email);
 
-})();
+    // If found in parent accounts — redirect, don't allow staff login
+    if (!user && window.RCA_PARENTS) {
+      const parentUser = window.RCA_PARENTS.getByEmail(email) || null;
+      if (parentUser) {
+        setLoading(false);
+        errorBox.style.display = 'block';
+        errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
+        return;
+      }
+    }
+
+    if (!user) {
+      setLoading(false);
+      showError('No staff account found with that email address.');
+      return;
+    }
+
+    // Block parents who somehow ended up in SAMPLE_USERS
+    const demoRole = user.primary_role || user.role;
+    if (demoRole === 'parent') {
+      setLoading(false);
+      errorBox.style.display = 'block';
+      errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
+      return;
+    }
+
+    if (user.status === 'deactivated' || user.status === 'suspended') {
+      setLoading(false);
+      showError('This account has been deactivated. Contact the ICT Administrator.');
+      return;
+    }
+
+    // Check password
+    const defaultPwd = 'RCA@2026!';
+    const userPwd = user.password || defaultPwd;
+    if (pwd !== userPwd && pwd !== defaultPwd) {
+      setLoading(false);
+      showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
+      return;
+    }
+
+    storeSession(user, null);
+  });
+
+  /* ---- Password show/hide toggle ---- */
+  const toggleBtn = document.getElementById('togglePassword');
+  const pwdInput  = document.getElementById('login_password');
+  if (toggleBtn && pwdInput) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = pwdInput.type === 'password';
+      pwdInput.type  = isHidden ? 'text' : 'password';
+      toggleBtn.textContent = isHidden ? '🙈' : '👁';
+    });
+  }
+
+  /* ---- Parent login hint ---- */
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('role') === 'parent') {
+    const emailInput = document.getElementById('login_email');
+    if (emailInput) emailInput.focus();
+    const note = document.createElement('div');
+    note.style.cssText = 'background:#dbeafe;border:1px solid #93c5fd;color:#1e40af;border-radius:8px;padding:10px 14px;font-size:0.8rem;margin-bottom:14px';
+    note.innerHTML = '👨‍👩‍👧 <strong>Parent Portal:</strong> Use the email address linked to your child\'s account.';
+    form.insertBefore(note, form.firstChild);
+  }
+
+  /* ---- Forgot password modal ---- */
+  const forgotLink    = document.getElementById('forgotPasswordLink');
+  const forgotOverlay = document.getElementById('forgotModalOverlay');
+  const forgotClose   = document.getElementById('forgotModalClose');
+  const sendResetBtn  = document.getElementById('sendResetBtn');
+  const resetSuccess  = document.getElementById('resetSuccess');
+
+  forgotLink?.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('reset_email').value = document.getElementById('login_email').value;
+    resetSuccess.style.display = 'none';
+    forgotOverlay.classList.add('open');
+  });
+
+  forgotClose?.addEventListener('click', () => forgotOverlay.classList.remove('open'));
+  forgotOverlay?.addEventListener('click', e => {
+    if (e.target === forgotOverlay) forgotOverlay.classList.remove('open');
+  });
+  sendResetBtn?.addEventListener('click', () => {
+    resetSuccess.style.display = 'block';
+  });
+
+});
