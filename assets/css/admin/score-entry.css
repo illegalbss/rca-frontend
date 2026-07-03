@@ -260,4 +260,89 @@
     flex-direction: column;
     align-items: stretch;
   }
+
+  /* ============================================
+     SCORE TABLE -> STACKED CARDS ON MOBILE
+     ============================================
+     A 10-column table with a number input in most cells never
+     works on a phone screen — it just forces sideways scrolling
+     while typing. Below 700px, turn each row into its own card:
+     pupil name as the card header, then one labelled field per
+     line (label comes from the td's data-label attribute).
+  */
+  .table-scroll { overflow-x: visible; }
+
+  .score-table { min-width: 0; }
+
+  .score-table thead { display: none; }
+
+  .score-table, .score-table tbody, .score-table tr, .score-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .score-table tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .score-table td {
+    border-bottom: none;
+    padding: 0.5rem 0;
+    text-align: right;
+  }
+
+  /* Every scorable field: label on the left, input/value on the right */
+  .score-table td[data-label]:not([data-label=""]) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    border-bottom: 1px dashed var(--color-border);
+  }
+
+  .score-table td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-align: left;
+  }
+
+  .score-table td:last-of-type {
+    border-bottom: none;
+  }
+
+  /* Avatar + name form the card header instead of a labelled row */
+  .score-table .col-avatar {
+    display: inline-block;
+    width: auto;
+    vertical-align: middle;
+    padding: 0;
+  }
+
+  .score-table .pupil-name-cell {
+    display: inline-block;
+    width: auto;
+    vertical-align: middle;
+    font-weight: 700;
+    font-size: var(--fs-base);
+    padding: 0 0 0.5rem var(--space-sm);
+    margin-bottom: 0.35rem;
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .score-table .row-avatar {
+    margin: 0;
+  }
+
+  /* Bigger tap targets and inputs — no column-width squeeze anymore */
+  .score-input,
+  .exam-input {
+    width: 84px;
+    min-height: 42px;
+    font-size: var(--fs-base);
+  }
 }

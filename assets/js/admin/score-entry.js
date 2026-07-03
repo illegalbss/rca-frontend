@@ -187,16 +187,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const r = getResultRecord(student.admission_no, subjectId);
       return `
         <tr data-admission="${student.admission_no}">
-          <td class="col-avatar"><div class="row-avatar">${getInitials(student.full_name)}</div></td>
-          <td class="pupil-name-cell">${student.full_name}</td>
-          <td><input type="number" class="score-input ca-input" data-component="test" min="0" max="${caMax.test}" value="${r.test}"></td>
-          <td><input type="number" class="score-input ca-input" data-component="assessment" min="0" max="${caMax.assessment}" value="${r.assessment}"></td>
-          <td><input type="number" class="score-input ca-input" data-component="project" min="0" max="${caMax.project}" value="${r.project}"></td>
-          <td><input type="number" class="score-input ca-input" data-component="midterm" min="0" max="${caMax.midterm}" value="${r.midterm}"></td>
-          <td class="ca-total-col"><span class="computed-value ca-total-display">${r.caTotal}</span></td>
-          <td><input type="number" class="score-input exam-input ca-input" data-component="exam" min="0" max="${examMax}" value="${r.exam}"></td>
-          <td class="final-col"><span class="computed-value final-score-display ${r.finalScore >= 40 ? 'above-pass' : 'below-pass'}">${r.finalScore}</span></td>
-          <td><span class="grade-pill ${r.grade} grade-display">${r.grade}</span></td>
+          <td class="col-avatar" data-label=""><div class="row-avatar">${getInitials(student.full_name)}</div></td>
+          <td class="pupil-name-cell" data-label="">${student.full_name}</td>
+          <td data-label="Test /${caMax.test}"><input type="number" class="score-input ca-input" data-component="test" min="0" max="${caMax.test}" value="${r.test}"></td>
+          <td data-label="Assessment /${caMax.assessment}"><input type="number" class="score-input ca-input" data-component="assessment" min="0" max="${caMax.assessment}" value="${r.assessment}"></td>
+          <td data-label="Project /${caMax.project}"><input type="number" class="score-input ca-input" data-component="project" min="0" max="${caMax.project}" value="${r.project}"></td>
+          <td data-label="Mid-term /${caMax.midterm}"><input type="number" class="score-input ca-input" data-component="midterm" min="0" max="${caMax.midterm}" value="${r.midterm}"></td>
+          <td class="ca-total-col" data-label="CA Total /40"><span class="computed-value ca-total-display">${r.caTotal}</span></td>
+          <td data-label="Exam /${examMax}"><input type="number" class="score-input exam-input ca-input" data-component="exam" min="0" max="${examMax}" value="${r.exam}"></td>
+          <td class="final-col" data-label="Final /100"><span class="computed-value final-score-display ${r.finalScore >= 40 ? 'above-pass' : 'below-pass'}">${r.finalScore}</span></td>
+          <td data-label="Grade"><span class="grade-pill ${r.grade} grade-display">${r.grade}</span></td>
         </tr>
       `;
     }).join('');

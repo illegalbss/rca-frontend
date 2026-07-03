@@ -1600,22 +1600,9 @@ html, body { height: 100%; }
     border-radius: 12px !important;
   }
 
-  /* ---- SCORE ENTRY TABLE ---- */
-  .score-table-wrap {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-
-  .score-table {
-    min-width: 500px !important;
-    font-size: 0.72rem !important;
-  }
-
-  .score-input {
-    width: 44px !important;
-    padding: 4px !important;
-    font-size: 0.72rem !important;
-  }
+  /* Score Entry table's own mobile layout (stacked cards) lives in
+     score-entry.css — it needs full control over .score-table and
+     .score-input, so no overrides are forced here. */
 
   /* ---- APPROVAL BANNER ---- */
   .approval-banner {
