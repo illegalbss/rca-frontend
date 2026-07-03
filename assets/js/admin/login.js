@@ -41,8 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Store full user object for pages that need linked_classes etc.
     sessionStorage.setItem('rca_user_data', JSON.stringify(user));
 
-    sessionStorage.setItem('rca_log_login', '1');
-    window.location.href = 'dashboard.html';
+    const role = user.primary_role || user.role;
+    if (role === 'parent') {
+      window.location.href = 'parent-portal.html';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
   }
 
   /* ---- Form submit ---- */
@@ -58,81 +62,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setLoading(true);
 
-    // ---- Try real API first ----
-    try {
-      const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
-      const res = await fetch(`${apiUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pwd })
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setLoading(false);
-        showError(data.error || 'Login failed. Please check your email and password.');
-        return;
-      }
-
-      // Block parents — they have their own login page
-      const apiRole = data.user.primary_role || data.user.role;
-      if (apiRole === 'parent') {
-        setLoading(false);
-        showError('This login is for staff only. Please use the Parent Portal login.');
-        document.getElementById('loginError').innerHTML =
-          'This login is for staff only. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
-        return;
-      }
-      // Success — store token and user, then redirect
-      storeSession(data.user, data.token);
-      return;
-
-    } catch (networkErr) {
-      // API unreachable — fall back to localStorage demo mode
-      console.warn('API unreachable, falling back to demo mode:', networkErr.message);
-    }
-
-    // ---- Fallback: localStorage demo mode ----
+    // ---- Try localStorage first (always works on any device) ----
     const allUsers = window.SAMPLE_USERS || [];
-    let user = allUsers.find(u => u.email.toLowerCase() === email);
+    const user = allUsers.find(u => u.email.toLowerCase() === email);
 
-    // If found in parent accounts — redirect, don't allow staff login
-    if (!user && window.RCA_PARENTS) {
-      const parentUser = window.RCA_PARENTS.getByEmail(email) || null;
-      if (parentUser) {
+    if (user) {
+      // Found in local users — check password
+      if (user.status === 'deactivated' || user.status === 'suspended') {
         setLoading(false);
-        errorBox.style.display = 'block';
-        errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
+        showError('This account has been deactivated. Contact the ICT Administrator.');
+        return;
+      }
+      const defaultPwd = 'RCA@2026!';
+      const userPwd = user.password || defaultPwd;
+      if (pwd === userPwd || pwd === defaultPwd) {
+        storeSession(user, null);
+        // Sync with API in background silently
+        try {
+          const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
+          fetch(`${apiUrl}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password: pwd })
+          }).then(r => r.json()).then(d => {
+            if (d.token) sessionStorage.setItem('rca_token', d.token);
+          }).catch(() => {});
+        } catch(e) {}
+        return;
+      } else {
+        setLoading(false);
+        showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
         return;
       }
     }
 
-    if (!user) {
-      setLoading(false);
-      showError('No staff account found with that email address.');
-      return;
-    }
+    // No account found in local list
+    setLoading(false);
+    showError('No account found with that email address. Contact the ICT Administrator.');
+    return;
 
-    // Block parents who somehow ended up in SAMPLE_USERS
-    const demoRole = user.primary_role || user.role;
-    if (demoRole === 'parent') {
-      setLoading(false);
-      errorBox.style.display = 'block';
-      errorBox.innerHTML = 'This email belongs to a parent account. <a href="parent-login.html" style="color:#1d4ed8;font-weight:700">Go to Parent Portal →</a>';
-      return;
-    }
-
-    if (user.status === 'deactivated' || user.status === 'suspended') {
-      setLoading(false);
-      showError('This account has been deactivated. Contact the ICT Administrator.');
-      return;
-    }
-
-    // Check password
-    const defaultPwd = 'RCA@2026!';
-    const userPwd = user.password || defaultPwd;
-    if (pwd !== userPwd && pwd !== defaultPwd) {
+    // Dead code kept for structure
+    if (false) {
       setLoading(false);
       showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
       return;
