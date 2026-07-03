@@ -1434,10 +1434,13 @@ html, body { height: 100%; }
     grid-template-columns: 1fr !important;
   }
 
-  /* ---- USER MANAGEMENT TABLE ---- */
+  /* ---- USER MANAGEMENT TABLE ----
+     .score-table is excluded: it carries the .data-table class too,
+     but score-entry.css gives it its own stacked-card mobile layout
+     that needs cells to wrap normally, not force nowrap + scroll. */
   .credentials-table,
   .um-table,
-  .data-table {
+  .data-table:not(.score-table) {
     font-size: 0.72rem !important;
     display: block !important;
     overflow-x: auto !important;

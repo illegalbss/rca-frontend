@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/illegal boss/Desktop/rca-backend/src/db/**)"
+    ]
+  }
+}

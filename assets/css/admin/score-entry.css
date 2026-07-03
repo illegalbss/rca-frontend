@@ -315,18 +315,23 @@
     border-bottom: none;
   }
 
-  /* Avatar + name form the card header instead of a labelled row */
+  /* Avatar + name form the card header instead of a labelled row.
+     The name cell gets a fixed width (100% minus the avatar) rather
+     than auto-sizing to its content, so long names wrap onto a
+     second line instead of forcing the whole card to overflow. */
   .score-table .col-avatar {
     display: inline-block;
-    width: auto;
+    width: 32px;
     vertical-align: middle;
     padding: 0;
   }
 
   .score-table .pupil-name-cell {
     display: inline-block;
-    width: auto;
+    width: calc(100% - 40px);
     vertical-align: middle;
+    white-space: normal;
+    word-break: break-word;
     font-weight: 700;
     font-size: var(--fs-base);
     padding: 0 0 0.5rem var(--space-sm);
