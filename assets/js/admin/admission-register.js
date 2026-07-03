@@ -44,6 +44,10 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function generateAdmissionNo() {
+    // Uses the same persistent counter as the Students page (see
+    // window.nextAdmissionNo in localstorage.js) so numbers issued from
+    // either screen can never collide with each other.
+    if (window.nextAdmissionNo) return window.nextAdmissionNo();
     var year = new Date().getFullYear();
     var allNos = [].concat(
       REGISTER.map(function (r) { return r.admission_no || ''; }),

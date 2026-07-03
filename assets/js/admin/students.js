@@ -503,10 +503,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ADD student
   window._addStudent = function(className) {
     showStudentModal('+ Add New Pupil', null, ({ firstName, lastName, gender, className: cls, dob, phone }) => {
-      // Generate admission number
-      const year  = new Date().getFullYear();
-      const count = allStudents.length + 1;
-      const admNo = `RCA/${year}/${String(count).padStart(4,'0')}`;
+      // Generate admission number from the persistent counter — never
+      // re-derived from the current roster size, so archiving/removing
+      // students can't cause a later number to collide with one already issued.
+      const admNo = window.nextAdmissionNo ? window.nextAdmissionNo()
+        : `RCA/${new Date().getFullYear()}/${String(allStudents.length + 1).padStart(4,'0')}`;
 
       const newStudent = {
         id:            admNo,

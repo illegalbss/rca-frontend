@@ -254,6 +254,29 @@
   let admissionRegister = lsGet('admission_register') || [];
   window.ADMISSION_REGISTER = admissionRegister;
 
+  /* ---- Persistent admission number counter ----
+     Generating admission numbers from the CURRENT active-student count
+     (e.g. "RCA/2026/" + (activeCount + 1)) breaks the moment anyone is
+     ever archived/removed: the count shrinks, so a later "next" number
+     can collide with one already issued to an existing student. A real
+     counter that only ever increments — seeded once from the highest
+     number seen across the full (unfiltered) roster and register —
+     can never hand out the same number twice. */
+  if (!lsGet('admission_counter')) {
+    let maxSeen = 0;
+    students.concat(admissionRegister).forEach(r => {
+      const m = (r && r.admission_no || '').match(/RCA\/\d+\/(\d+)/);
+      if (m) maxSeen = Math.max(maxSeen, parseInt(m[1], 10));
+    });
+    lsSet('admission_counter', maxSeen);
+  }
+  window.nextAdmissionNo = function () {
+    const year = new Date().getFullYear();
+    const next = (lsGet('admission_counter') || 0) + 1;
+    lsSet('admission_counter', next);
+    return 'RCA/' + year + '/' + String(next).padStart(4, '0');
+  };
+
   /* PAYMENT SETTINGS (manual vs online mode, gateway config) */
   const defaultPaymentSettings = {
     mode: 'manual', online_gateway: 'paystack', online_public_key: '',
