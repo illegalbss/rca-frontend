@@ -216,10 +216,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${student.full_name}</td>
         <td>${student.admission_no}</td>
         <td>${(student.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'}</td>
-        <td style="font-size:0.78rem;color:#6b7280">${student.date_of_birth || '<span style="color:#d1d5db">—</span>'}</td>
-        <td style="font-size:0.78rem">${student.parent_phone
-          ? `<a href="tel:${student.parent_phone}" style="color:#1d4ed8;font-weight:600;text-decoration:none">${student.parent_phone}</a>`
-          : '<span style="color:#d1d5db">—</span>'}</td>
         <td>
           <span class="badge ${student.status === 'active' ? 'badge-success' : 'badge-danger'}">
             ${student.status === 'active' ? 'Active' : 'Inactive'}
@@ -400,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div>
               <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">Date of Birth</label>
-              <input id="sDob" type="date" value="${student?.date_of_birth || ''}" class="form-control">
+              <input id="sDob" type="date" value="${student?.date_of_birth ? String(student.date_of_birth).substring(0, 10) : ''}" class="form-control">
             </div>
             <div>
               <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">Parent Phone</label>
@@ -408,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
         </div>
-        <div style="padding:16px 22px;border-top:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
+        <div style="padding:16px 22px;border-top:1px solid #f3f4f6;display:flex;gap:10px;justify-content:flex-end">
           <button onclick="document.getElementById('studentModal').remove()" class="btn btn-outline">Cancel</button>
           <button id="studentSaveBtn" class="btn btn-primary">Save</button>
         </div>
@@ -537,8 +533,11 @@ Status:       ${student.status}
       if (window.RCA) window.RCA.save('students');
 
       // Phase 4: update in real database
+      // Admission numbers contain slashes (e.g. RCA/2026/016), so they
+      // must be URL-encoded or the server sees them as multiple path
+      // segments instead of one ID and returns a 404.
       if (window.RCA_API) {
-        window.RCA_API.call(`/students/${admNo}`, {
+        window.RCA_API.call(`/students/${encodeURIComponent(admNo)}`, {
           method: 'PUT',
           body: { first_name: firstName, last_name: lastName, gender, class_name: cls, date_of_birth: dob, parent_phone: phone }
         }).catch(e => console.warn('Student update API failed:', e.message));
@@ -562,7 +561,7 @@ This will archive the record. You can restore it from User Management if needed.
 
     // Phase 4: update in real database
     if (window.RCA_API) {
-      window.RCA_API.call(`/students/${admNo}`, {
+      window.RCA_API.call(`/students/${encodeURIComponent(admNo)}`, {
         method: 'PUT',
         body: { status: 'archived' }
       }).catch(e => console.warn('Student archive API failed:', e.message));
