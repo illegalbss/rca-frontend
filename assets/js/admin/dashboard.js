@@ -14,12 +14,27 @@
      parent          → redirect to parent-portal.html
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
   const user    = window.CURRENT_USER;
   const roles   = user ? (user.roles || [user.role]) : [];
   const mainEl  = document.getElementById('dashboardMain');
   const titleEl = document.getElementById('dashboardTitle');
+
+  // Load the REAL students from the database before computing any stats
+  if (window.RCA_API) {
+    try {
+      const realStudents = await window.RCA_API.getStudents();
+      if (realStudents) {
+        window.SAMPLE_STUDENTS = realStudents.map(s => ({
+          ...s,
+          gender: (s.gender || '').toLowerCase()
+        }));
+      }
+    } catch (e) {
+      console.warn('Could not load real students for dashboard:', e.message);
+    }
+  }
 
   /* ---- All data sources ---- */
   // Only count ACTIVE students — exclude inactive, archived, removed
