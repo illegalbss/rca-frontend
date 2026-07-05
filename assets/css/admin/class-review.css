@@ -360,3 +360,34 @@
 
 .save-status.saved   { color: var(--color-success); font-weight: 600; }
 .save-status.unsaved { color: var(--color-secondary-dark); font-weight: 600; }
+
+/* Behaviour trait rows on mobile — the fixed 200px label + five
+   fixed 34px circles + 80px value label never fit a phone screen
+   and had no way to wrap, pushing the last circles off-screen.
+   Stack the label above the circles instead. */
+@media (max-width: 700px) {
+  .trait-row {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .trait-label {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .trait-circles {
+    flex-wrap: wrap;
+  }
+
+  .rating-circle {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+
+  .trait-value-label {
+    min-width: 0;
+    margin-left: auto;
+  }
+}
