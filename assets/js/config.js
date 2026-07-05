@@ -15,9 +15,9 @@
     SUPABASE_URL: 'https://sftrchflhgxzenkkbqpl.supabase.co',
     SUPABASE_KEY: 'sb_publishable_tV5CjyAQRFCYuHk8_hF6zQ_JX9a7fKn',
 
-    API_URL: isLocalhost
-      ? 'http://localhost:3000/api'
-      : 'https://rca-backend-3r1c.onrender.com/api',
+   API_URL: isLocalhost
+  ? 'http://localhost:3000/api'
+  : 'https://rca-backend-five.vercel.app/api',
 
     SCHOOL_NAME:   'Royal Crystal Academy',
     SCHOOL_DOMAIN: 'royalcrystalacademy.edu.ng',
