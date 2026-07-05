@@ -61,6 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
+     HELPER: split a full name into first/last for
+     pre-filling the edit form. Our database only
+     stores a single full_name field, so we derive
+     these for display purposes only.
+     -------------------------------------------- */
+  function splitName(fullName) {
+    const parts = (fullName || '').trim().split(/\s+/);
+    return {
+      first: parts[0] || '',
+      last: parts.slice(1).join(' ') || ''
+    };
+  }
+
+  /* --------------------------------------------
      STEP 1: BUILD THE CLASS PICKER CARDS
      -------------------------------------------- 
      For each class name, we COUNT how many students in
@@ -90,8 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
         s.status !== 'inactive' &&
         s.status !== 'removed'
       );
-      const maleCount = studentsInClass.filter(s => s.gender === 'male').length;
-      const femaleCount = studentsInClass.filter(s => s.gender === 'female').length;
+      // Gender is normalized to lowercase when students are loaded
+      // (see the Phase 4 API-load block at the bottom of this file)
+      const maleCount = studentsInClass.filter(s => (s.gender || '').toLowerCase() === 'male').length;
+      const femaleCount = studentsInClass.filter(s => (s.gender || '').toLowerCase() === 'female').length;
 
       const card = document.createElement('div');
       card.className = 'card class-card';
@@ -199,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>${student.full_name}</td>
         <td>${student.admission_no}</td>
-        <td>${student.gender === 'male' ? 'Male' : 'Female'}</td>
+        <td>${(student.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'}</td>
         <td>
           <span class="badge ${student.status === 'active' ? 'badge-success' : 'badge-danger'}">
             ${student.status === 'active' ? 'Active' : 'Inactive'}
@@ -336,6 +352,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('studentModal')?.remove();
 
     const classes = window.SCHOOL_CLASSES || [];
+    // Our database stores one full_name field — split it here just to
+    // pre-fill these two boxes (this is display-only; on save we send
+    // both parts back and the backend recombines them into full_name).
+    const nameParts = splitName(student?.full_name);
+    const firstName = student?.first_name || nameParts.first;
+    const lastName  = student?.last_name  || nameParts.last;
+    const genderLower = (student?.gender || '').toLowerCase();
+
     const modal = document.createElement('div');
     modal.id = 'studentModal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -351,17 +375,17 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
               <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">First Name *</label>
-              <input id="sFirstName" type="text" value="${student?.first_name || ''}" class="form-control" placeholder="First name">
+              <input id="sFirstName" type="text" value="${firstName}" class="form-control" placeholder="First name">
             </div>
             <div>
               <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">Last Name *</label>
-              <input id="sLastName" type="text" value="${student?.last_name || ''}" class="form-control" placeholder="Last name">
+              <input id="sLastName" type="text" value="${lastName}" class="form-control" placeholder="Last name">
             </div>
             <div>
               <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">Gender *</label>
               <select id="sGender" class="form-control">
-                <option value="male"   ${student?.gender === 'male'   ? 'selected' : ''}>Male</option>
-                <option value="female" ${student?.gender === 'female' ? 'selected' : ''}>Female</option>
+                <option value="male"   ${genderLower === 'male'   ? 'selected' : ''}>Male</option>
+                <option value="female" ${genderLower === 'female' ? 'selected' : ''}>Female</option>
               </select>
             </div>
             <div>
@@ -422,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
 Name:         ${student.full_name}
 Admission No: ${student.admission_no}
 Class:        ${student.class_name}
-Gender:       ${student.gender}
+Gender:       ${(student.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'}
 Parent Phone: ${student.parent_phone || '—'}
 Status:       ${student.status}
     `.trim());
@@ -462,6 +486,7 @@ Status:       ${student.status}
       }
 
       // Phase 4: save to real database
+      // (backend accepts first_name + last_name and combines them into full_name)
       if (window.RCA_API) {
         window.RCA_API.call('/students', {
           method: 'POST',
@@ -561,12 +586,16 @@ This will archive the record. You can restore it from User Management if needed.
       if (apiStudents && apiStudents.length > 0) {
         // Merge API students with localStorage
         apiStudents.forEach(s => {
+          // Normalize gender to lowercase so comparisons like
+          // s.gender === 'male' elsewhere in this file work correctly
+          // — the database stores "Male"/"Female" (capitalized).
+          const normalized = { ...s, gender: (s.gender || '').toLowerCase() };
           const idx = allStudents.findIndex(ls =>
             ls.admission_no === s.admission_no);
           if (idx >= 0) {
-            allStudents[idx] = { ...allStudents[idx], ...s };
+            allStudents[idx] = { ...allStudents[idx], ...normalized };
           } else {
-            allStudents.push(s);
+            allStudents.push(normalized);
           }
         });
         renderClassCards();

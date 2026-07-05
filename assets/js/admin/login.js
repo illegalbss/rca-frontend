@@ -76,18 +76,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const defaultPwd = 'RCA@2026!';
       const userPwd = user.password || defaultPwd;
       if (pwd === userPwd || pwd === defaultPwd) {
-        storeSession(user, null);
-        // Sync with API in background silently
+        // Get the REAL token from the API before redirecting — the previous
+        // version redirected immediately and fired this fetch in the
+        // background, so the page navigated away before the token was
+        // ever saved. We now wait for it (with a short timeout fallback).
+        let realToken = null;
         try {
           const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
-          fetch(`${apiUrl}/auth/login`, {
+          const res = await fetch(`${apiUrl}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password: pwd })
-          }).then(r => r.json()).then(d => {
-            if (d.token) sessionStorage.setItem('rca_token', d.token);
-          }).catch(() => {});
-        } catch(e) {}
+          });
+          const data = await res.json();
+          if (res.ok && data.token) {
+            realToken = data.token;
+          } else {
+            console.warn('API login did not return a token:', data.error || res.status);
+          }
+        } catch (e) {
+          console.warn('API login unreachable, continuing in local-only mode:', e.message);
+        }
+
+        storeSession(user, realToken);
         return;
       } else {
         setLoading(false);
@@ -100,15 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setLoading(false);
     showError('No account found with that email address. Contact the ICT Administrator.');
     return;
-
-    // Dead code kept for structure
-    if (false) {
-      setLoading(false);
-      showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
-      return;
-    }
-
-    storeSession(user, null);
   });
 
   /* ---- Password show/hide toggle ---- */
