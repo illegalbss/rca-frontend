@@ -266,9 +266,9 @@ document.addEventListener('DOMContentLoaded', () => {
             <label class="form-label">Author Name</label>
             <input type="text" id="ann_author" class="form-control" value="${existing?.author || user?.full_name || 'Administration'}">
           </div>
-          <div style="display:flex;gap:10px">
-            <button id="closeAnnModal2" class="btn btn-outline" style="flex:1">Cancel</button>
-            <button id="saveAnnBtn" class="btn btn-primary" style="flex:1">${existing ? 'Save Changes' : 'Publish Announcement'}</button>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <button id="closeAnnModal2" class="btn btn-outline" style="flex:1 1 100px">Cancel</button>
+            <button id="saveAnnBtn" class="btn btn-primary" style="flex:1 1 100px">${existing ? 'Save Changes' : 'Publish Announcement'}</button>
           </div>
         </div>
       </div>`;
@@ -361,9 +361,9 @@ document.addEventListener('DOMContentLoaded', () => {
               <option value="parents" ${existing?.audience==='parents'?'selected':''}>Parents Only</option>
             </select>
           </div>
-          <div style="display:flex;gap:10px">
-            <button id="closeEvtModal2" class="btn btn-outline" style="flex:1">Cancel</button>
-            <button id="saveEvtBtn" style="flex:1;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">${existing ? 'Save Changes' : 'Add Event'}</button>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <button id="closeEvtModal2" class="btn btn-outline" style="flex:1 1 100px">Cancel</button>
+            <button id="saveEvtBtn" style="flex:1 1 100px;padding:10px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">${existing ? 'Save Changes' : 'Add Event'}</button>
           </div>
         </div>
       </div>`;

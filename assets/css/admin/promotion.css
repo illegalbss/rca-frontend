@@ -285,11 +285,12 @@
 
 .modal-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-sm);
 }
 
 .modal-actions .btn {
-  flex: 1;
+  flex: 1 1 140px;
 }
 
 /* On small screens, stack the toolbar and bulk actions */

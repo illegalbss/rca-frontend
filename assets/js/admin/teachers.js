@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;justify-content:flex-end">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
         <button onclick="window._editStaffProfile('${teacher.staff_id}')" style="padding:9px 20px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:0.85rem;font-weight:600;cursor:pointer">Edit Profile</button>
         <button onclick="window.location.href='user-management.html'" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Manage Accounts</button>
       </div>
@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <div id="ep_msg" style="display:none;padding:9px 13px;border-radius:8px;font-size:0.82rem;margin-bottom:14px"></div>
 
-      <div style="display:flex;gap:10px;justify-content:flex-end">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
         <button onclick="window._cancelEditProfile('${staffId}')" style="padding:9px 20px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:0.85rem;font-weight:600;cursor:pointer">Cancel</button>
         <button onclick="window._saveStaffProfile('${staffId}')" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Save Changes</button>
       </div>

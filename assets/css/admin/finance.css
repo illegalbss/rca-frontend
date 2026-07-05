@@ -693,6 +693,9 @@
   .finance-toolbar { flex-direction: column; align-items: stretch; }
   .bar-row { grid-template-columns: 80px 1fr 60px; }
   .receipt-info-grid { grid-template-columns: 1fr; }
+  /* Admission-number lookup row (input + term select + button) —
+     the "auto" button column doesn't shrink, so stack it on mobile. */
+  .payment-lookup-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {

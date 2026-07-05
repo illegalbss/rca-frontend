@@ -313,10 +313,10 @@
               : '⏳ After submitting, the Head Teacher must approve before parents and staff can see it.'}
           </div>
 
-          <div style="display:flex;gap:10px">
-            <button id="closeNlModal2" class="btn btn-outline" style="flex:1">Cancel</button>
-            <button id="saveNlDraftBtn" class="btn" style="flex:1;background:#6b7280;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;padding:10px">💾 Save Draft</button>
-            <button id="saveNlSubmitBtn" class="btn btn-primary" style="flex:1">📤 Submit</button>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <button id="closeNlModal2" class="btn btn-outline" style="flex:1 1 100px">Cancel</button>
+            <button id="saveNlDraftBtn" class="btn" style="flex:1 1 100px;background:#6b7280;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;padding:10px">💾 Save Draft</button>
+            <button id="saveNlSubmitBtn" class="btn btn-primary" style="flex:1 1 100px">📤 Submit</button>
           </div>
         </div>
       </div>`;
@@ -457,9 +457,9 @@
           <p style="font-size:0.85rem;color:#374151;margin-bottom:12px">Provide a reason so the author can revise and resubmit:</p>
           <textarea id="nlRejectReason" class="form-control" rows="4"
             placeholder="e.g. Please include the Third Term timetable and correct the sports day date."></textarea>
-          <div style="display:flex;gap:10px;margin-top:16px">
-            <button id="cancelRejectNl" class="btn btn-outline" style="flex:1">Cancel</button>
-            <button id="confirmRejectNl" style="flex:1;padding:10px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">Reject &amp; Return</button>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px">
+            <button id="cancelRejectNl" class="btn btn-outline" style="flex:1 1 100px">Cancel</button>
+            <button id="confirmRejectNl" style="flex:1 1 140px;padding:10px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">Reject &amp; Return</button>
           </div>
         </div>
       </div>`;

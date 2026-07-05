@@ -322,9 +322,9 @@
     const rowsHtml = week.rows.map((row, ri) => buildRowEditor(row, wi, ri)).join('');
     return `
       <div id="week_${wi}" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:14px;overflow:hidden">
-        <div style="background:#f3f4f6;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="background:#f3f4f6;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px">
           <span style="font-weight:700;color:#1a3a5c;font-size:0.9rem">WEEK ${week.week_no}</span>
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
             <button onclick="window._spAddRow(${wi})" style="padding:4px 10px;background:#fff;border:1px solid #d1d5db;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600">+ Add Row</button>
             <button onclick="window._spDeleteWeek(${wi})" style="padding:4px 10px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600">🗑 Remove Week</button>
           </div>
@@ -559,9 +559,9 @@
             </select>
           </div>
 
-          <div style="display:flex;gap:10px">
-            <button id="closeSpCreate2" class="btn btn-outline" style="flex:1">Cancel</button>
-            <button id="spCreateBtn" class="btn btn-primary" style="flex:1">Create &amp; Start Editing →</button>
+          <div style="display:flex;flex-wrap:wrap;gap:10px">
+            <button id="closeSpCreate2" class="btn btn-outline" style="flex:1 1 100px">Cancel</button>
+            <button id="spCreateBtn" class="btn btn-primary" style="flex:1 1 160px">Create &amp; Start Editing →</button>
           </div>
         </div>
       </div>`;

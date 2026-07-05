@@ -456,13 +456,13 @@ document.addEventListener('DOMContentLoaded', () => {
           '</div>' +
 
           // Action buttons
-          '<div style="display:flex;gap:10px">' +
+          '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
             '<button onclick="ppPrintAdviceSlip(' + JSON.stringify({adm: adm, name: child.full_name, cls: child.class_name, outstanding: outstanding, total: totalDue}) + ')" ' +
-              'style="flex:1;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.82rem;cursor:pointer">' +
+              'style="flex:1 1 160px;padding:11px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:0.82rem;cursor:pointer">' +
               '&#128424; Print Advice Slip' +
             '</button>' +
             '<button onclick="document.getElementById(\'ppPayModal\').remove()" ' +
-              'style="padding:11px 18px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-weight:600;font-size:0.82rem;cursor:pointer">' +
+              'style="flex:0 0 auto;padding:11px 18px;background:#f3f4f6;color:#374151;border:none;border-radius:8px;font-weight:600;font-size:0.82rem;cursor:pointer">' +
               'Close' +
             '</button>' +
           '</div>' +

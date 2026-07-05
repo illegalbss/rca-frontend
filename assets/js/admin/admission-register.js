@@ -706,9 +706,9 @@ document.addEventListener('DOMContentLoaded', function () {
           '</div>' +
           '<div style="margin-top:20px;padding-top:14px;border-top:1px solid #f3f4f6">' +
             '<div style="font-weight:700;font-size:0.78rem;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em">Export Data</div>' +
-            '<div style="display:flex;gap:10px">' +
-              '<button style="flex:1;padding:10px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-family:var(--font-heading);font-size:0.82rem;font-weight:700;cursor:pointer;color:#374151" onclick="AR.exportCSV()">&#128202; Export CSV</button>' +
-              '<button style="flex:1;padding:10px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-family:var(--font-heading);font-size:0.82rem;font-weight:700;cursor:pointer;color:#374151" onclick="AR.exportExcel()">&#128200; Export Excel</button>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:10px">' +
+              '<button style="flex:1 1 140px;padding:10px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-family:var(--font-heading);font-size:0.82rem;font-weight:700;cursor:pointer;color:#374151" onclick="AR.exportCSV()">&#128202; Export CSV</button>' +
+              '<button style="flex:1 1 140px;padding:10px 12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-family:var(--font-heading);font-size:0.82rem;font-weight:700;cursor:pointer;color:#374151" onclick="AR.exportExcel()">&#128200; Export Excel</button>' +
             '</div>' +
           '</div>' +
         '</div>' +

@@ -360,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
 
       <!-- Record fault button -->
-      <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px">
         <button class="btn btn-primary" style="font-size:0.82rem" onclick="window._ictRecordFault()">⚠️ Record Fault</button>
         <button class="btn btn-outline" style="font-size:0.82rem" onclick="window.print()">🖨 Equipment Report</button>
       </div>

@@ -203,6 +203,7 @@
 /* ---- Action buttons ---- */
 .um-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
@@ -294,6 +295,7 @@
 
 .um-modal-footer {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
   padding: 16px 24px 20px;

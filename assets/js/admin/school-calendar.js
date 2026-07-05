@@ -265,9 +265,9 @@ window.showCalendarEventModal = function(existing = null) {
           <label class="form-label">Note (optional)</label>
           <input type="text" id="cal_note" class="form-control" placeholder="e.g. Parents invited, 9AM–1PM" value="${existing?.note || ''}">
         </div>
-        <div style="display:flex;gap:10px">
-          <button id="closeCalModal2" class="btn btn-outline" style="flex:1">Cancel</button>
-          <button id="saveCalEvent" class="btn btn-primary" style="flex:1">${existing ? 'Save Changes' : 'Add to Calendar'}</button>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <button id="closeCalModal2" class="btn btn-outline" style="flex:1 1 100px">Cancel</button>
+          <button id="saveCalEvent" class="btn btn-primary" style="flex:1 1 100px">${existing ? 'Save Changes' : 'Add to Calendar'}</button>
         </div>
       </div>
     </div>`;

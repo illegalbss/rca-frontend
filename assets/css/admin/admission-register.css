@@ -110,6 +110,7 @@
 }
 .ar-toolbar-right {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin-left: auto;
@@ -331,6 +332,7 @@
   padding: 14px 24px 20px;
   border-top: 1px solid #f3f4f6;
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
 }
@@ -414,6 +416,7 @@
 /* ── VIEW MODAL TABS ─────────────────────── */
 .ar-view-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
   border-bottom: 1px solid #f3f4f6;
   padding: 0 24px;

@@ -220,7 +220,7 @@
         <div class="payment-form-title">&#128269; Step 1 — Look Up Student</div>
 
         <!-- Search tabs -->
-        <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid #f3f4f6;padding-bottom:0">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;border-bottom:2px solid #f3f4f6;padding-bottom:0">
           <button id="tabByName" class="lookup-tab active" onclick="switchLookupTab('name')">&#128100; Search by Name / Class</button>
           <button id="tabByAdm"  class="lookup-tab"        onclick="switchLookupTab('adm')">&#128203; Admission Number</button>
         </div>
@@ -246,8 +246,8 @@
             <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Select a student</div>
             <div id="nameResultsList" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto"></div>
           </div>
-          <div style="display:flex;gap:10px;align-items:flex-end">
-            <div class="form-group" style="margin:0;min-width:180px">
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+            <div class="form-group" style="margin:0;min-width:180px;flex:1 1 180px">
               <label>Term</label>
               <select id="lookupTermName" class="form-control">
                 <option value="term1">First Term</option>
@@ -261,7 +261,7 @@
 
         <!-- Search by Admission Number -->
         <div id="panelByAdm" style="display:none">
-          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:var(--space-md);align-items:flex-end;flex-wrap:wrap">
+          <div class="payment-lookup-grid" style="display:grid;grid-template-columns:1fr 1fr auto;gap:var(--space-md);align-items:flex-end">
             <div class="form-group" style="margin:0">
               <label>Admission Number</label>
               <input type="text" id="lookupAdmNo" class="form-control" placeholder="e.g. RCA/2026/0001" style="text-transform:uppercase">
@@ -360,7 +360,7 @@
         <input type="hidden" id="payGatewayReference" value="">
         <input type="hidden" id="payPaymentStatus"    value="success">
 
-        <div style="display:flex;gap:var(--space-md);margin-top:var(--space-lg)">
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-md);margin-top:var(--space-lg)">
           <button class="btn btn-primary" id="savePaymentBtn">&#10003; Save Payment &amp; Generate Receipt</button>
           <button class="btn btn-outline" id="cancelPaymentBtn">Cancel</button>
         </div>
