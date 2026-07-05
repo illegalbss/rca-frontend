@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
         </div>
-        <div style="padding:16px 22px;border-top:1px solid #f3f4f6;display:flex;gap:10px;justify-content:flex-end">
+        <div style="padding:16px 22px;border-top:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
           <button onclick="document.getElementById('studentModal').remove()" class="btn btn-outline">Cancel</button>
           <button id="studentSaveBtn" class="btn btn-primary">Save</button>
         </div>
