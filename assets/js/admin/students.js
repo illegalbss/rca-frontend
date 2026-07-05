@@ -61,6 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
+     HELPER: split a full name into first/last for
+     pre-filling the edit form. Our database only
+     stores a single full_name field, so we derive
+     these for display purposes only.
+     -------------------------------------------- */
+  function splitName(fullName) {
+    const parts = (fullName || '').trim().split(/\s+/);
+    return {
+      first: parts[0] || '',
+      last: parts.slice(1).join(' ') || ''
+    };
+  }
+
+  /* --------------------------------------------
      STEP 1: BUILD THE CLASS PICKER CARDS
      -------------------------------------------- 
      For each class name, we COUNT how many students in
@@ -90,8 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
         s.status !== 'inactive' &&
         s.status !== 'removed'
       );
-      const maleCount = studentsInClass.filter(s => s.gender === 'male').length;
-      const femaleCount = studentsInClass.filter(s => s.gender === 'female').length;
+      // Gender is normalized to lowercase when students are loaded
+      // (see the Phase 4 API-load block at the bottom of this file)
+      const maleCount = studentsInClass.filter(s => (s.gender || '').toLowerCase() === 'male').length;
+      const femaleCount = studentsInClass.filter(s => (s.gender || '').toLowerCase() === 'female').length;
 
       const card = document.createElement('div');
       card.className = 'card class-card';
@@ -199,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>${student.full_name}</td>
         <td>${student.admission_no}</td>
-        <td>${student.gender === 'male' ? 'Male' : 'Female'}</td>
+        <td>${(student.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'}</td>
         <td>
           <span class="badge ${student.status === 'active' ? 'badge-success' : 'badge-danger'}">
             ${student.status === 'active' ? 'Active' : 'Inactive'}
@@ -336,6 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('studentModal')?.remove();
 
     const classes = window.SCHOOL_CLASSES || [];
+    const genderLower = (student?.gender || '').toLowerCase();
+
     const modal = document.createElement('div');
     modal.id = 'studentModal';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -348,20 +366,16 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div style="padding:20px 22px">
           <div id="studentModalAlert" style="display:none;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem"></div>
+          <div style="margin-bottom:14px">
+            <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">Full Name *</label>
+            <input id="sFullName" type="text" value="${student?.full_name || ''}" class="form-control" placeholder="e.g. Chukwu Salvation Chinonso" style="width:100%">
+          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-            <div>
-              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">First Name *</label>
-              <input id="sFirstName" type="text" value="${student?.first_name || ''}" class="form-control" placeholder="First name">
-            </div>
-            <div>
-              <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">Last Name *</label>
-              <input id="sLastName" type="text" value="${student?.last_name || ''}" class="form-control" placeholder="Last name">
-            </div>
             <div>
               <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">Gender *</label>
               <select id="sGender" class="form-control">
-                <option value="male"   ${student?.gender === 'male'   ? 'selected' : ''}>Male</option>
-                <option value="female" ${student?.gender === 'female' ? 'selected' : ''}>Female</option>
+                <option value="male"   ${genderLower === 'male'   ? 'selected' : ''}>Male</option>
+                <option value="female" ${genderLower === 'female' ? 'selected' : ''}>Female</option>
               </select>
             </div>
             <div>
@@ -396,21 +410,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save button
     document.getElementById('studentSaveBtn').addEventListener('click', () => {
-      const firstName = document.getElementById('sFirstName').value.trim();
-      const lastName  = document.getElementById('sLastName').value.trim();
+      const fullName  = document.getElementById('sFullName').value.trim();
       const gender    = document.getElementById('sGender').value;
       const className = document.getElementById('sClass').value;
       const dob       = document.getElementById('sDob').value;
       const phone     = document.getElementById('sPhone').value.trim();
       const alertEl   = document.getElementById('studentModalAlert');
 
-      if (!firstName || !lastName) {
-        alertEl.textContent = 'Please enter both first name and last name.';
+      if (!fullName) {
+        alertEl.textContent = 'Please enter the pupil\'s full name.';
         alertEl.style.display = 'block';
         return;
       }
 
-      onSave({ firstName, lastName, gender, className, dob, phone });
+      onSave({ fullName, gender, className, dob, phone });
     });
   }
 
@@ -422,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
 Name:         ${student.full_name}
 Admission No: ${student.admission_no}
 Class:        ${student.class_name}
-Gender:       ${student.gender}
+Gender:       ${(student.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'}
 Parent Phone: ${student.parent_phone || '—'}
 Status:       ${student.status}
     `.trim());
@@ -430,7 +443,7 @@ Status:       ${student.status}
 
   // ADD student
   window._addStudent = function(className) {
-    showStudentModal('+ Add New Pupil', null, ({ firstName, lastName, gender, className: cls, dob, phone }) => {
+    showStudentModal('+ Add New Pupil', null, ({ fullName, gender, className: cls, dob, phone }) => {
       // Generate admission number
       const year  = new Date().getFullYear();
       const count = allStudents.length + 1;
@@ -439,9 +452,7 @@ Status:       ${student.status}
       const newStudent = {
         id:            admNo,
         admission_no:  admNo,
-        first_name:    firstName,
-        last_name:     lastName,
-        full_name:     `${firstName} ${lastName}`,
+        full_name:     fullName,
         gender,
         class_name:    cls,
         date_of_birth: dob || null,
@@ -466,8 +477,7 @@ Status:       ${student.status}
         window.RCA_API.call('/students', {
           method: 'POST',
           body: {
-            first_name:    firstName,
-            last_name:     lastName,
+            full_name:     fullName,
             gender,
             class_name:    cls,
             date_of_birth: dob || null,
@@ -495,11 +505,9 @@ Status:       ${student.status}
     const student = allStudents.find(s => s.admission_no === admNo);
     if (!student) return;
 
-    showStudentModal(`Edit — ${student.full_name}`, student, ({ firstName, lastName, gender, className: cls, dob, phone }) => {
+    showStudentModal(`Edit — ${student.full_name}`, student, ({ fullName, gender, className: cls, dob, phone }) => {
       // Update in memory
-      student.first_name    = firstName;
-      student.last_name     = lastName;
-      student.full_name     = `${firstName} ${lastName}`;
+      student.full_name     = fullName;
       student.gender        = gender;
       student.class_name    = cls;
       student.date_of_birth = dob || student.date_of_birth;
@@ -511,7 +519,7 @@ Status:       ${student.status}
       if (window.RCA_API) {
         window.RCA_API.call(`/students/${admNo}`, {
           method: 'PUT',
-          body: { first_name: firstName, last_name: lastName, gender, class_name: cls, date_of_birth: dob, parent_phone: phone }
+          body: { full_name: fullName, gender, class_name: cls, date_of_birth: dob, parent_phone: phone }
         }).catch(e => console.warn('Student update API failed:', e.message));
       }
 
@@ -561,12 +569,16 @@ This will archive the record. You can restore it from User Management if needed.
       if (apiStudents && apiStudents.length > 0) {
         // Merge API students with localStorage
         apiStudents.forEach(s => {
+          // Normalize gender to lowercase so comparisons like
+          // s.gender === 'male' elsewhere in this file work correctly
+          // — the database stores "Male"/"Female" (capitalized).
+          const normalized = { ...s, gender: (s.gender || '').toLowerCase() };
           const idx = allStudents.findIndex(ls =>
             ls.admission_no === s.admission_no);
           if (idx >= 0) {
-            allStudents[idx] = { ...allStudents[idx], ...s };
+            allStudents[idx] = { ...allStudents[idx], ...normalized };
           } else {
-            allStudents.push(s);
+            allStudents.push(normalized);
           }
         });
         renderClassCards();
