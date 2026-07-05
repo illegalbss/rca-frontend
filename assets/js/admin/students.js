@@ -216,6 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${student.full_name}</td>
         <td>${student.admission_no}</td>
         <td>${(student.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'}</td>
+        <td style="font-size:0.78rem;color:#6b7280">${student.date_of_birth || '<span style="color:#d1d5db">—</span>'}</td>
+        <td style="font-size:0.78rem">${student.parent_phone
+          ? `<a href="tel:${student.parent_phone}" style="color:#1d4ed8;font-weight:600;text-decoration:none">${student.parent_phone}</a>`
+          : '<span style="color:#d1d5db">—</span>'}</td>
         <td>
           <span class="badge ${student.status === 'active' ? 'badge-success' : 'badge-danger'}">
             ${student.status === 'active' ? 'Active' : 'Inactive'}
