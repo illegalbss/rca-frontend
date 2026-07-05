@@ -4,19 +4,11 @@
    Depends on window.SAMPLE_STUDENTS + window.SCHOOL_CLASSES
    (from sample-students.js - see script order in attendance.html).
 
-   NEW CONCEPT vs Students/Teachers/Classes: this is the first
-   page where the person actually CHANGES data (marking P/A/L/E)
-   and needs it to "stick" while they keep using the page. We
-   store this in a JS object keyed by "className|date", held in
-   memory for the duration of the page visit.
-
-   IMPORTANT PHASE 1 LIMITATION: this in-memory object is lost
-   the moment you refresh the page - there is no real persistence
-   yet. We deliberately keep this limitation OBVIOUS in the UI
-   (see the "saved" indicator) so it teaches the right mental model
-   for Phase 2, where we'll swap this exact same data structure to
-   read/write from localStorage instead - the rendering code below
-   won't need to change AT ALL, only how we store/retrieve the data.
+   The attendance register for the currently open class+date is
+   held in memory as `register`, an object shaped like:
+     { "RCA/2026/001": "present", "RCA/2026/002": "absent", ... }
+   Clicking a P/A/L/E pill updates this object directly, and the
+   Save button below sends it to the real backend.
 */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -262,8 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
      -------------------------------------------- 
      This is a small but important UX habit: whenever the person
      changes something, make it visually obvious that it hasn't
-     been "saved" yet. Once we add real storage in Phase 2, this
-     same pattern protects against accidentally losing work.
+     been "saved" yet.
   */
   function markUnsaved() {
     hasUnsavedChanges = true;
@@ -280,39 +271,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   saveBtn.addEventListener('click', () => {
-    // Phase 2: persist attendance to localStorage
-    markSaved();
-    if (window.RCA) window.RCA.save('activity_log');
+    const className  = classSelect.value;
+    const dateString = dateSelect.value;
+    const register   = getOrCreateRegister(className, dateString);
 
-    // Phase 4: save attendance to real database
+    markSaved();
+
+    // Save attendance to the real database.
+    // `register` is the in-memory { admissionNo: status } map for this
+    // class+date, kept up to date by the pill-click handlers above —
+    // we just need to convert it into the array shape the API expects.
     if (window.RCA_API) {
-      const className = classSelect.value;
-      const date      = dateInput.value;
-      const rows      = document.querySelectorAll('.attendance-row');
-      const records   = [];
-      rows.forEach(row => {
-        const studentId = row.dataset.studentId;
-        const status    = row.querySelector('select, .att-status')?.value || 'present';
-        if (studentId) records.push({ student_id: studentId, status });
-      });
+      const records = Object.entries(register).map(([admissionNo, status]) => ({
+        student_id: admissionNo,
+        status
+      }));
       if (records.length > 0) {
-        window.RCA_API.markAttendance(className, date, records)
+        window.RCA_API.markAttendance(className, dateString, records)
           .catch(e => console.warn('Attendance API failed:', e.message));
       }
     }
 
-    // Save ALL attendance to localStorage so it persists between page loads
+    // Also persist to localStorage as an offline fallback
     try {
       localStorage.setItem('rca_v1_attendance', JSON.stringify(attendanceStore));
     } catch(e) { console.warn('Attendance localStorage save failed:', e); }
-
-    // Save attendance register directly keyed by class+date
-    const compositeKey = classSelect.value + '|' + dateInput.value;
-    try {
-      const stored = JSON.parse(localStorage.getItem('rca_v1_attendance') || '{}');
-      stored[compositeKey] = window.ATTENDANCE_RECORDS ? window.ATTENDANCE_RECORDS[compositeKey] : {};
-      localStorage.setItem('rca_v1_attendance', JSON.stringify(stored));
-    } catch(e) { console.warn('Attendance save failed', e); }
   });
 
   /* --------------------------------------------
@@ -360,10 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
      WARN BEFORE LEAVING WITH UNSAVED CHANGES
      -------------------------------------------- 
      beforeunload fires when the person tries to close the tab,
-     refresh, or navigate away. Returning a string (in older
-     browsers) or just calling preventDefault() triggers the
-     browser's built-in "Leave site? Changes you made may not be
-     saved" confirmation dialog. We only want this if there ARE
+     refresh, or navigate away. We only want this if there ARE
      unsaved changes - otherwise it would be annoying.
   */
   window.addEventListener('beforeunload', (event) => {
