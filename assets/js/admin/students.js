@@ -77,13 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
   /* --------------------------------------------
      HELPER: format a date string as DD/MM/YY
      -------------------------------------------- */
-  function formatDOB(dateStr) {
+ function formatDOB(dateStr) {
     if (!dateStr) return null;
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return null;
     const day   = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year  = String(d.getFullYear()).slice(-2);
+    const year  = d.getFullYear();
     return `${day}/${month}/${year}`;
   }
 
