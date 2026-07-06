@@ -75,6 +75,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
+     HELPER: format a date string as DD/MM/YY
+     -------------------------------------------- */
+  function formatDOB(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return null;
+    const day   = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year  = String(d.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  }
+
+  /* --------------------------------------------
      STEP 1: BUILD THE CLASS PICKER CARDS
      -------------------------------------------- 
      For each class name, we COUNT how many students in
@@ -216,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${student.full_name}</td>
         <td>${student.admission_no}</td>
         <td>${(student.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'}</td>
-        <td style="font-size:0.78rem;color:#6b7280">${student.date_of_birth || '<span style="color:#d1d5db">—</span>'}</td>
+        <td style="font-size:0.78rem;color:#6b7280">${formatDOB(student.date_of_birth) || '<span style="color:#d1d5db">—</span>'}</td>
         <td style="font-size:0.78rem">${student.parent_phone
           ? `<a href="tel:${student.parent_phone}" style="color:#1d4ed8;font-weight:600;text-decoration:none">${student.parent_phone}</a>`
           : '<span style="color:#d1d5db">—</span>'}</td>
