@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -91,14 +91,15 @@
       <!-- Search bar (hidden on print) -->
       <div class="finance-toolbar no-print" style="margin-bottom:var(--space-lg)">
         <div class="form-group" style="margin:0;flex:1;min-width:200px">
-          <label>Admission Number</label>
-          <input type="text" id="receiptSearch" class="form-control" placeholder="e.g. GP/2024/001">
+          <label>Search by Name or Admission Number</label>
+          <input type="text" id="receiptSearch" class="form-control" placeholder="e.g. Chukwu Salvation or RCA/2026/001">
         </div>
         <div class="form-group" style="margin:0">
           <label>Term</label>
           <select id="receiptTerm" class="form-control">
+            <option value="" selected>All Terms</option>
             <option value="term1">First Term</option>
-            <option value="term2" selected>Second Term</option>
+            <option value="term2">Second Term</option>
             <option value="term3">Third Term</option>
           </select>
         </div>
@@ -157,37 +158,32 @@
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const allStudents = window.SAMPLE_STUDENTS || [];
-  const records     = window.PAYMENT_RECORDS || {};
-  const fmt         = window.formatNaira;
+  const fmt         = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
 
-  let currentTerm = 'term2';
+  let currentRows = []; // last set of payments loaded from the API
 
-  function getAllPaymentRows(termFilter, admFilter) {
-    const rows = [];
-    Object.entries(records).forEach(([key, rec]) => {
-      const [adm, term] = key.split('|');
-      if (termFilter && term !== termFilter) return;
-      if (admFilter && !adm.toUpperCase().includes(admFilter.toUpperCase())) return;
+  /* ---- Fetch real payments from the backend ---- */
+  async function fetchPayments(term, admFilter) {
+    if (!window.RCA_API) return [];
+    const params = new URLSearchParams();
+    if (term) params.set('term', term);
+    if (admFilter) params.set('admission_no', admFilter);
 
-      const student = allStudents.find(s => s.admission_no === adm);
-      rec.payments.forEach(pay => {
-        rows.push({ ...pay, admission_no: adm, term,
-          student_name: student ? student.full_name : adm,
-          class_name:   student ? student.class_name : '' });
-      });
-    });
-    // Sort newest date first
-    rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    return rows;
+    try {
+      const data = await window.RCA_API.call('/payments' + (params.toString() ? '?' + params.toString() : ''));
+      return data.payments || [];
+    } catch (e) {
+      console.warn('Could not load payments:', e.message);
+      return [];
+    }
   }
 
-  function renderTable(term, admFilter) {
-    const rows = getAllPaymentRows(term, admFilter || '');
+  function renderTable(rows, term, searchTerm) {
+    currentRows = rows;
     const tbody = document.getElementById('receiptTableBody');
     document.getElementById('receiptListTitle').textContent =
-      `Payment Records — ${admFilter ? admFilter.toUpperCase() + ' · ' : ''}${TERM_LABELS[term] || 'All Terms'}`;
+      `Payment Records — ${searchTerm ? '"' + searchTerm + '" · ' : ''}${TERM_LABELS[term] || 'All Terms'}`;
 
     if (rows.length === 0) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:2rem">No payment records found.</td></tr>';
@@ -196,16 +192,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tbody.innerHTML = rows.map(r => `
       <tr>
-        <td style="font-size:0.75rem;font-weight:600">${r.receipt_no}</td>
-        <td>${r.date}</td>
+        <td style="font-size:0.75rem;font-weight:600">${r.reference || '—'}</td>
+        <td>${r.payment_date ? String(r.payment_date).substring(0, 10) : '—'}</td>
         <td>${r.admission_no}</td>
-        <td>${r.student_name}</td>
+        <td>${r.full_name}</td>
         <td>${r.class_name}</td>
         <td class="amount-col">${fmt(r.amount)}</td>
-        <td>${r.method}</td>
-        <td style="font-size:0.75rem">${r.recorded_by}</td>
+        <td>${r.payment_method || '—'}</td>
+        <td style="font-size:0.75rem">${r.recorded_by_name || '—'}</td>
         <td class="no-print">
-          <button class="btn btn-outline btn-sm" onclick="showReceipt('${r.admission_no}','${r.term}','${r.receipt_no}')">View</button>
+          <button class="btn btn-outline btn-sm" onclick="showReceiptById(${r.id})">View</button>
         </td>
       </tr>
     `).join('');
@@ -242,20 +238,15 @@ document.addEventListener('DOMContentLoaded', () => {
       </g>
     </svg>`;
 
-  /* ---- Build and display a single printable receipt ---- */
-  window.showReceipt = function(admNo, term, receiptNo) {
-    const student = allStudents.find(s => s.admission_no === admNo);
-    const key     = `${admNo}|${term}`;
-    const rec     = records[key];
-    if (!rec || !student) return;
-
-    const payment = rec.payments.find(p => p.receipt_no === receiptNo);
+  /* ---- Build and display a single printable receipt, by row id ---- */
+  window.showReceiptById = function(id) {
+    const payment = currentRows.find(r => r.id === id);
     if (!payment) return;
 
     const naira        = Math.floor(payment.amount);
     const kobo         = String(Math.round((payment.amount - naira) * 100)).padStart(2, '0');
-    const receivedFrom = payment.parent_name || ('Parent / Guardian of ' + student.full_name);
-    const beingFor     = `${TERM_LABELS[term]} School Fees — 2025/2026 Academic Session — ${student.full_name} (${student.class_name})`;
+    const receivedFrom = payment.parent_name || ('Parent / Guardian of ' + payment.full_name);
+    const beingFor     = `${TERM_LABELS[payment.term] || payment.term} School Fees — ${payment.session || '2025/2026'} Academic Session — ${payment.full_name} (${payment.class_name})`;
 
     const card = document.getElementById('receiptCard');
     card.style.cssText = 'padding:0;background:transparent;border:none;box-shadow:none;border-radius:0';
@@ -303,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="receipt-physical-badge">
           <span class="receipt-physical-badge-title">Official Receipt</span>
         </div>
-        <div class="receipt-physical-serial">${receiptNo}</div>
+        <div class="receipt-physical-serial">${payment.reference || ''}</div>
 
         <div class="receipt-physical-body">
           <div class="receipt-physical-row">
@@ -313,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="receipt-physical-field-inline receipt-physical-field-date">
               <span class="receipt-physical-label">Date:</span>
-              <span class="receipt-physical-value">${payment.date}</span>
+              <span class="receipt-physical-value">${payment.payment_date ? String(payment.payment_date).substring(0, 10) : ''}</span>
             </div>
           </div>
           <div class="receipt-physical-field">
@@ -355,26 +346,43 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('receiptListSection').style.display  = 'block';
   });
 
-  document.getElementById('receiptSearchBtn').addEventListener('click', () => {
-    currentTerm = document.getElementById('receiptTerm').value;
-    const adm   = document.getElementById('receiptSearch').value.trim();
-    renderTable(currentTerm, adm);
+  document.getElementById('receiptSearchBtn').addEventListener('click', async () => {
+    const term = document.getElementById('receiptTerm').value;
+    const searchText = document.getElementById('receiptSearch').value.trim().toLowerCase();
+
+    // Fetch everything for the selected term (or all terms), then filter
+    // by name OR admission number on our side — the backend only supports
+    // an exact admission_no match, which is too strict for a search box.
+    const allRows = await fetchPayments(term, '');
+    const rows = searchText
+      ? allRows.filter(r =>
+          r.full_name.toLowerCase().includes(searchText) ||
+          r.admission_no.toLowerCase().includes(searchText))
+      : allRows;
+
+    renderTable(rows, term, searchText);
     document.getElementById('receiptPrintSection').style.display = 'none';
     document.getElementById('receiptListSection').style.display  = 'block';
   });
 
-  // Check if coming from payments.html with a specific receipt to show
-  const lastReceipt = sessionStorage.getItem('rca_last_receipt');
-  if (lastReceipt) {
-    try {
-      const lr = JSON.parse(lastReceipt);
-      sessionStorage.removeItem('rca_last_receipt');
-      renderTable(lr.term, '');
-      showReceipt(lr.admission_no, lr.term, lr.receipt_no);
-    } catch(e) { renderTable(currentTerm, ''); }
-  } else {
-    renderTable(currentTerm, '');
-  }
+  /* ---- Initial load ---- */
+  (async () => {
+    // Check if coming from payments.html with a specific receipt to show
+    const lastReceipt = sessionStorage.getItem('rca_last_receipt');
+    if (lastReceipt) {
+      try {
+        const lr = JSON.parse(lastReceipt);
+        sessionStorage.removeItem('rca_last_receipt');
+        const rows = await fetchPayments(lr.term, lr.admission_no);
+        renderTable(rows, lr.term, '');
+        const match = rows.find(r => r.reference === lr.receipt_no);
+        if (match) showReceiptById(match.id);
+        return;
+      } catch(e) { /* fall through to default load */ }
+    }
+    const rows = await fetchPayments('', '');
+    renderTable(rows, '', '');
+  })();
 });
 </script>
 </body>
