@@ -51,17 +51,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return; // stop running the rest of this script
   }
 
-  // Look up the FULL current user record so pages can check
+ // Look up the FULL current user record so pages can check
   // linked_classes, linked_subjects, roles array, etc.
-  const currentUserId = sessionStorage.getItem('rca_user_id');
-  const allUsers = window.SAMPLE_USERS || [];
-  const currentUser = allUsers.find(u => u.id === currentUserId) || {
-    roles: [currentRole],
-    primary_role: currentRole,
-    role: currentRole,
-    full_name: sessionStorage.getItem('rca_demo_name') || 'User',
-    email: sessionStorage.getItem('rca_demo_email') || ''
-  };
+  //
+  // NOTE: window.CURRENT_USER may already be correctly set by the
+  // early IIFE at the top of this file (reading real login data from
+  // sessionStorage, including linked_children for parents). Only fall
+  // back to the old SAMPLE_USERS lookup if that didn't happen — the
+  // SAMPLE_USERS list is demo data and won't have real accounts.
+  if (!window.CURRENT_USER) {
+    const currentUserId = sessionStorage.getItem('rca_user_id');
+    const allUsers = window.SAMPLE_USERS || [];
+    const currentUser = allUsers.find(u => u.id === currentUserId) || {
+      roles: [currentRole],
+      primary_role: currentRole,
+      role: currentRole,
+      full_name: sessionStorage.getItem('rca_demo_name') || 'User',
+      email: sessionStorage.getItem('rca_demo_email') || ''
+    };
+    window.CURRENT_USER = currentUser;
+  }
+  const currentUser = window.CURRENT_USER;
 
   // Normalise: always ensure roles array exists (handles old sessionStorage shape)
   if (!currentUser.roles) {
