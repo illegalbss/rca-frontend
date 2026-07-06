@@ -12,15 +12,15 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-  const user = window.CURRENT_USER;
-  if (!user) return;
-
   const fmt = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
   const SESSION = '2025/2026';
 
   /* ============================================
      PAGE NAVIGATION (switches between .pp-page sections)
+     Defined FIRST, unconditionally — the sidebar's onclick
+     handlers need this to exist even if the user data below
+     is still loading.
      ============================================ */
   window.showPage = function(pageId, linkEl) {
     document.querySelectorAll('.pp-page').forEach(p => p.style.display = 'none');
@@ -34,6 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (matching) matching.classList.add('active');
     }
   };
+
+  const user = window.CURRENT_USER;
+  if (!user) return;
 
   let myChildren = [];
   let selectedChild = null;
