@@ -311,6 +311,7 @@ html, body { height: 100%; }
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .user-role-badge {
@@ -319,6 +320,12 @@ html, body { height: 100%; }
   background: #f3f4f6;
   padding: 4px 10px;
   border-radius: 999px;
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .user-avatar {
