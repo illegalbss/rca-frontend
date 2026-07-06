@@ -441,7 +441,7 @@
 
 .why-image img {
   width: 100%;
-  height: 500px;
+  height: 420px;
   object-fit: cover;
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
@@ -734,7 +734,7 @@
   .contact-strip-grid { grid-template-columns: repeat(2, 1fr); }
 
   .about-images { height: 380px; }
-  .why-image img { height: 360px; }
+  .why-image img { height: 300px; }
   .why-cta-card { position: static; margin-top: var(--space-xl); max-width: 100%; }
 }
 
