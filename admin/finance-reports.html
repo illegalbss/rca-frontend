@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -188,10 +188,8 @@
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const allStudents = window.SAMPLE_STUDENTS || [];
-  const allClasses  = window.SCHOOL_CLASSES  || [];
-  const records     = window.PAYMENT_RECORDS || {};
-  const fmt         = window.formatNaira;
+  const allClasses  = window.SCHOOL_CLASSES || [];
+  const fmt         = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
   const BADGE = { paid: 'badge-paid', partial: 'badge-partial', unpaid: 'badge-unpaid' };
 
@@ -203,43 +201,44 @@ document.addEventListener('DOMContentLoaded', () => {
     classSelect.appendChild(opt);
   });
 
-  function getFilteredRecords(termFilter, classFilter) {
-    return Object.entries(records).filter(([key, rec]) => {
-      const [adm, term] = key.split('|');
-      if (termFilter !== 'all' && term !== termFilter) return false;
-      if (classFilter !== 'all') {
-        const st = allStudents.find(s => s.admission_no === adm);
-        if (!st || st.class_name !== classFilter) return false;
-      }
-      return true;
-    }).map(([key, rec]) => {
-      const [adm, term] = key.split('|');
-      const st = allStudents.find(s => s.admission_no === adm);
-      return { ...rec, admission_no: adm, term,
-        student_name: st ? st.full_name : adm,
-        class_name:   st ? st.class_name : '' };
-    });
+  /* ---- Fetch real aggregated report from the backend ---- */
+  async function fetchReport(term, className) {
+    if (!window.RCA_API) return null;
+    const params = new URLSearchParams({ term, class: className });
+    try {
+      return await window.RCA_API.call('/payments/report?' + params.toString());
+    } catch (e) {
+      console.warn('Could not load finance report:', e.message);
+      return null;
+    }
   }
 
-  function render() {
+  async function render() {
     const termFilter  = document.getElementById('reportTerm').value;
     const classFilter = document.getElementById('reportClass').value;
-    const data = getFilteredRecords(termFilter, classFilter);
 
-    const totalExpected    = data.reduce((s, r) => s + r.amount_expected, 0);
-    const totalPaid        = data.reduce((s, r) => s + r.amount_paid, 0);
-    const totalOutstanding = totalExpected - totalPaid;
-    const paidRecs    = data.filter(r => r.status === 'paid');
-    const partialRecs = data.filter(r => r.status === 'partial');
-    const unpaidRecs  = data.filter(r => r.status === 'unpaid');
-    const collectionRate = totalExpected > 0 ? (totalPaid / totalExpected * 100).toFixed(1) : 0;
+    document.getElementById('reportStats').innerHTML = '<p style="color:var(--color-text-muted)">Loading report…</p>';
+    const data = await fetchReport(termFilter, classFilter);
+
+    if (!data) {
+      document.getElementById('reportStats').innerHTML = '<p style="color:var(--color-text-muted)">Could not load report data.</p>';
+      document.getElementById('reportsGrid').innerHTML = '';
+      return;
+    }
+
+    const {
+      total_expected: totalExpected, total_paid: totalPaid,
+      total_outstanding: totalOutstanding, collection_rate: collectionRate,
+      paid_count: paidCount, partial_count: partialCount, unpaid_count: unpaidCount,
+      total_records: totalRecords, by_class: byClass
+    } = data;
 
     /* Stat cards */
     document.getElementById('reportStats').innerHTML = `
       <div class="finance-stat-card stat-total">
         <span class="finance-stat-label">Total Expected</span>
         <span class="finance-stat-value">${fmt(totalExpected)}</span>
-        <span class="finance-stat-sub">${data.length} fee records</span>
+        <span class="finance-stat-sub">${totalRecords} fee records</span>
       </div>
       <div class="finance-stat-card stat-paid">
         <span class="finance-stat-label">Total Collected</span>
@@ -249,23 +248,20 @@ document.addEventListener('DOMContentLoaded', () => {
       <div class="finance-stat-card stat-unpaid">
         <span class="finance-stat-label">Outstanding</span>
         <span class="finance-stat-value">${fmt(totalOutstanding)}</span>
-        <span class="finance-stat-sub">${partialRecs.length + unpaidRecs.length} accounts pending</span>
+        <span class="finance-stat-sub">${partialCount + unpaidCount} accounts pending</span>
       </div>
       <div class="finance-stat-card" style="border-left-color:var(--color-info)">
         <span class="finance-stat-label">Fully Paid</span>
-        <span class="finance-stat-value">${paidRecs.length}</span>
-        <span class="finance-stat-sub">of ${data.length} records (${data.length > 0 ? (paidRecs.length/data.length*100).toFixed(0) : 0}%)</span>
+        <span class="finance-stat-value">${paidCount}</span>
+        <span class="finance-stat-sub">of ${totalRecords} records (${totalRecords > 0 ? (paidCount/totalRecords*100).toFixed(0) : 0}%)</span>
       </div>
     `;
 
     /* Collection by class bar chart */
-    const byClass = {};
-    data.forEach(r => {
-      if (!byClass[r.class_name]) byClass[r.class_name] = { expected: 0, paid: 0 };
-      byClass[r.class_name].expected += r.amount_expected;
-      byClass[r.class_name].paid     += r.amount_paid;
-    });
-    const classEntries = Object.entries(byClass).sort((a,b) => b[1].paid - a[1].paid).slice(0, 11);
+    const classEntries = byClass
+      .map(c => [c.class_name, c])
+      .sort((a,b) => b[1].paid - a[1].paid)
+      .slice(0, 11);
     const maxPaid = Math.max(...classEntries.map(([,v]) => v.paid), 1);
 
     const barRows = classEntries.map(([cls, v]) => {
@@ -278,9 +274,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
 
     /* Payment status donut legend */
-    const paidPct    = data.length > 0 ? (paidRecs.length    / data.length * 100).toFixed(1) : 0;
-    const partialPct = data.length > 0 ? (partialRecs.length / data.length * 100).toFixed(1) : 0;
-    const unpaidPct  = data.length > 0 ? (unpaidRecs.length  / data.length * 100).toFixed(1) : 0;
+    const paidPct    = totalRecords > 0 ? (paidCount    / totalRecords * 100).toFixed(1) : 0;
+    const partialPct = totalRecords > 0 ? (partialCount / totalRecords * 100).toFixed(1) : 0;
+    const unpaidPct  = totalRecords > 0 ? (unpaidCount  / totalRecords * 100).toFixed(1) : 0;
 
     document.getElementById('reportsGrid').innerHTML = `
       <div class="report-chart-card">
@@ -293,81 +289,72 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="donut-legend-row">
             <span class="donut-dot paid"></span>
             <span class="donut-legend-label">Fully Paid</span>
-            <span class="donut-legend-val">${paidRecs.length}</span>
+            <span class="donut-legend-val">${paidCount}</span>
             <span class="donut-legend-pct">(${paidPct}%)</span>
           </div>
           <div class="donut-legend-row">
             <span class="donut-dot partial"></span>
             <span class="donut-legend-label">Partial Payment</span>
-            <span class="donut-legend-val">${partialRecs.length}</span>
+            <span class="donut-legend-val">${partialCount}</span>
             <span class="donut-legend-pct">(${partialPct}%)</span>
           </div>
           <div class="donut-legend-row">
             <span class="donut-dot unpaid"></span>
             <span class="donut-legend-label">Not Yet Paid</span>
-            <span class="donut-legend-val">${unpaidRecs.length}</span>
+            <span class="donut-legend-val">${unpaidCount}</span>
             <span class="donut-legend-pct">(${unpaidPct}%)</span>
           </div>
         </div>
         <div style="margin-top:var(--space-xl);padding-top:var(--space-md);border-top:1px solid var(--color-border)">
           <div class="report-chart-title" style="margin-bottom:var(--space-md)">&#128181; Revenue Summary</div>
           <div style="font-size:var(--fs-sm);display:flex;flex-direction:column;gap:var(--space-sm)">
-            <div style="display:flex;justify-content:space-between"><span>School Fees</span><strong>${fmt(data.reduce((s,r)=>s+(window.computeFeeBreakdown(r.admission_no,r.term)?.lines[0]?.amount||0),0))}</strong></div>
-            <div style="display:flex;justify-content:space-between"><span>Utility Bills</span><strong>${fmt(data.length * 5000)}</strong></div>
-            <div style="display:flex;justify-content:space-between"><span>Lesson Fees</span><strong>${fmt(data.length * 5000)}</strong></div>
-            <div style="display:flex;justify-content:space-between;border-top:1px solid var(--color-border);padding-top:var(--space-sm);font-weight:700;color:var(--color-primary)"><span>Grand Total Expected</span><strong>${fmt(totalExpected)}</strong></div>
+            <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--color-primary)"><span>Total Expected</span><strong>${fmt(totalExpected)}</strong></div>
+            <div style="display:flex;justify-content:space-between"><span>Total Collected</span><strong>${fmt(totalPaid)}</strong></div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid var(--color-border);padding-top:var(--space-sm)"><span>Outstanding</span><strong style="color:#dc2626">${fmt(totalOutstanding)}</strong></div>
           </div>
         </div>
       </div>
     `;
 
-    /* Outstanding table — handled by renderDebtors() */
     renderDebtors();
   }
 
-  /* ── Debtors table: includes ALL students even if no record exists yet ── */
-  // Populate debtor class filter
+  /* ── Debtors table: pulled from the real /payments/debtors endpoint ── */
   const debtorClassSel = document.getElementById('debtorClass');
   allClasses.forEach(c => {
     const o = document.createElement('option'); o.value = c; o.textContent = c;
     debtorClassSel.appendChild(o);
   });
 
-  function buildDebtorRows() {
+  async function fetchDebtors(term, className, status, search) {
+    if (!window.RCA_API) return [];
+    const params = new URLSearchParams({ term });
+    if (className) params.set('class', className);
+    if (status) params.set('status', status);
+    if (search) params.set('search', search);
+    try {
+      const data = await window.RCA_API.call('/payments/debtors?' + params.toString());
+      return data.debtors || [];
+    } catch (e) {
+      console.warn('Could not load debtors:', e.message);
+      return [];
+    }
+  }
+
+  let debtorsCache = [];
+
+  async function renderDebtors() {
     const termFilter   = document.getElementById('debtorTerm').value;
     const classFilter  = document.getElementById('debtorClass').value;
     const statusFilter = document.getElementById('debtorStatus').value;
-    const nameQ        = (document.getElementById('debtorSearch').value || '').trim().toLowerCase();
-    const terms        = termFilter === 'all' ? ['term1','term2','term3'] : [termFilter];
+    const nameQ        = document.getElementById('debtorSearch').value.trim();
 
-    const rows = [];
-    allStudents.forEach(st => {
-      if (classFilter && st.class_name !== classFilter) return;
-      if (nameQ && !st.full_name.toLowerCase().includes(nameQ)) return;
-      terms.forEach(term => {
-        let rec = records[`${st.admission_no}|${term}`];
-        if (!rec) {
-          // No record yet — compute expected fee and show as fully unpaid
-          const bd = window.computeFeeBreakdown(st.admission_no, term);
-          if (!bd) return;
-          rec = { amount_expected: bd.grand_total, amount_paid: 0, balance: bd.grand_total, status: 'unpaid' };
-        }
-        if (rec.status === 'paid') return; // skip fully paid
-        if (statusFilter && rec.status !== statusFilter) return;
-        rows.push({
-          admission_no: st.admission_no,
-          student_name: st.full_name,
-          class_name:   st.class_name,
-          term, rec
-        });
-      });
-    });
+    document.getElementById('outstandingBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:2rem">Loading…</td></tr>';
 
-    return rows.sort((a,b) => b.rec.balance - a.rec.balance);
-  }
+    const rows = await fetchDebtors(termFilter, classFilter, statusFilter, nameQ);
+    debtorsCache = rows;
 
-  function renderDebtors() {
-    const rows = buildDebtorRows();
     document.getElementById('outstandingCount').textContent =
       `${rows.length} student-term${rows.length !== 1 ? 's' : ''} with outstanding balance`;
 
@@ -376,13 +363,13 @@ document.addEventListener('DOMContentLoaded', () => {
       : rows.map(r => `
         <tr>
           <td style="font-size:0.78rem">${r.admission_no}</td>
-          <td style="font-weight:600">${r.student_name}</td>
+          <td style="font-weight:600">${r.full_name}</td>
           <td>${r.class_name}</td>
           <td>${TERM_LABELS[r.term] || r.term}</td>
-          <td class="amount-col">${fmt(r.rec.amount_expected)}</td>
-          <td class="amount-col">${fmt(r.rec.amount_paid)}</td>
-          <td class="amount-col balance-col" style="color:#dc2626;font-weight:700">${fmt(r.rec.balance)}</td>
-          <td><span class="${BADGE[r.rec.status]}">${r.rec.status === 'unpaid' ? 'Not Paid' : 'Part Paid'}</span></td>
+          <td class="amount-col">${fmt(r.grand_total)}</td>
+          <td class="amount-col">${fmt(r.amount_paid)}</td>
+          <td class="amount-col balance-col" style="color:#dc2626;font-weight:700">${fmt(r.balance)}</td>
+          <td><span class="${BADGE[r.status]}">${r.status === 'unpaid' ? 'Not Paid' : 'Part Paid'}</span></td>
           <td>
             <a href="payments.html?adm=${encodeURIComponent(r.admission_no)}&term=${r.term}"
                class="btn btn-outline btn-sm" style="font-size:0.72rem;padding:3px 10px">
@@ -393,19 +380,22 @@ document.addEventListener('DOMContentLoaded', () => {
       `).join('');
   }
 
-  // Live search
-  ['debtorSearch','debtorClass','debtorStatus','debtorTerm'].forEach(id => {
-    document.getElementById(id).addEventListener('input', renderDebtors);
+  // Live search (debounced on input, immediate on select change)
+  let searchDebounce;
+  document.getElementById('debtorSearch').addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(renderDebtors, 400);
+  });
+  ['debtorClass','debtorStatus','debtorTerm'].forEach(id => {
     document.getElementById(id).addEventListener('change', renderDebtors);
   });
 
-  // CSV export
+  // CSV export (uses whatever is currently loaded in the table)
   document.getElementById('exportDebtorsCSV').addEventListener('click', () => {
-    const rows = buildDebtorRows();
     const header = ['Admission No.','Student Name','Class','Term','Expected','Paid','Balance','Status'];
-    const lines  = rows.map(r => [
-      r.admission_no, '"' + r.student_name + '"', r.class_name,
-      TERM_LABELS[r.term], r.rec.amount_expected, r.rec.amount_paid, r.rec.balance, r.rec.status
+    const lines  = debtorsCache.map(r => [
+      r.admission_no, '"' + r.full_name + '"', r.class_name,
+      TERM_LABELS[r.term], r.grand_total, r.amount_paid, r.balance, r.status
     ].join(','));
     const csv  = [header.join(','), ...lines].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });

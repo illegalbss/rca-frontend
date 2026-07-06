@@ -202,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td style="font-size:0.75rem">${r.recorded_by_name || '—'}</td>
         <td class="no-print">
           <button class="btn btn-outline btn-sm" onclick="showReceiptById(${r.id})">View</button>
+          <button class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fca5a5" onclick="deletePayment(${r.id})">Delete</button>
         </td>
       </tr>
     `).join('');
@@ -339,6 +340,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('receiptListSection').style.display  = 'none';
     document.getElementById('receiptPrintSection').style.display = 'block';
+  };
+
+  /* ---- Delete a payment record ---- */
+  window.deletePayment = async function(id) {
+    const payment = currentRows.find(r => r.id === id);
+    if (!payment) return;
+
+    if (!confirm(`Delete this payment record?\n\n${payment.full_name} — ${fmt(payment.amount)} — ${payment.reference || 'no receipt no.'}\n\nThis cannot be undone.`)) return;
+
+    try {
+      await window.RCA_API.call(`/payments/${id}`, { method: 'DELETE' });
+      // Refresh the current view
+      document.getElementById('receiptSearchBtn').click();
+    } catch (e) {
+      alert('Could not delete payment: ' + e.message);
+    }
   };
 
   document.getElementById('backToListBtn').addEventListener('click', () => {

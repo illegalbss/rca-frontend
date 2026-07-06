@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -10,17 +10,36 @@
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
   <link rel="stylesheet" href="../assets/css/admin/finance.css">
+  <style>
+    .fee-term-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 14px;
+      padding: 20px 24px; margin-bottom: 20px;
+    }
+    .fee-term-title {
+      font-family: var(--font-heading); font-weight: 700; font-size: 1rem;
+      color: #111827; margin-bottom: 16px; display: flex; align-items: center;
+      justify-content: space-between;
+    }
+    .fee-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .fee-field label {
+      font-size: 0.78rem; font-weight: 600; color: #374151;
+      display: block; margin-bottom: 4px;
+    }
+    .fee-save-row { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+    .fee-save-status { font-size: 0.8rem; color: #16a34a; display: none; }
+  </style>
 </head>
 <body>
 <div class="admin-shell">
 
   <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-header">
-      <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
+      <img src="../assets/images/logo.svg" alt="logo">
       <span>Royal Crystal Academy</span>
     </div>
-
-      <!-- User profile block -->
       <div class="sidebar-profile">
         <div class="sidebar-avatar" id="sidebarAvatar">?</div>
         <div class="sidebar-profile-info">
@@ -73,8 +92,8 @@
 
   <div class="admin-content">
     <header class="admin-topbar">
-      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">&#9776;</button>
-      <h1 class="topbar-title">Fee Schedule — 2025/2026 Session</h1>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+      <h1 class="topbar-title">Fee Schedule</h1>
       <span class="topbar-session">Academic Session: 2025/2026</span>
         <button class="topbar-bell" title="Notifications">
           &#128276;
@@ -87,34 +106,14 @@
     </header>
 
     <main class="admin-main">
-
-      <p style="color:var(--color-text-muted);margin-bottom:var(--space-xl)">
-        Official fee structure for all pupils. Fees are the same across all classes.
-        The sibling discount applies automatically when a family has <strong>3 or more children</strong> currently enrolled.
+      <p style="color:#6b7280;font-size:0.85rem;margin-bottom:20px">
+        These figures determine every student's expected fees on the Record Payment and Finance Reports pages.
+        Only the ICT Administrator can change them — Head Teacher and Accountant can view but not edit.
       </p>
 
-      <!-- Stat summary -->
-      <div class="finance-stats" id="feeStats"></div>
-
-      <!-- Per-term fee breakdown cards -->
-      <div class="fee-terms-grid" id="feeTermsGrid"></div>
-
-      <!-- Sibling discount explanation -->
-      <div class="fee-schedule-card">
-        <div class="fee-schedule-title">&#128106; Sibling Discount Policy</div>
-        <p style="font-size:var(--fs-sm);margin-bottom:var(--space-md)">
-          When a family has <strong>3 or more children</strong> simultaneously enrolled at Royal Crystal Academy,
-          the school fees component is reduced from ₦30,000 to ₦15,000 per child.
-          All other fees (Utility Bill, Lesson, and term levies) remain at full price.
-        </p>
-        <table class="fee-line-table" style="max-width:400px">
-          <tr><td>School Fees (standard)</td><td>₦30,000</td></tr>
-          <tr><td>School Fees (sibling discount)</td><td style="color:var(--color-success)">₦15,000</td></tr>
-          <tr><td>Saving per child per term</td><td style="color:var(--color-primary);font-weight:700">₦15,000</td></tr>
-        </table>
-        <div class="fee-discount-note" id="siblingStats"></div>
+      <div id="feeScheduleContainer">
+        <p style="color:#9ca3af">Loading fee schedule…</p>
       </div>
-
     </main>
   </div>
 </div>
@@ -128,94 +127,88 @@
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const FEES = window.SCHOOL_FEES;
-  const fmt  = window.formatNaira;
-  const allStudents = window.SAMPLE_STUDENTS || [];
-  const allUsers    = window.SAMPLE_USERS    || [];
-  const records     = window.PAYMENT_RECORDS || {};
+document.addEventListener('DOMContentLoaded', async () => {
+  const fmt = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
+  const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
 
-  /* ---- Stat cards ---- */
-  const totalExpected = Object.values(records).reduce((s, r) => s + r.amount_expected, 0);
-  const totalCollected = Object.values(records).reduce((s, r) => s + r.amount_paid, 0);
-  const totalOutstanding = totalExpected - totalCollected;
-  const paidCount    = Object.values(records).filter(r => r.status === 'paid').length;
-  const partialCount = Object.values(records).filter(r => r.status === 'partial').length;
-  const unpaidCount  = Object.values(records).filter(r => r.status === 'unpaid').length;
+  const user  = window.CURRENT_USER;
+  const roles = user ? (user.roles || [user.role, user.primary_role]) : [];
+  const canEdit = roles.includes('ict_admin');
 
-  document.getElementById('feeStats').innerHTML = `
-    <div class="finance-stat-card stat-total">
-      <span class="finance-stat-label">Total Expected (All Terms)</span>
-      <span class="finance-stat-value">${fmt(totalExpected)}</span>
-      <span class="finance-stat-sub">${allStudents.length} pupils × 3 terms</span>
-    </div>
-    <div class="finance-stat-card stat-paid">
-      <span class="finance-stat-label">Total Collected</span>
-      <span class="finance-stat-value">${fmt(totalCollected)}</span>
-      <span class="finance-stat-sub">${paidCount} fully paid records</span>
-    </div>
-    <div class="finance-stat-card stat-partial">
-      <span class="finance-stat-label">Partial Payments</span>
-      <span class="finance-stat-value">${partialCount}</span>
-      <span class="finance-stat-sub">outstanding balances pending</span>
-    </div>
-    <div class="finance-stat-card stat-unpaid">
-      <span class="finance-stat-label">Total Outstanding</span>
-      <span class="finance-stat-value">${fmt(totalOutstanding)}</span>
-      <span class="finance-stat-sub">${unpaidCount} fully unpaid records</span>
-    </div>
-  `;
+  const container = document.getElementById('feeScheduleContainer');
 
-  /* ---- Per-term fee cards ---- */
-  const terms = [
-    { key: 'term1', label: 'First Term', levy: FEES.levies.term1 },
-    { key: 'term2', label: 'Second Term', levy: FEES.levies.term2 },
-    { key: 'term3', label: 'Third Term', levy: null }
-  ];
+  if (!window.RCA_API) {
+    container.innerHTML = '<p style="color:#dc2626">Cannot reach the server.</p>';
+    return;
+  }
 
-  document.getElementById('feeTermsGrid').innerHTML = terms.map(t => {
-    const standardTotal = FEES.school_fees + FEES.utility_bill + FEES.lesson +
-      (t.key === 'term3' ? FEES.levies.term3_standard.amount : (t.levy ? t.levy.amount : 0));
-    const discountTotal = FEES.school_fees_sibling + FEES.utility_bill + FEES.lesson +
-      (t.key === 'term3' ? FEES.levies.term3_standard.amount : (t.levy ? t.levy.amount : 0));
-    const basic6Total = t.key === 'term3'
-      ? FEES.school_fees + FEES.utility_bill + FEES.lesson + FEES.levies.term3_basic6.amount
-      : null;
+  let terms = [];
+  try {
+    const data = await window.RCA_API.call('/payments/fee-schedule');
+    terms = data.terms || [];
+  } catch (e) {
+    container.innerHTML = `<p style="color:#dc2626">Could not load fee schedule: ${e.message}</p>`;
+    return;
+  }
 
-    const levyRow = t.key === 'term3'
-      ? `<tr><td>${FEES.levies.term3_standard.label}</td><td>${fmt(FEES.levies.term3_standard.amount)}</td></tr>`
-      : (t.levy ? `<tr><td>${t.levy.label}</td><td>${fmt(t.levy.amount)}</td></tr>` : '');
+  if (terms.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af">No fee schedule has been set up yet.</p>';
+    return;
+  }
 
+  function fieldHtml(term, key, label, value, isMoney = true) {
     return `
-      <div class="fee-schedule-card">
-        <div class="fee-schedule-title">${t.label}</div>
-        <table class="fee-line-table">
-          <tr><td>School Fees</td><td>${fmt(FEES.school_fees)}</td></tr>
-          <tr><td>Utility Bill</td><td>${fmt(FEES.utility_bill)}</td></tr>
-          <tr><td>Lesson</td><td>${fmt(FEES.lesson)}</td></tr>
-          ${levyRow}
-          <tr class="fee-total-row"><td><strong>Total</strong></td><td><strong>${fmt(standardTotal)}</strong></td></tr>
-        </table>
-        <div class="fee-discount-note">
-          &#128106; With sibling discount: <strong>${fmt(discountTotal)}</strong> per child
-          ${t.key === 'term3' ? `<br>&#127891; Basic 6 graduation levy: <strong>${fmt(basic6Total)}</strong> (standard) / <strong>${fmt(discountTotal - FEES.levies.term3_standard.amount + FEES.levies.term3_basic6.amount)}</strong> (sibling discount)` : ''}
-        </div>
+      <div class="fee-field">
+        <label>${label}</label>
+        <input type="number" class="form-control" data-term="${term}" data-field="${key}"
+               value="${value ?? 0}" ${canEdit ? '' : 'readonly style="background:#f9fafb"'}>
       </div>`;
-  }).join('');
+  }
 
-  /* ---- Sibling stats ---- */
-  const households = {};
-  (window.SAMPLE_USERS || []).filter(u => u.roles && u.roles.includes('parent')).forEach(p => {
-    if (p.linked_students) households[p.id] = p.linked_students.length;
-  });
-  const discountFamilies = Object.values(households).filter(n => n >= 3).length;
-  const discountPupils   = Object.entries(households).filter(([,n]) => n >= 3)
-    .reduce((s,[,n]) => s + n, 0);
+  container.innerHTML = terms.map(t => `
+    <div class="fee-term-card">
+      <div class="fee-term-title">
+        <span>${TERM_LABELS[t.term] || t.term}</span>
+        <span class="fee-save-status" id="status-${t.term}">&#10003; Saved</span>
+      </div>
+      <div class="fee-grid">
+        ${fieldHtml(t.term, 'school_fees', 'School Fees (standard)', t.school_fees)}
+        ${fieldHtml(t.term, 'school_fees_sibling', 'School Fees (sibling discount)', t.school_fees_sibling)}
+        ${fieldHtml(t.term, 'sibling_threshold', 'Sibling Threshold (children)', t.sibling_threshold, false)}
+        ${fieldHtml(t.term, 'utility_bill', 'Utility Bill', t.utility_bill)}
+        ${fieldHtml(t.term, 'lesson_fee', 'Lesson Fee', t.lesson_fee)}
+        ${fieldHtml(t.term, 'levy_amount', 'Levy Amount', t.levy_amount)}
+        <div class="fee-field">
+          <label>Levy Label <span style="font-weight:400;color:#9ca3af">(e.g. Sports Levy)</span></label>
+          <input type="text" class="form-control" data-term="${t.term}" data-field="levy_label"
+                 value="${t.levy_label || ''}" ${canEdit ? '' : 'readonly style="background:#f9fafb"'}>
+        </div>
+      </div>
+      ${canEdit ? `
+        <div class="fee-save-row">
+          <button class="btn btn-primary btn-sm" onclick="saveFeeTerm('${t.term}')">Save ${TERM_LABELS[t.term] || t.term}</button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
 
-  document.getElementById('siblingStats').innerHTML =
-    `Currently <strong>${discountFamilies} families</strong> qualify for the sibling discount,
-     covering <strong>${discountPupils} pupils</strong>.
-     Discount applied automatically — no application required.`;
+  window.saveFeeTerm = async function(term) {
+    const inputs = document.querySelectorAll(`[data-term="${term}"]`);
+    const body = {};
+    inputs.forEach(input => {
+      const field = input.dataset.field;
+      body[field] = field === 'levy_label' ? (input.value.trim() || null) : Number(input.value);
+    });
+
+    try {
+      await window.RCA_API.call(`/payments/fee-schedule/${term}`, { method: 'PUT', body });
+      const statusEl = document.getElementById(`status-${term}`);
+      statusEl.style.display = 'inline';
+      setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    } catch (e) {
+      alert('Could not save: ' + e.message);
+    }
+  };
 });
 </script>
 </body>
