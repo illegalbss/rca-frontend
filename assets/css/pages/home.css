@@ -803,13 +803,16 @@
 }
 
 
-/* ---- Hero background image (img tag approach for Netlify compatibility) ---- */
+/* ---- Hero background image (img tag approach for Netlify compatibility) ----
+   object-fit:contain (rather than cover) so the whole photo — full
+   faces included — is always visible instead of being cropped to
+   fill the full-height hero section. */
 .hero-bg-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   z-index: 0;
 }
