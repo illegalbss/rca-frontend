@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -320,17 +320,6 @@
   </div>
 </div>
 
-<script src="../assets/js/config.js"></script>
-<script src="../assets/js/api.js"></script>
-<script src="../assets/js/admin/sample-students.js"></script>
-<script src="../assets/js/admin/parent-manager.js"></script>
-<script src="../assets/js/admin/sample-teachers.js"></script>
-<script src="../assets/js/admin/sample-users.js"></script>
-<script src="../assets/js/admin/subjects-and-grading.js"></script>
-<script src="../assets/js/admin/localstorage.js"></script>
-<script src="../assets/js/admin/dashboard-shell.js"></script>
-<script src="../assets/js/admin/user-management.js"></script>
-
 <!-- ADD PARENT MODAL — uses same um-* classes as the staff modal -->
 <div class="um-modal-overlay" id="addParentModal">
   <div class="um-modal">
@@ -360,6 +349,7 @@
         </div>
         <div class="um-form-group um-full">
           <label class="um-form-label">Link to Children</label>
+          <input type="text" id="parentStudentSearch" class="form-control" placeholder="Search by name…" style="margin-bottom:8px">
           <div id="studentCheckboxes" style="max-height:180px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-top:4px"></div>
           <span class="um-form-hint">Select the pupil(s) belonging to this parent</span>
         </div>
@@ -372,18 +362,42 @@
   </div>
 </div>
 
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/api.js"></script>
+<script src="../assets/js/admin/sample-students.js"></script>
+<script src="../assets/js/admin/sample-teachers.js"></script>
+<script src="../assets/js/admin/sample-users.js"></script>
+<script src="../assets/js/admin/subjects-and-grading.js"></script>
+<script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/dashboard-shell.js"></script>
+<script src="../assets/js/admin/user-management.js"></script>
+
 <script>
-    // Load parent list
-    function renderParents() {
+    let allRealStudents = [];
+    let allRealParents  = [];
+
+    // Load parent list from the real backend
+    async function renderParents() {
       const list = document.getElementById('parentsList');
-      if (!list) return;
-      const parents = window.RCA_PARENTS?.getAll() || [];
-      if (parents.length === 0) {
+      if (!list || !window.RCA_API) return;
+
+      list.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:20px">Loading…</p>';
+
+      try {
+        const data = await window.RCA_API.call('/users/parents');
+        allRealParents = data.parents || [];
+      } catch (e) {
+        list.innerHTML = `<p style="color:#dc2626;font-size:0.85rem;text-align:center;padding:20px">Could not load parents: ${e.message}</p>`;
+        return;
+      }
+
+      if (allRealParents.length === 0) {
         list.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:20px">No parent accounts yet. Click + Add Parent Account to create one.</p>';
         return;
       }
-      list.innerHTML = parents.map(p => {
-        const children = window.RCA_PARENTS.getChildren(p.id);
+
+      list.innerHTML = allRealParents.map(p => {
+        const children = p.children || [];
         return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
           <div>
             <strong style="font-size:0.9rem;color:#111">${p.full_name}</strong>
@@ -393,37 +407,66 @@
             </span>
           </div>
           <div style="display:flex;gap:8px">
-            <button onclick="linkChildModal('${p.id}')" style="padding:6px 12px;background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">+ Link Child</button>
-            <button onclick="deleteParent('${p.id}')" style="padding:6px 12px;background:#fef2f2;color:#dc2626;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">Delete</button>
+            <button onclick="linkChildModal(${p.id})" style="padding:6px 12px;background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">+ Link Child</button>
+            <button onclick="deleteParent(${p.id})" style="padding:6px 12px;background:#fef2f2;color:#dc2626;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">Delete</button>
           </div>
         </div>`;
       }).join('');
     }
 
-    function showAddParentModal() {
+    // Fetch the real student list (used to populate checkboxes)
+    async function loadRealStudents() {
+      if (!window.RCA_API) return [];
+      try {
+        const data = await window.RCA_API.call('/students');
+        return data.students || [];
+      } catch (e) {
+        console.warn('Could not load students:', e.message);
+        return [];
+      }
+    }
+
+    // Shared helper: renders a checkbox list for a set of students,
+    // pre-checking any admission numbers found in `checkedAdmNos`.
+    function renderStudentCheckboxes(containerId, students, checkedAdmNos) {
+      const active = students.filter(s => s.status !== 'archived' && s.status !== 'inactive');
+      const box = document.getElementById(containerId);
+      box.innerHTML = active.length
+        ? active.map(s => `
+            <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
+              <input type="checkbox" value="${s.admission_no}" ${checkedAdmNos.includes(s.admission_no) ? 'checked' : ''} style="width:16px;height:16px">
+              ${s.full_name} — ${s.class_name}
+            </label>`).join('')
+        : '<p style="color:#9ca3af;font-size:0.82rem;padding:4px">No matching students</p>';
+    }
+
+    async function showAddParentModal() {
       const modal = document.getElementById('addParentModal');
       modal.classList.add('open');
-      // Clear previous values
       ['par_name','par_email','par_phone'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('par_password').value = 'RCA@2026!';
       document.getElementById('parentModalAlert').style.display = 'none';
-      // Populate student checkboxes
-      const allStudents = (window.SAMPLE_STUDENTS || []).filter(s => s.status !== 'archived' && s.status !== 'inactive');
-      const box = document.getElementById('studentCheckboxes');
-      box.innerHTML = allStudents.length
-        ? allStudents.map(s => `
-            <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
-              <input type="checkbox" value="${s.admission_no}" style="width:16px;height:16px">
-              ${s.full_name} — ${s.class_name}
-            </label>`).join('')
-        : '<p style="color:#9ca3af;font-size:0.82rem;padding:4px">No students registered yet</p>';
+
+      allRealStudents = await loadRealStudents();
+      renderStudentCheckboxes('studentCheckboxes', allRealStudents, []);
+
+      const searchBox = document.getElementById('parentStudentSearch');
+      if (searchBox) {
+        searchBox.value = '';
+        searchBox.oninput = () => {
+          const q = searchBox.value.trim().toLowerCase();
+          const filtered = allRealStudents.filter(s => s.full_name.toLowerCase().includes(q));
+          const checkedNow = [...document.querySelectorAll('#studentCheckboxes input:checked')].map(i => i.value);
+          renderStudentCheckboxes('studentCheckboxes', filtered, checkedNow);
+        };
+      }
     }
 
     function closeParentModal() {
       document.getElementById('addParentModal').classList.remove('open');
     }
 
-    function submitAddParent() {
+    async function submitAddParent() {
       const name  = document.getElementById('par_name').value.trim();
       const email = document.getElementById('par_email').value.trim();
       const phone = document.getElementById('par_phone').value.trim();
@@ -438,12 +481,27 @@
 
       const checked = [...document.querySelectorAll('#studentCheckboxes input:checked')].map(i => i.value);
 
-      const parent = window.RCA_PARENTS.add({ full_name: name, email, phone, password: pass, children: checked });
+      try {
+        await window.RCA_API.call('/users', {
+          method: 'POST',
+          body: {
+            full_name: name,
+            email,
+            phone,
+            password: pass,
+            primary_role: 'parent',
+            linked_children: checked
+          }
+        });
+      } catch (e) {
+        alertEl.textContent = 'Could not create account: ' + e.message;
+        alertEl.style.display = 'block';
+        return;
+      }
 
       closeParentModal();
       renderParents();
 
-      // Show success
       const toast = document.createElement('div');
       toast.textContent = `✅ Parent account created for ${name}. Login: ${email} / ${pass}`;
       toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:14px 20px;border-radius:10px;z-index:9999;font-size:0.85rem;font-weight:600;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
@@ -451,43 +509,62 @@
       setTimeout(() => toast.remove(), 5000);
     }
 
-    function linkChildModal(parentId) {
-      const allStudents = (window.SAMPLE_STUDENTS || []).filter(s => s.status !== 'archived');
-      const p = window.RCA_PARENTS.getAll().find(p => p.id === parentId);
+    async function linkChildModal(parentId) {
+      if (allRealStudents.length === 0) allRealStudents = await loadRealStudents();
+      const p = allRealParents.find(p => p.id === parentId);
+      const linkedAdmNos = (p?.children || []).map(c => c.admission_no);
+
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
       modal.innerHTML = `
         <div style="background:#fff;border-radius:16px;width:100%;max-width:400px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-          <h3 style="margin-bottom:16px;color:var(--color-primary);font-size:1rem">Link Child to ${p?.full_name}</h3>
-          <div style="max-height:250px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:16px">
-            ${allStudents.map(s => `
-              <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
-                <input type="checkbox" value="${s.admission_no}" ${p?.children?.includes(s.admission_no) ? 'checked' : ''} style="width:16px;height:16px">
-                ${s.full_name} — ${s.class_name}
-              </label>
-            `).join('')}
-          </div>
+          <h3 style="margin-bottom:12px;color:var(--color-primary);font-size:1rem">Link Child to ${p?.full_name}</h3>
+          <input type="text" id="linkChildSearch" class="form-control" placeholder="Search by name…" style="margin-bottom:10px">
+          <div id="linkChildCheckboxes" style="max-height:250px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:16px"></div>
           <div style="display:flex;gap:10px">
             <button onclick="this.closest('[style*=fixed]').remove()" class="btn btn-outline" style="flex:1">Cancel</button>
-            <button onclick="saveLinkedChildren('${parentId}', this)" class="btn btn-primary" style="flex:1">Save</button>
+            <button onclick="saveLinkedChildren(${parentId}, this)" class="btn btn-primary" style="flex:1">Save</button>
           </div>
         </div>`;
       document.body.appendChild(modal);
+
+      renderStudentCheckboxes('linkChildCheckboxes', allRealStudents, linkedAdmNos);
+
+      const searchBox = modal.querySelector('#linkChildSearch');
+      searchBox.oninput = () => {
+        const q = searchBox.value.trim().toLowerCase();
+        const filtered = allRealStudents.filter(s => s.full_name.toLowerCase().includes(q));
+        const checkedNow = [...modal.querySelectorAll('#linkChildCheckboxes input:checked')].map(i => i.value);
+        renderStudentCheckboxes('linkChildCheckboxes', filtered, checkedNow);
+      };
     }
 
-    function saveLinkedChildren(parentId, btn) {
+    async function saveLinkedChildren(parentId, btn) {
       const modal = btn.closest('[style*="fixed"]');
       const checked = [...modal.querySelectorAll('input:checked')].map(i => i.value);
-      const parents = window.RCA_PARENTS.getAll();
-      const idx = parents.findIndex(p => p.id === parentId);
-      if (idx > -1) { parents[idx].children = checked; window.RCA_PARENTS.saveAll(parents); }
+
+      try {
+        await window.RCA_API.call(`/users/${parentId}`, {
+          method: 'PUT',
+          body: { linked_children: checked }
+        });
+      } catch (e) {
+        alert('Could not save: ' + e.message);
+        return;
+      }
+
       modal.remove();
       renderParents();
     }
 
-    function deleteParent(parentId) {
+    async function deleteParent(parentId) {
       if (!confirm('Delete this parent account?')) return;
-      window.RCA_PARENTS.delete(parentId);
+      try {
+        await window.RCA_API.call(`/users/${parentId}`, { method: 'DELETE' });
+      } catch (e) {
+        alert('Could not delete: ' + e.message);
+        return;
+      }
       renderParents();
     }
 
