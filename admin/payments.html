@@ -3,13 +3,94 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Receipts | Royal Crystal Academy</title>
+  <title>Record Payment | Royal Crystal Academy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
   <link rel="stylesheet" href="../assets/css/admin/finance.css">
+  <style>
+    .pay-coming-soon {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1.5px solid #bae6fd;
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+    .pay-cs-icon { font-size: 2rem; flex-shrink: 0; }
+    .pay-cs-title { font-family: var(--font-heading); font-weight: 700; font-size: 1rem; color: #0369a1; margin-bottom: 4px; }
+    .pay-cs-body  { font-size: 0.83rem; color: #0c4a6e; line-height: 1.55; }
+    .pay-cs-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #0369a1; color: #fff; border-radius: 999px;
+      padding: 3px 12px; font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .pay-cs-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc;
+      border-radius: 999px; padding: 7px 18px;
+      font-family: var(--font-heading); font-size: 0.78rem; font-weight: 700;
+      cursor: not-allowed; opacity: 0.7; margin-top: 10px;
+    }
+    .pay-type-tabs { display: flex; gap: 10px; margin-bottom: 6px; }
+    .pay-type-tab {
+      flex: 1; padding: 10px 14px; border-radius: 10px;
+      border: 2px solid #e5e7eb; background: #f9fafb;
+      font-family: var(--font-heading); font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; text-align: center; color: #6b7280;
+      transition: all 0.15s ease;
+    }
+    .pay-type-tab.active { border-color: #1d4ed8; background: #eff6ff; color: #1d4ed8; }
+    .pay-type-tab.disabled { cursor: not-allowed; opacity: 0.5; }
+    .pay-type-tab .pay-type-status {
+      display: block; font-size: 0.65rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;
+      color: #9ca3af;
+    }
+    .pay-type-tab.active .pay-type-status { color: #1d4ed8; }
+    .pay-settings-note { font-size: 0.75rem; color: #9ca3af; text-align: right; margin-bottom: 10px; }
+    .pay-settings-note a { color: #1d4ed8; text-decoration: none; font-weight: 600; }
+    .pay-settings-note a:hover { text-decoration: underline; }
+    .lookup-tab {
+      padding: 8px 18px; background: none; border: none;
+      font-family: var(--font-heading); font-size: 0.82rem; font-weight: 600;
+      color: #9ca3af; cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.15s;
+    }
+    .lookup-tab.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
+    .lookup-tab:hover:not(.active) { color: #374151; }
+    .lookup-dropdown {
+      position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+      background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 200;
+      max-height: 220px; overflow-y: auto;
+    }
+    .lookup-dropdown-item {
+      padding: 9px 14px; cursor: pointer; font-size: 0.83rem;
+      border-bottom: 1px solid #f3f4f6; display: flex;
+      align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .lookup-dropdown-item:last-child { border-bottom: none; }
+    .lookup-dropdown-item:hover { background: #eff6ff; }
+    .lookup-dropdown-item .ld-name { font-weight: 600; color: #111827; }
+    .lookup-dropdown-item .ld-meta { font-size: 0.72rem; color: #9ca3af; }
+    .name-result-card {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px;
+      cursor: pointer; background: #fff; transition: all 0.12s;
+      font-size: 0.82rem;
+    }
+    .name-result-card:hover, .name-result-card.selected {
+      border-color: #1d4ed8; background: #eff6ff;
+    }
+    .name-result-card .nrc-name { font-weight: 700; color: #111827; }
+    .name-result-card .nrc-adm  { font-size: 0.72rem; color: #9ca3af; }
+  </style>
 </head>
 <body>
 <div class="admin-shell">
@@ -19,37 +100,35 @@
       <img src="../assets/images/logo.png" alt="Royal Crystal Academy">
       <span>Royal Crystal Academy</span>
     </div>
-
-      <!-- User profile block -->
-      <div class="sidebar-profile">
-        <div class="sidebar-avatar" id="sidebarAvatar">?</div>
-        <div class="sidebar-profile-info">
-          <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
-          <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
-          <div class="sidebar-online-dot">Online</div>
-        </div>
+    <div class="sidebar-profile">
+      <div class="sidebar-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-profile-info">
+        <div class="sidebar-profile-role" id="sidebarRole">Loading...</div>
+        <div class="sidebar-profile-name" id="sidebarName">Loading...</div>
+        <div class="sidebar-online-dot">Online</div>
       </div>
+    </div>
     <nav class="sidebar-nav">
       <p class="sidebar-section-label">Main</p>
-      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">&#9632;</i> Dashboard</a>
+      <a href="dashboard.html" class="sidebar-link" data-roles="all"><i class="icon">⊞</i> Dashboard</a>
       <p class="sidebar-section-label">Administration</p>
-      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">&#9675;</i> Students</a>
+      <a href="students.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant"><i class="icon">○</i> Students</a>
       <a href="admission-form.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Form</a>
       <a href="admission-register.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Admission Register</a>
-      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Teachers</a>
-      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Classes</a>
-      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Attendance</a>
-      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Discipline</a>
+      <a href="teachers.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Teachers</a>
+      <a href="classes.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Classes</a>
+      <a href="attendance.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Attendance</a>
+      <a href="discipline.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Discipline</a>
       <p class="sidebar-section-label">Results</p>
-      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">&#9675;</i> Score Entry</a>
-      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">&#9675;</i> Class Review</a>
-      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Approvals</a>
-      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Report Cards</a>
+      <a href="score-entry.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher"><i class="icon">○</i> Score Entry</a>
+      <a href="class-review.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher"><i class="icon">○</i> Class Review</a>
+      <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Approvals</a>
+      <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Report Cards</a>
       <p class="sidebar-section-label">Finance</p>
-      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
-      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Record Payment</a>
-      <a href="receipts.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9632;</i> Receipts</a>
-      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">○</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">○</i> Finance Reports</a>
       <a href="payment-settings.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Payment Settings</a>
       <p class="sidebar-section-label">Communications</p>
       <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
@@ -57,90 +136,245 @@
       <a href="school-programme.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Programme of Events</a>
       <a href="school-calendar.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> School Calendar</a>
       <p class="sidebar-section-label">ICT Department</p>
-      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
-      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab &amp; Curriculum</a>
+      <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT &amp; Coding Clubs</a>
       <p class="sidebar-section-label">System</p>
-      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">&#9675;</i> User Management</a>
-      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">&#9675;</i> Activity Logs</a>
+      <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> User Management</a>
+      <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Activity Logs</a>
     </nav>
     <div class="sidebar-footer">
-      <a href="../index.html" class="sidebar-link"><i class="icon">&#8592;</i> Back to website</a>
-      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">&#10006;</i> Log out</a>
+      <a href="../index.html" class="sidebar-link"><i class="icon">←</i> Back to website</a>
+      <a href="login.html" class="sidebar-link logout-link" id="logoutBtn"><i class="icon">✕</i> Log out</a>
     </div>
   </aside>
-
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
   <div class="admin-content">
-    <header class="admin-topbar no-print">
+    <header class="admin-topbar">
       <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
-      <h1 class="topbar-title">Payment Receipts</h1>
+      <h1 class="topbar-title">Record Payment</h1>
       <span class="topbar-session">Academic Session: 2025/2026</span>
-        <button class="topbar-bell" title="Notifications">
-          &#128276;
-          <span class="topbar-bell-badge">4</span>
-        </button>
-        <div class="topbar-user">
+      <button class="topbar-bell" title="Notifications">&#128276;<span class="topbar-bell-badge">4</span></button>
+      <div class="topbar-user">
         <span class="user-role-badge" id="userRoleBadge">Guest</span>
-        <div class="user-avatar" id="userAvatar"><img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;"></div>
+        <div class="user-avatar" id="userAvatar">
+          <img src="../assets/images/logo.png" alt="RCA" style="width:36px;height:36px;object-fit:contain;border-radius:6px;">
+        </div>
       </div>
     </header>
 
     <main class="admin-main">
 
-      <!-- Search bar (hidden on print) -->
-      <div class="finance-toolbar no-print" style="margin-bottom:var(--space-lg)">
-        <div class="form-group" style="margin:0;flex:1;min-width:200px">
-          <label>Admission Number</label>
-          <input type="text" id="receiptSearch" class="form-control" placeholder="e.g. RCA/2026/001">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>Term</label>
-          <select id="receiptTerm" class="form-control">
-            <option value="">All Terms</option>
-            <option value="term1">First Term</option>
-            <option value="term2" selected>Second Term</option>
-            <option value="term3">Third Term</option>
-          </select>
-        </div>
-        <button class="btn btn-primary" id="receiptSearchBtn">Find Receipts</button>
-      </div>
-
-      <!-- Payment history list (screen only) -->
-      <div id="receiptListSection">
-        <div class="finance-table-wrap no-print">
-          <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid var(--color-border)">
-            <h3 style="font-size:var(--fs-base);font-weight:700" id="receiptListTitle">All Payment Records — Second Term</h3>
+      <div class="pay-coming-soon" id="onlineComingSoon">
+        <div class="pay-cs-icon">&#128179;</div>
+        <div>
+          <div class="pay-cs-badge">&#128100; Parent Information</div>
+          <div class="pay-cs-title">Online Payments — Coming Soon</div>
+          <div class="pay-cs-body">
+            Online payment via Paystack will be available in a future update.<br>
+            <strong>Please visit the school office to complete your payment.</strong>
+            All manual payments are recorded here by the Accountant and a receipt is issued immediately.
           </div>
-          <div style="overflow-x:auto">
-            <table class="finance-table">
-              <thead>
-                <tr>
-                  <th>Receipt No.</th>
-                  <th>Date</th>
-                  <th>Admission No.</th>
-                  <th>Student Name</th>
-                  <th>Class</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Recorded By</th>
-                  <th class="no-print">Action</th>
-                </tr>
-              </thead>
-              <tbody id="receiptTableBody"></tbody>
-            </table>
-          </div>
+          <button class="pay-cs-btn" disabled>&#128274; Pay Online (Coming Soon)</button>
         </div>
       </div>
 
-      <!-- Printable receipt (hidden until a specific record is chosen) -->
-      <div id="receiptPrintSection" style="display:none">
-        <div class="receipt-print-btn no-print" style="margin-bottom:var(--space-md);display:flex;flex-wrap:wrap;gap:var(--space-md)">
-          <button onclick="window.print()" class="btn btn-primary">&#128424; Print Receipt</button>
-          <button id="backToListBtn" class="btn btn-outline">&#8592; Back to List</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="pay-type-tabs" style="max-width:420px;width:100%">
+          <div class="pay-type-tab active">
+            &#128179; Manual Payment
+            <span class="pay-type-status">&#10003; Active</span>
+          </div>
+          <div class="pay-type-tab disabled">
+            &#127760; Online Payment
+            <span class="pay-type-status">&#128274; Coming Soon</span>
+          </div>
         </div>
-        <div class="receipt-wrap">
-          <div class="receipt-card" id="receiptCard"></div>
+        <div class="pay-settings-note">
+          ICT Admin: <a href="payment-settings.html">Payment Settings &#8594;</a>
+        </div>
+      </div>
+
+      <div class="payment-form-card">
+        <div class="payment-form-title">&#128269; Step 1 — Look Up Student</div>
+
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;border-bottom:2px solid #f3f4f6;padding-bottom:0">
+          <button id="tabByName" class="lookup-tab active" onclick="switchLookupTab('name')">&#128100; Search by Name / Class</button>
+          <button id="tabByAdm"  class="lookup-tab"        onclick="switchLookupTab('adm')">&#128203; Admission Number</button>
+        </div>
+
+        <div id="panelByName">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:10px">
+            <div class="form-group" style="margin:0">
+              <label>Student Name</label>
+              <div style="position:relative">
+                <input type="text" id="lookupNameInput" class="form-control" placeholder="Type name to search…" autocomplete="off">
+                <div id="nameDropdown" class="lookup-dropdown" style="display:none"></div>
+              </div>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Filter by Class <span style="font-weight:400;color:#9ca3af">(optional)</span></label>
+              <select id="lookupClassFilter" class="form-control">
+                <option value="">All Classes</option>
+              </select>
+            </div>
+          </div>
+          <div id="nameSearchResults" style="display:none;margin-bottom:12px">
+            <div style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Select a student</div>
+            <div id="nameResultsList" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto"></div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+            <div class="form-group" style="margin:0;min-width:180px;flex:1 1 180px">
+              <label>Term</label>
+              <select id="lookupTermName" class="form-control">
+                <option value="term1">First Term</option>
+                <option value="term2" selected>Second Term</option>
+                <option value="term3">Third Term</option>
+              </select>
+            </div>
+            <button class="btn btn-primary no-print" id="lookupBtnName" style="flex-shrink:0">Look Up</button>
+          </div>
+        </div>
+
+        <div id="panelByAdm" style="display:none">
+          <div class="payment-lookup-grid" style="display:grid;grid-template-columns:1fr 1fr auto;gap:var(--space-md);align-items:flex-end">
+            <div class="form-group" style="margin:0">
+              <label>Admission Number</label>
+              <input type="text" id="lookupAdmNo" class="form-control" placeholder="e.g. RCA/2026/0001" style="text-transform:uppercase">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label>Term</label>
+              <select id="lookupTerm" class="form-control">
+                <option value="term1">First Term</option>
+                <option value="term2" selected>Second Term</option>
+                <option value="term3">Third Term</option>
+              </select>
+            </div>
+            <button class="btn btn-primary no-print" id="lookupBtn">Look Up</button>
+          </div>
+        </div>
+
+        <div id="lookupError" style="color:var(--color-danger,#dc2626);font-size:var(--fs-sm);margin-top:var(--space-sm);display:none"></div>
+
+        <div class="payment-lookup-result" id="lookupResult">
+          <div class="lookup-student-name" id="lookupName"></div>
+          <div class="lookup-meta" id="lookupMeta"></div>
+          <div class="lookup-balance-row">
+            <div class="lookup-balance-item total">
+              <span>Total Fee</span>
+              <strong id="lookupTotal"></strong>
+            </div>
+            <div class="lookup-balance-item paid">
+              <span>Paid So Far</span>
+              <strong id="lookupPaid"></strong>
+            </div>
+            <div class="lookup-balance-item owed">
+              <span>Balance Owed</span>
+              <strong id="lookupBalance"></strong>
+            </div>
+          </div>
+          <div id="lookupBreakdown" style="margin-top:10px;font-size:0.78rem;color:#6b7280"></div>
+          <div id="lookupDiscount" style="font-size:var(--fs-sm);margin-top:var(--space-sm);color:var(--color-primary)"></div>
+        </div>
+      </div>
+
+      <div class="payment-form-card" id="paymentFormCard" style="display:none">
+        <div class="payment-form-title">&#128179; Step 2 — Enter Payment Details (Manual)</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)">
+          <div class="form-group">
+            <label>Student Name</label>
+            <input type="text" id="payStudentName" class="form-control" readonly style="background:#f9fafb">
+          </div>
+          <div class="form-group">
+            <label>Admission Number</label>
+            <input type="text" id="payAdmNo" class="form-control" readonly style="background:#f9fafb">
+          </div>
+          <div class="form-group">
+            <label>Class</label>
+            <input type="text" id="payClass" class="form-control" readonly style="background:#f9fafb">
+          </div>
+          <div class="form-group">
+            <label>Term</label>
+            <input type="text" id="payTermLabel" class="form-control" readonly style="background:#f9fafb">
+          </div>
+          <div class="form-group">
+            <label>Amount Being Paid (&#8358;) *</label>
+            <input type="number" id="payAmount" class="form-control" placeholder="Enter amount" min="1">
+          </div>
+          <div class="form-group">
+            <label>Payment Method *</label>
+            <select id="payMethod" class="form-control">
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="POS">POS</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Payment Date *</label>
+            <input type="date" id="payDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Receipt Number <span style="font-weight:400;color:#9ca3af">(auto-generated if blank)</span></label>
+            <input type="text" id="payReceiptNo" class="form-control" placeholder="RCA-RCP-…">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Parent / Guardian Name (person making payment)</label>
+            <input type="text" id="payParentName" class="form-control" placeholder="Full name of parent or guardian making payment">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label>Notes <span style="font-weight:400;color:#9ca3af">(optional)</span></label>
+            <input type="text" id="payNotes" class="form-control" placeholder="e.g. Part payment — balance to be paid by end of term">
+          </div>
+        </div>
+
+        <input type="hidden" id="payPaymentType"      value="manual">
+        <input type="hidden" id="payGateway"          value="">
+        <input type="hidden" id="payTransactionId"    value="">
+        <input type="hidden" id="payGatewayReference" value="">
+        <input type="hidden" id="payPaymentStatus"    value="success">
+
+        <div style="display:flex;flex-wrap:wrap;gap:var(--space-md);margin-top:var(--space-lg)">
+          <button class="btn btn-primary" id="savePaymentBtn">&#10003; Save Payment &amp; Generate Receipt</button>
+          <button class="btn btn-outline" id="cancelPaymentBtn">Cancel</button>
+        </div>
+        <div id="paymentError" style="color:var(--color-danger,#dc2626);font-size:var(--fs-sm);margin-top:var(--space-sm);display:none"></div>
+      </div>
+
+      <div class="payment-form-card" id="successCard" style="display:none">
+        <div style="text-align:center;padding:var(--space-xl) 0">
+          <div style="font-size:3rem;margin-bottom:var(--space-md)">&#10004;&#65039;</div>
+          <h2 style="font-family:var(--font-heading);color:#16a34a;margin-bottom:var(--space-sm)">Payment Recorded!</h2>
+          <p id="successMsg" style="color:#6b7280;margin-bottom:var(--space-xl)"></p>
+          <div style="display:flex;gap:var(--space-md);justify-content:center;flex-wrap:wrap">
+            <a id="viewReceiptBtn" href="receipts.html" class="btn btn-primary">&#128231; View &amp; Print Receipt</a>
+            <button id="recordAnotherBtn" class="btn btn-outline">Record Another Payment</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="finance-table-wrap no-print" style="margin-top:var(--space-xl)">
+        <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center">
+          <h3 style="font-size:var(--fs-base);font-weight:700">Recent Payments (This Session)</h3>
+          <a href="receipts.html" class="btn btn-outline btn-sm">View All Receipts</a>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="finance-table" id="recentPaymentsTable">
+            <thead>
+              <tr>
+                <th>Receipt No.</th>
+                <th>Admission No.</th>
+                <th>Student Name</th>
+                <th>Class</th>
+                <th>Term</th>
+                <th>Amount Paid</th>
+                <th>Method</th>
+                <th>Parent / Guardian</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentPaymentsBody"></tbody>
+          </table>
         </div>
       </div>
 
@@ -157,222 +391,322 @@
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const fmt         = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
-  const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+document.addEventListener('DOMContentLoaded', function () {
+  var allStudents  = window.SAMPLE_STUDENTS || [];
+  var fmt          = window.formatNaira || function(n) { return '₦' + Number(n).toLocaleString(); };
+  var TERM_LABELS  = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+  var currentAdmNo = '';
+  var currentTerm  = '';
+  var currentLookup = null;
 
-  let currentRows = []; // last set of payments loaded from the API
+  if (!window.SESSION_PAYMENTS) window.SESSION_PAYMENTS = [];
 
-  /* ---- Fetch real payments from the backend ---- */
-  async function fetchPayments(term, admFilter) {
-    if (!window.RCA_API) return [];
-    const params = new URLSearchParams();
-    if (term) params.set('term', term);
-    if (admFilter) params.set('admission_no', admFilter);
+  var classes = [...new Set(allStudents.map(function(s) { return s.class_name; }))].sort();
+  var classFilter = document.getElementById('lookupClassFilter');
+  classes.forEach(function(c) {
+    var o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    classFilter.appendChild(o);
+  });
 
-    try {
-      const data = await window.RCA_API.call('/payments' + (params.toString() ? '?' + params.toString() : ''));
-      return data.payments || [];
-    } catch (e) {
-      console.warn('Could not load payments:', e.message);
-      return [];
+  window.switchLookupTab = function(tab) {
+    document.getElementById('panelByName').style.display = tab === 'name' ? 'block' : 'none';
+    document.getElementById('panelByAdm').style.display  = tab === 'adm'  ? 'block' : 'none';
+    document.getElementById('tabByName').classList.toggle('active', tab === 'name');
+    document.getElementById('tabByAdm').classList.toggle('active',  tab === 'adm');
+    document.getElementById('lookupError').style.display = 'none';
+    document.getElementById('lookupResult').classList.remove('visible');
+    document.getElementById('paymentFormCard').style.display = 'none';
+    document.getElementById('successCard').style.display = 'none';
+    selectedStudent = null;
+  };
+
+  var selectedStudent = null;
+
+  document.getElementById('lookupNameInput').addEventListener('input', function() {
+    var q = this.value.trim().toLowerCase();
+    var cls = document.getElementById('lookupClassFilter').value;
+    var dropdown = document.getElementById('nameDropdown');
+    document.getElementById('nameSearchResults').style.display = 'none';
+    selectedStudent = null;
+
+    if (q.length < 2) { dropdown.style.display = 'none'; return; }
+
+    var matches = allStudents.filter(function(s) {
+      var nameMatch = s.full_name.toLowerCase().includes(q);
+      var clsMatch  = !cls || s.class_name === cls;
+      return nameMatch && clsMatch;
+    }).slice(0, 12);
+
+    if (!matches.length) { dropdown.innerHTML = '<div style="padding:10px 14px;font-size:0.82rem;color:#9ca3af">No students found</div>'; dropdown.style.display = 'block'; return; }
+
+    dropdown.innerHTML = matches.map(function(s) {
+      return '<div class="lookup-dropdown-item" data-adm="' + s.admission_no + '">' +
+        '<span class="ld-name">' + s.full_name + '</span>' +
+        '<span class="ld-meta">' + s.class_name + ' &bull; ' + s.admission_no + '</span>' +
+      '</div>';
+    }).join('');
+    dropdown.style.display = 'block';
+
+    dropdown.querySelectorAll('.lookup-dropdown-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var adm = this.getAttribute('data-adm');
+        selectedStudent = allStudents.find(function(s) { return s.admission_no === adm; });
+        document.getElementById('lookupNameInput').value = selectedStudent.full_name;
+        dropdown.style.display = 'none';
+      });
+    });
+  });
+
+  document.getElementById('lookupClassFilter').addEventListener('change', function() {
+    var cls = this.value;
+    var resultsDiv = document.getElementById('nameSearchResults');
+    var listDiv    = document.getElementById('nameResultsList');
+    selectedStudent = null;
+    document.getElementById('lookupNameInput').value = '';
+    document.getElementById('nameDropdown').style.display = 'none';
+
+    if (!cls) { resultsDiv.style.display = 'none'; return; }
+
+    var matches = allStudents.filter(function(s) { return s.class_name === cls; });
+    if (!matches.length) { resultsDiv.style.display = 'none'; return; }
+
+    listDiv.innerHTML = matches.map(function(s) {
+      return '<div class="name-result-card" data-adm="' + s.admission_no + '">' +
+        '<div><div class="nrc-name">' + s.full_name + '</div><div class="nrc-adm">' + s.admission_no + '</div></div>' +
+        '<span style="font-size:0.72rem;color:#6b7280">' + s.gender + '</span>' +
+      '</div>';
+    }).join('');
+    resultsDiv.style.display = 'block';
+
+    listDiv.querySelectorAll('.name-result-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        listDiv.querySelectorAll('.name-result-card').forEach(function(c) { c.classList.remove('selected'); });
+        this.classList.add('selected');
+        var adm = this.getAttribute('data-adm');
+        selectedStudent = allStudents.find(function(s) { return s.admission_no === adm; });
+        document.getElementById('lookupNameInput').value = selectedStudent.full_name;
+      });
+    });
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#lookupNameInput') && !e.target.closest('#nameDropdown')) {
+      document.getElementById('nameDropdown').style.display = 'none';
     }
+  });
+
+  document.getElementById('lookupBtnName').addEventListener('click', function() {
+    var errEl = document.getElementById('lookupError');
+    errEl.style.display = 'none';
+    if (!selectedStudent) {
+      errEl.textContent = 'Please select a student from the search results first.';
+      errEl.style.display = 'block';
+      return;
+    }
+    doLookup(selectedStudent.admission_no, document.getElementById('lookupTermName').value);
+  });
+
+  var cu      = window.CURRENT_USER;
+  var cuRoles = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
+  var canRecord = cuRoles.some(function(r) { return r === 'ict_admin' || r === 'accountant'; });
+  if (!canRecord) {
+    document.getElementById('paymentFormCard') && (document.getElementById('paymentFormCard').style.display = 'none');
+    document.querySelector('.payment-form-card') && (document.querySelector('.payment-form-card').style.pointerEvents = 'none');
   }
 
-  function renderTable(rows, term, admFilter) {
-    currentRows = rows;
-    const tbody = document.getElementById('receiptTableBody');
-    document.getElementById('receiptListTitle').textContent =
-      `Payment Records — ${admFilter ? admFilter.toUpperCase() + ' · ' : ''}${TERM_LABELS[term] || 'All Terms'}`;
+  function doLookup(admNo, term) {
+    var errEl = document.getElementById('lookupError');
+    errEl.style.display = 'none';
+    errEl.textContent = 'Looking up...';
+    errEl.style.display = 'block';
+    errEl.style.color = '#6b7280';
 
-    if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:2rem">No payment records found.</td></tr>';
+    if (!window.RCA_API) {
+      errEl.textContent = 'Cannot reach the server. Please check your connection.';
+      errEl.style.color = '#dc2626';
       return;
     }
 
-    tbody.innerHTML = rows.map(r => `
-      <tr>
-        <td style="font-size:0.75rem;font-weight:600">${r.reference || '—'}</td>
-        <td>${r.payment_date ? String(r.payment_date).substring(0, 10) : '—'}</td>
-        <td>${r.admission_no}</td>
-        <td>${r.full_name}</td>
-        <td>${r.class_name}</td>
-        <td class="amount-col">${fmt(r.amount)}</td>
-        <td>${r.payment_method || '—'}</td>
-        <td style="font-size:0.75rem">${r.recorded_by_name || '—'}</td>
-        <td class="no-print">
-          <button class="btn btn-outline btn-sm" onclick="showReceiptById(${r.id})">View</button>
-        </td>
-      </tr>
-    `).join('');
+    window.RCA_API.call('/payments/lookup?admission_no=' + encodeURIComponent(admNo) + '&term=' + term)
+      .then(function(data) {
+        errEl.style.display = 'none';
+        errEl.style.color = '';
+        currentAdmNo = data.admission_no;
+        currentTerm  = term;
+        currentLookup = data;
+
+        document.getElementById('lookupName').textContent = data.full_name;
+        document.getElementById('lookupMeta').textContent = data.class_name + ' · ' + data.admission_no + ' · ' + TERM_LABELS[term];
+        document.getElementById('lookupTotal').textContent   = fmt(data.grand_total);
+        document.getElementById('lookupPaid').textContent    = fmt(data.amount_paid);
+        document.getElementById('lookupBalance').textContent = fmt(data.balance);
+
+        var bkd = document.getElementById('lookupBreakdown');
+        bkd.innerHTML = data.lines.map(function(l) {
+          return '<span style="margin-right:16px">' + l.label + ': <strong>' + fmt(l.amount) + '</strong></span>';
+        }).join('');
+
+        document.getElementById('lookupDiscount').innerHTML = data.has_sibling_discount
+          ? '&#128106; Sibling discount applied (' + data.sibling_count + ' children enrolled) — school fees reduced to ' + fmt(15000)
+          : '';
+
+        document.getElementById('lookupResult').classList.add('visible');
+        document.getElementById('successCard').style.display = 'none';
+
+        if (data.balance <= 0) {
+          document.getElementById('paymentFormCard').style.display = 'none';
+          errEl.textContent = data.full_name + ' has already paid in full for this term.';
+          errEl.style.display = 'block';
+        } else {
+          document.getElementById('payStudentName').value = data.full_name;
+          document.getElementById('payAdmNo').value       = data.admission_no;
+          document.getElementById('payClass').value       = data.class_name;
+          document.getElementById('payTermLabel').value   = TERM_LABELS[term];
+          document.getElementById('payAmount').value      = data.balance;
+          document.getElementById('payAmount').max        = data.balance;
+          document.getElementById('payDate').value        = new Date().toISOString().split('T')[0];
+          document.getElementById('payReceiptNo').value   = '';
+          document.getElementById('payParentName').value  = '';
+          document.getElementById('payNotes').value       = '';
+          document.getElementById('paymentFormCard').style.display = 'block';
+        }
+      })
+      .catch(function(e) {
+        errEl.textContent = e.message || 'No student found with that admission number.';
+        errEl.style.color = '#dc2626';
+        errEl.style.display = 'block';
+      });
   }
 
-  /* ---- Number → words helper (for "The sum of:" line) ---- */
-  function numberToWords(amount) {
-    const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
-      'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
-      'Seventeen','Eighteen','Nineteen'];
-    const tns = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-    function _w(n) {
-      if (n === 0)     return '';
-      if (n < 20)      return ones[n] + ' ';
-      if (n < 100)     return tns[Math.floor(n/10)] + (n%10 ? '-'+ones[n%10] : '') + ' ';
-      if (n < 1000)    return ones[Math.floor(n/100)] + ' Hundred ' + _w(n%100);
-      if (n < 1000000) return _w(Math.floor(n/1000)) + 'Thousand ' + _w(n%1000);
-      return _w(Math.floor(n/1000000)) + 'Million ' + _w(n%1000000);
+  document.getElementById('lookupBtn').addEventListener('click', function () {
+    var raw  = document.getElementById('lookupAdmNo').value.trim();
+    var term = document.getElementById('lookupTerm').value;
+    var errEl = document.getElementById('lookupError');
+    errEl.style.display = 'none';
+    if (!raw) { errEl.textContent = 'Please enter an admission number.'; errEl.style.display = 'block'; return; }
+    doLookup(raw, term);
+  });
+
+  document.getElementById('lookupAdmNo').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('lookupBtn').click();
+  });
+
+  document.getElementById('savePaymentBtn').addEventListener('click', function () {
+    var amount = parseFloat(document.getElementById('payAmount').value);
+    var errEl  = document.getElementById('paymentError');
+    errEl.style.display = 'none';
+
+    if (!currentLookup) { errEl.textContent = 'Please look up a student first.'; errEl.style.display = 'block'; return; }
+    if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = 'block'; return; }
+    if (amount > currentLookup.balance) { errEl.textContent = 'Amount cannot exceed balance of ' + fmt(currentLookup.balance) + '.'; errEl.style.display = 'block'; return; }
+
+    var method     = document.getElementById('payMethod').value;
+    var date       = document.getElementById('payDate').value || new Date().toISOString().split('T')[0];
+    var parentName = document.getElementById('payParentName').value.trim();
+    var notes      = document.getElementById('payNotes').value.trim();
+    var customReceipt = document.getElementById('payReceiptNo').value.trim();
+    var receiptNo  = customReceipt || ('RCA-RCP-' + Date.now().toString().slice(-6));
+
+    document.getElementById('savePaymentBtn').disabled = true;
+
+    window.RCA_API.call('/payments', {
+      method: 'POST',
+      body: {
+        admission_no: currentAdmNo,
+        amount: amount,
+        fee_type: 'school_fees',
+        term: currentTerm,
+        session: currentLookup.session,
+        payment_date: date,
+        payment_method: method,
+        reference: receiptNo,
+        status: (currentLookup.amount_paid + amount) >= currentLookup.grand_total ? 'paid' : 'partial'
+      }
+    }).then(function() {
+      document.getElementById('savePaymentBtn').disabled = false;
+
+      window.SESSION_PAYMENTS.unshift({
+        admission_no:  currentAdmNo,
+        student_name:  currentLookup.full_name,
+        class_name:    currentLookup.class_name,
+        term:          currentTerm,
+        amount:        amount,
+        method:        method,
+        receipt_no:    receiptNo,
+        parent_name:   parentName,
+        status: (currentLookup.amount_paid + amount) >= currentLookup.grand_total ? 'paid' : 'partial'
+      });
+
+      sessionStorage.setItem('rca_last_receipt', JSON.stringify({
+        admission_no: currentAdmNo,
+        term: currentTerm,
+        receipt_no: receiptNo,
+        payment: { amount: amount, method: method, payment_date: date, receipt_no: receiptNo, parent_name: parentName, notes: notes }
+      }));
+
+      document.getElementById('successMsg').textContent =
+        fmt(amount) + ' recorded for ' + currentLookup.full_name + ' — ' + TERM_LABELS[currentTerm] + '. Receipt: ' + receiptNo;
+      document.getElementById('paymentFormCard').style.display = 'none';
+      document.getElementById('successCard').style.display     = 'block';
+      renderRecentPayments();
+    }).catch(function(e) {
+      document.getElementById('savePaymentBtn').disabled = false;
+      errEl.textContent = 'Could not save payment: ' + e.message;
+      errEl.style.display = 'block';
+    });
+  });
+
+  document.getElementById('cancelPaymentBtn').addEventListener('click', function () {
+    document.getElementById('paymentFormCard').style.display = 'none';
+    document.getElementById('lookupResult').classList.remove('visible');
+    document.getElementById('lookupAdmNo').value = '';
+  });
+
+  document.getElementById('recordAnotherBtn').addEventListener('click', function () {
+    document.getElementById('successCard').style.display = 'none';
+    document.getElementById('lookupResult').classList.remove('visible');
+    document.getElementById('lookupAdmNo').value = '';
+    document.getElementById('lookupError').style.display = 'none';
+  });
+
+  function renderRecentPayments() {
+    var BADGE = { paid: 'badge-paid', partial: 'badge-partial', unpaid: 'badge-unpaid' };
+    var tbody = document.getElementById('recentPaymentsBody');
+    var list  = window.SESSION_PAYMENTS.slice(0, 25);
+
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:2rem">No payments recorded this session yet.</td></tr>';
+      return;
     }
-    const naira = Math.floor(amount);
-    let words = _w(naira).trim() + ' Only';
-    return words;
+    tbody.innerHTML = list.map(function(p) {
+      return '<tr>' +
+        '<td style="font-size:0.75rem;font-weight:600">' + p.receipt_no + '</td>' +
+        '<td>' + p.admission_no + '</td>' +
+        '<td>' + p.student_name + '</td>' +
+        '<td>' + p.class_name + '</td>' +
+        '<td>' + (TERM_LABELS[p.term] || p.term) + '</td>' +
+        '<td class="amount-col">' + fmt(p.amount) + '</td>' +
+        '<td>' + p.method + '</td>' +
+        '<td style="font-size:0.78rem">' + (p.parent_name || '—') + '</td>' +
+        '<td><span class="' + (BADGE[p.status] || '') + '">' + p.status + '</span></td>' +
+      '</tr>';
+    }).join('');
   }
 
-  /* ---- Recreated St. Joseph's Institute globe + accessibility mark ---- */
-  const INSTITUTE_LOGO_SVG = `
-    <svg viewBox="0 0 100 100" width="60" height="60" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="46" fill="none" stroke="#1a3a6b" stroke-width="3"/>
-      <ellipse cx="50" cy="50" rx="20" ry="46" fill="none" stroke="#1a3a6b" stroke-width="2"/>
-      <ellipse cx="50" cy="50" rx="46" ry="20" fill="none" stroke="#1a3a6b" stroke-width="2"/>
-      <line x1="4" y1="50" x2="96" y2="50" stroke="#1a3a6b" stroke-width="2"/>
-      <g transform="translate(29,31) scale(1.7)">
-        <path fill="#1a3a6b" d="M13 5.5c0 .83-.67 1.5-1.5 1.5S10 6.33 10 5.5 10.67 4 11.5 4s1.5.67 1.5 1.5zm-1.5 2.5c-1.2 0-2.05.65-2.5 1.5l-1.5 3H4v2h4.5l1.75-3.5.75 1.5-1.5 3H6v2h4.5l1.32-2.65L13 15.5V20h2v-5.5l-1.9-1.9.65-1.3c.75.9 1.9 1.7 3.25 1.7v-2c-1.1 0-2-.6-2.45-1.5l-.5-1c-.4-.8-1.2-1.3-2.1-1.3zM6 15c0 2.76 2.24 5 5 5 1.7 0 3.2-.85 4.1-2.15l-1.1-1.1C13.36 17.55 12.24 18 11 18c-1.65 0-3-1.35-3-3 0-1.03.53-1.94 1.32-2.48l-.86-1.72C7.15 11.51 6 13.12 6 15z"/>
-      </g>
-    </svg>`;
+  renderRecentPayments();
 
-  /* ---- Build and display a single printable receipt, by row id ---- */
-  window.showReceiptById = function(id) {
-    const payment = currentRows.find(r => r.id === id);
-    if (!payment) return;
-
-    const naira        = Math.floor(payment.amount);
-    const kobo         = String(Math.round((payment.amount - naira) * 100)).padStart(2, '0');
-    const receivedFrom = payment.parent_name || ('Parent / Guardian of ' + payment.full_name);
-    const beingFor     = `${TERM_LABELS[payment.term] || payment.term} School Fees — ${payment.session || '2025/2026'} Academic Session — ${payment.full_name} (${payment.class_name})`;
-
-    const card = document.getElementById('receiptCard');
-    card.style.cssText = 'padding:0;background:transparent;border:none;box-shadow:none;border-radius:0';
-    card.innerHTML = `
-      <div class="receipt-physical">
-        <div class="receipt-physical-watermark">${INSTITUTE_LOGO_SVG}</div>
-
-        <div class="receipt-physical-header">
-          <div class="receipt-physical-logo">${INSTITUTE_LOGO_SVG}</div>
-          <div>
-            <div class="receipt-physical-org-name">St. Joseph's Institute</div>
-            <div class="receipt-physical-org-sub">Subsidiary of Development Projects Coordination</div>
-            <div class="receipt-physical-campuses">
-              St. Joseph Institute Agbani and Enugu Campuses<br>
-              St. Joseph Sc, Tech &amp; Voc College Agbani &amp; Enugu<br>
-              Royal Crystal Academy (Nursery And Primary School, Enugu)<br>
-              Chi's Ugbawka<br>
-              Voc Centre For Youths And Challenged<br>
-              Euro Hostel Independence Layout, Enugu.<br>
-              St. Joseph Hostel Independence Phase II, Enugu.<br>
-              www.st-joseph-enugu.com.ng
-            </div>
-          </div>
-        </div>
-
-        <div class="receipt-physical-offices">
-          <div class="receipt-physical-office">
-            <strong>Agbani Office:</strong><br>
-            Over-rail, Enugu Road,<br>
-            Agbani, Nkanu West L.G.A<br>
-            Enugu State<br>
-            Tel: 09131386243<br>
-            Email: stjosephinstitute1@gmail.com
-          </div>
-          <div class="receipt-physical-office">
-            <strong>Enugu Office:</strong><br>
-            20/22 Amaigbo/Mgbemene Lane<br>
-            Uwani, Enugu.<br>
-            Email: stjosephinstitute1@gmail.com<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;stjosephinstitute01@gmail.com<br>
-            Tel: +234 813 369 7388
-          </div>
-        </div>
-
-        <div class="receipt-physical-badge">
-          <span class="receipt-physical-badge-title">Official Receipt</span>
-        </div>
-        <div class="receipt-physical-serial">${payment.reference || ''}</div>
-
-        <div class="receipt-physical-body">
-          <div class="receipt-physical-row">
-            <div class="receipt-physical-field-inline">
-              <span class="receipt-physical-label">Received from:</span>
-              <span class="receipt-physical-value">${receivedFrom}</span>
-            </div>
-            <div class="receipt-physical-field-inline receipt-physical-field-date">
-              <span class="receipt-physical-label">Date:</span>
-              <span class="receipt-physical-value">${payment.payment_date ? String(payment.payment_date).substring(0, 10) : ''}</span>
-            </div>
-          </div>
-          <div class="receipt-physical-field">
-            <span class="receipt-physical-label">The sum of:</span>
-            <span class="receipt-physical-value">${numberToWords(payment.amount)}</span>
-            <span class="receipt-physical-suffix">Naira</span>
-          </div>
-          <div class="receipt-physical-field">
-            <span class="receipt-physical-label">Being payment for:</span>
-            <span class="receipt-physical-value">${beingFor}</span>
-            <span class="receipt-physical-suffix">Kobo</span>
-          </div>
-
-          <div class="receipt-physical-amount-box">
-            <span class="receipt-physical-amount-caption">Amount in figure</span>
-            <span class="receipt-physical-hash">#</span>
-            <span class="receipt-physical-amount-naira">${naira.toLocaleString()}</span>
-            <span class="receipt-physical-kobo-sep">:</span>
-            <span class="receipt-physical-amount-kobo">${kobo}</span>
-            <span class="receipt-physical-k">K</span>
-          </div>
-
-          <div class="receipt-physical-sig-row">
-            <div class="receipt-physical-sig-block">
-              <div class="receipt-physical-sig-line"></div>
-              <div class="receipt-physical-sig-label">Receiver's Signature</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.getElementById('receiptListSection').style.display  = 'none';
-    document.getElementById('receiptPrintSection').style.display = 'block';
-  };
-
-  document.getElementById('backToListBtn').addEventListener('click', () => {
-    document.getElementById('receiptPrintSection').style.display = 'none';
-    document.getElementById('receiptListSection').style.display  = 'block';
-  });
-
-  document.getElementById('receiptSearchBtn').addEventListener('click', async () => {
-    const term = document.getElementById('receiptTerm').value;
-    const adm  = document.getElementById('receiptSearch').value.trim();
-    const rows = await fetchPayments(term, adm);
-    renderTable(rows, term, adm);
-    document.getElementById('receiptPrintSection').style.display = 'none';
-    document.getElementById('receiptListSection').style.display  = 'block';
-  });
-
-  /* ---- Initial load ---- */
-  (async () => {
-    // Check if coming from payments.html with a specific receipt to show
-    const lastReceipt = sessionStorage.getItem('rca_last_receipt');
-    if (lastReceipt) {
-      try {
-        const lr = JSON.parse(lastReceipt);
-        sessionStorage.removeItem('rca_last_receipt');
-        const rows = await fetchPayments(lr.term, lr.admission_no);
-        renderTable(rows, lr.term, '');
-        const match = rows.find(r => r.reference === lr.receipt_no);
-        if (match) showReceiptById(match.id);
-        return;
-      } catch(e) { /* fall through to default load */ }
+  var urlParams = new URLSearchParams(window.location.search);
+  var urlAdm    = urlParams.get('adm');
+  var urlTerm   = urlParams.get('term');
+  if (urlAdm) {
+    window.switchLookupTab('adm');
+    document.getElementById('lookupAdmNo').value = urlAdm.toUpperCase();
+    if (urlTerm && document.getElementById('lookupTerm').querySelector('[value="' + urlTerm + '"]')) {
+      document.getElementById('lookupTerm').value = urlTerm;
     }
-    const rows = await fetchPayments('term2', '');
-    renderTable(rows, 'term2', '');
-  })();
+    setTimeout(function() { doLookup(urlAdm, document.getElementById('lookupTerm').value); }, 100);
+  }
 });
 </script>
 </body>
