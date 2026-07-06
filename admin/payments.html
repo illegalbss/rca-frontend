@@ -38,10 +38,7 @@
       font-family: var(--font-heading); font-size: 0.78rem; font-weight: 700;
       cursor: not-allowed; opacity: 0.7; margin-top: 10px;
     }
-    /* ── Payment type badge in form ── */
-    .pay-type-tabs {
-      display: flex; gap: 10px; margin-bottom: 6px;
-    }
+    .pay-type-tabs { display: flex; gap: 10px; margin-bottom: 6px; }
     .pay-type-tab {
       flex: 1; padding: 10px 14px; border-radius: 10px;
       border: 2px solid #e5e7eb; background: #f9fafb;
@@ -49,27 +46,17 @@
       cursor: pointer; text-align: center; color: #6b7280;
       transition: all 0.15s ease;
     }
-    .pay-type-tab.active {
-      border-color: #1d4ed8; background: #eff6ff; color: #1d4ed8;
-    }
-    .pay-type-tab.disabled {
-      cursor: not-allowed; opacity: 0.5;
-    }
+    .pay-type-tab.active { border-color: #1d4ed8; background: #eff6ff; color: #1d4ed8; }
+    .pay-type-tab.disabled { cursor: not-allowed; opacity: 0.5; }
     .pay-type-tab .pay-type-status {
       display: block; font-size: 0.65rem; font-weight: 600;
       text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;
       color: #9ca3af;
     }
     .pay-type-tab.active .pay-type-status { color: #1d4ed8; }
-    /* ── Payment settings shortcut ── */
-    .pay-settings-note {
-      font-size: 0.75rem; color: #9ca3af;
-      text-align: right; margin-bottom: 10px;
-    }
+    .pay-settings-note { font-size: 0.75rem; color: #9ca3af; text-align: right; margin-bottom: 10px; }
     .pay-settings-note a { color: #1d4ed8; text-decoration: none; font-weight: 600; }
     .pay-settings-note a:hover { text-decoration: underline; }
-
-    /* ── Lookup tabs ── */
     .lookup-tab {
       padding: 8px 18px; background: none; border: none;
       font-family: var(--font-heading); font-size: 0.82rem; font-weight: 600;
@@ -78,8 +65,6 @@
     }
     .lookup-tab.active { color: #1d4ed8; border-bottom-color: #1d4ed8; }
     .lookup-tab:hover:not(.active) { color: #374151; }
-
-    /* ── Name search dropdown ── */
     .lookup-dropdown {
       position: absolute; top: calc(100% + 2px); left: 0; right: 0;
       background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px;
@@ -95,17 +80,13 @@
     .lookup-dropdown-item:hover { background: #eff6ff; }
     .lookup-dropdown-item .ld-name { font-weight: 600; color: #111827; }
     .lookup-dropdown-item .ld-meta { font-size: 0.72rem; color: #9ca3af; }
-
-    /* ── Name result cards (when searching by class) ── */
     .name-result-card {
       display: flex; align-items: center; justify-content: space-between;
       padding: 8px 12px; border: 1.5px solid #e5e7eb; border-radius: 8px;
       cursor: pointer; background: #fff; transition: all 0.12s;
       font-size: 0.82rem;
     }
-    .name-result-card:hover, .name-result-card.selected {
-      border-color: #1d4ed8; background: #eff6ff;
-    }
+    .name-result-card:hover, .name-result-card.selected { border-color: #1d4ed8; background: #eff6ff; }
     .name-result-card .nrc-name { font-weight: 700; color: #111827; }
     .name-result-card .nrc-adm  { font-size: 0.72rem; color: #9ca3af; }
   </style>
@@ -183,7 +164,6 @@
 
     <main class="admin-main">
 
-      <!-- ── Online Payment Coming Soon Banner ── -->
       <div class="pay-coming-soon" id="onlineComingSoon">
         <div class="pay-cs-icon">&#128179;</div>
         <div>
@@ -198,7 +178,6 @@
         </div>
       </div>
 
-      <!-- ── Payment Mode Indicator ── -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
         <div class="pay-type-tabs" style="max-width:420px;width:100%">
           <div class="pay-type-tab active">
@@ -215,17 +194,14 @@
         </div>
       </div>
 
-      <!-- ── Step 1: Look up student ── -->
       <div class="payment-form-card">
         <div class="payment-form-title">&#128269; Step 1 — Look Up Student</div>
 
-        <!-- Search tabs -->
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;border-bottom:2px solid #f3f4f6;padding-bottom:0">
           <button id="tabByName" class="lookup-tab active" onclick="switchLookupTab('name')">&#128100; Search by Name / Class</button>
           <button id="tabByAdm"  class="lookup-tab"        onclick="switchLookupTab('adm')">&#128203; Admission Number</button>
         </div>
 
-        <!-- Search by Name + Class -->
         <div id="panelByName">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:10px">
             <div class="form-group" style="margin:0">
@@ -259,7 +235,6 @@
           </div>
         </div>
 
-        <!-- Search by Admission Number -->
         <div id="panelByAdm" style="display:none">
           <div class="payment-lookup-grid" style="display:grid;grid-template-columns:1fr 1fr auto;gap:var(--space-md);align-items:flex-end">
             <div class="form-group" style="margin:0">
@@ -302,7 +277,6 @@
         </div>
       </div>
 
-      <!-- ── Step 2: Enter payment details ── -->
       <div class="payment-form-card" id="paymentFormCard" style="display:none">
         <div class="payment-form-title">&#128179; Step 2 — Enter Payment Details (Manual)</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)">
@@ -353,7 +327,6 @@
           </div>
         </div>
 
-        <!-- Future online fields (hidden — prepared for Phase 4) -->
         <input type="hidden" id="payPaymentType"      value="manual">
         <input type="hidden" id="payGateway"          value="">
         <input type="hidden" id="payTransactionId"    value="">
@@ -367,7 +340,6 @@
         <div id="paymentError" style="color:var(--color-danger,#dc2626);font-size:var(--fs-sm);margin-top:var(--space-sm);display:none"></div>
       </div>
 
-      <!-- ── Step 3: Success ── -->
       <div class="payment-form-card" id="successCard" style="display:none">
         <div style="text-align:center;padding:var(--space-xl) 0">
           <div style="font-size:3rem;margin-bottom:var(--space-md)">&#10004;&#65039;</div>
@@ -380,7 +352,6 @@
         </div>
       </div>
 
-      <!-- ── Recent payments this session ── -->
       <div class="finance-table-wrap no-print" style="margin-top:var(--space-xl)">
         <div style="padding:var(--space-md) var(--space-lg);border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between;align-items:center">
           <h3 style="font-size:var(--fs-base);font-weight:700">Recent Payments (This Session)</h3>
@@ -421,15 +392,14 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var allStudents  = window.SAMPLE_STUDENTS || [];
-  var records      = window.PAYMENT_RECORDS || {};
-  var fmt          = window.formatNaira;
+  var fmt          = window.formatNaira || function(n) { return '₦' + Number(n).toLocaleString(); };
   var TERM_LABELS  = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
   var currentAdmNo = '';
   var currentTerm  = '';
+  var currentLookup = null;
 
   if (!window.SESSION_PAYMENTS) window.SESSION_PAYMENTS = [];
 
-  /* ── Populate class filter dropdown ── */
   var classes = [...new Set(allStudents.map(function(s) { return s.class_name; }))].sort();
   var classFilter = document.getElementById('lookupClassFilter');
   classes.forEach(function(c) {
@@ -438,7 +408,6 @@ document.addEventListener('DOMContentLoaded', function () {
     classFilter.appendChild(o);
   });
 
-  /* ── Tab switcher ── */
   window.switchLookupTab = function(tab) {
     document.getElementById('panelByName').style.display = tab === 'name' ? 'block' : 'none';
     document.getElementById('panelByAdm').style.display  = tab === 'adm'  ? 'block' : 'none';
@@ -451,7 +420,6 @@ document.addEventListener('DOMContentLoaded', function () {
     selectedStudent = null;
   };
 
-  /* ── Name live-search ── */
   var selectedStudent = null;
 
   document.getElementById('lookupNameInput').addEventListener('input', function() {
@@ -489,10 +457,8 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  /* ── Class filter also refreshes results ── */
   document.getElementById('lookupClassFilter').addEventListener('change', function() {
     var cls = this.value;
-    var q   = document.getElementById('lookupNameInput').value.trim().toLowerCase();
     var resultsDiv = document.getElementById('nameSearchResults');
     var listDiv    = document.getElementById('nameResultsList');
     selectedStudent = null;
@@ -523,14 +489,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Close dropdown when clicking outside
   document.addEventListener('click', function(e) {
     if (!e.target.closest('#lookupNameInput') && !e.target.closest('#nameDropdown')) {
       document.getElementById('nameDropdown').style.display = 'none';
     }
   });
 
-  /* ── Name search Look Up button ── */
   document.getElementById('lookupBtnName').addEventListener('click', function() {
     var errEl = document.getElementById('lookupError');
     errEl.style.display = 'none';
@@ -542,7 +506,6 @@ document.addEventListener('DOMContentLoaded', function () {
     doLookup(selectedStudent.admission_no, document.getElementById('lookupTermName').value);
   });
 
-  /* ── Role guard — only accountant / ict_admin can record ── */
   var cu      = window.CURRENT_USER;
   var cuRoles = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
   var canRecord = cuRoles.some(function(r) { return r === 'ict_admin' || r === 'accountant'; });
@@ -551,71 +514,70 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.payment-form-card') && (document.querySelector('.payment-form-card').style.pointerEvents = 'none');
   }
 
-  /* ── Online payments coming-soon visibility ── */
-  var settings = window.PAYMENT_SETTINGS || {};
-  if (settings.mode === 'manual_and_online') {
-    document.getElementById('onlineComingSoon').style.display = 'none';
-  }
-
-  /* ── Shared lookup function ── */
   function doLookup(admNo, term) {
     var errEl = document.getElementById('lookupError');
     errEl.style.display = 'none';
+    errEl.textContent = 'Looking up...';
+    errEl.style.display = 'block';
+    errEl.style.color = '#6b7280';
 
-    var student = allStudents.find(function(s) { return s.admission_no.toUpperCase() === admNo.toUpperCase(); });
-    if (!student) { errEl.textContent = 'No student found with admission number "' + admNo + '".'; errEl.style.display = 'block'; return; }
-
-    var breakdown = window.computeFeeBreakdown(student.admission_no, term);
-    var key = student.admission_no + '|' + term;
-    var rec = records[key];
-    if (!rec) {
-      rec = { amount_expected: breakdown.grand_total, amount_paid: 0, balance: breakdown.grand_total, status: 'unpaid', payments: [] };
-      records[key] = rec;
+    if (!window.RCA_API) {
+      errEl.textContent = 'Cannot reach the server. Please check your connection.';
+      errEl.style.color = '#dc2626';
+      return;
     }
 
-    currentAdmNo = student.admission_no;
-    currentTerm  = term;
+    window.RCA_API.call('/payments/lookup?admission_no=' + encodeURIComponent(admNo) + '&term=' + term)
+      .then(function(data) {
+        errEl.style.display = 'none';
+        errEl.style.color = '';
+        currentAdmNo = data.admission_no;
+        currentTerm  = term;
+        currentLookup = data;
 
-    document.getElementById('lookupName').textContent    = student.full_name;
-    document.getElementById('lookupMeta').textContent    = student.class_name + ' · ' + student.admission_no + ' · ' + TERM_LABELS[term];
-    document.getElementById('lookupTotal').textContent   = fmt(rec.amount_expected);
-    document.getElementById('lookupPaid').textContent    = fmt(rec.amount_paid);
-    document.getElementById('lookupBalance').textContent = fmt(rec.balance);
+        document.getElementById('lookupName').textContent = data.full_name;
+        document.getElementById('lookupMeta').textContent = data.class_name + ' · ' + data.admission_no + ' · ' + TERM_LABELS[term];
+        document.getElementById('lookupTotal').textContent   = fmt(data.grand_total);
+        document.getElementById('lookupPaid').textContent    = fmt(data.amount_paid);
+        document.getElementById('lookupBalance').textContent = fmt(data.balance);
 
-    var bkd = document.getElementById('lookupBreakdown');
-    if (breakdown && breakdown.lines) {
-      bkd.innerHTML = breakdown.lines.map(function(l) {
-        return '<span style="margin-right:16px">' + l.label + ': <strong>' + fmt(l.amount) + '</strong></span>';
-      }).join('');
-    }
+        var bkd = document.getElementById('lookupBreakdown');
+        bkd.innerHTML = data.lines.map(function(l) {
+          return '<span style="margin-right:16px">' + l.label + ': <strong>' + fmt(l.amount) + '</strong></span>';
+        }).join('');
 
-    document.getElementById('lookupDiscount').innerHTML = breakdown && breakdown.has_sibling_discount
-      ? '&#128106; Sibling discount applied (' + breakdown.sibling_count + ' children enrolled) — school fees reduced to &#8358;15,000'
-      : '';
+        document.getElementById('lookupDiscount').innerHTML = data.has_sibling_discount
+          ? '&#128106; Sibling discount applied (' + data.sibling_count + ' children enrolled) — school fees reduced to ' + fmt(15000)
+          : '';
 
-    document.getElementById('lookupResult').classList.add('visible');
-    document.getElementById('successCard').style.display = 'none';
+        document.getElementById('lookupResult').classList.add('visible');
+        document.getElementById('successCard').style.display = 'none';
 
-    if (rec.balance <= 0) {
-      document.getElementById('paymentFormCard').style.display = 'none';
-      errEl.textContent = student.full_name + ' has already paid in full for this term.';
-      errEl.style.display = 'block';
-    } else {
-      document.getElementById('payStudentName').value = student.full_name;
-      document.getElementById('payAdmNo').value       = student.admission_no;
-      document.getElementById('payClass').value       = student.class_name;
-      document.getElementById('payTermLabel').value   = TERM_LABELS[term];
-      document.getElementById('payAmount').value      = rec.balance;
-      document.getElementById('payAmount').max        = rec.balance;
-      document.getElementById('payDate').value        = new Date().toISOString().split('T')[0];
-      document.getElementById('payReceiptNo').value   = '';
-      document.getElementById('payParentName').value  = '';
-      document.getElementById('payNotes').value       = '';
-      document.getElementById('paymentFormCard').style.display = 'block';
-    }
+        if (data.balance <= 0) {
+          document.getElementById('paymentFormCard').style.display = 'none';
+          errEl.textContent = data.full_name + ' has already paid in full for this term.';
+          errEl.style.display = 'block';
+        } else {
+          document.getElementById('payStudentName').value = data.full_name;
+          document.getElementById('payAdmNo').value       = data.admission_no;
+          document.getElementById('payClass').value       = data.class_name;
+          document.getElementById('payTermLabel').value   = TERM_LABELS[term];
+          document.getElementById('payAmount').value      = data.balance;
+          document.getElementById('payAmount').max        = data.balance;
+          document.getElementById('payDate').value        = new Date().toISOString().split('T')[0];
+          document.getElementById('payReceiptNo').value   = '';
+          document.getElementById('payParentName').value  = '';
+          document.getElementById('payNotes').value       = '';
+          document.getElementById('paymentFormCard').style.display = 'block';
+        }
+      })
+      .catch(function(e) {
+        errEl.textContent = e.message || 'No student found with that admission number.';
+        errEl.style.color = '#dc2626';
+        errEl.style.display = 'block';
+      });
   }
 
-  /* ── Admission number Look Up button ── */
   document.getElementById('lookupBtn').addEventListener('click', function () {
     var raw  = document.getElementById('lookupAdmNo').value.trim();
     var term = document.getElementById('lookupTerm').value;
@@ -625,81 +587,73 @@ document.addEventListener('DOMContentLoaded', function () {
     doLookup(raw, term);
   });
 
-  /* Enter key on admission number field ── */
   document.getElementById('lookupAdmNo').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') document.getElementById('lookupBtn').click();
   });
 
-  /* ── Save payment ── */
   document.getElementById('savePaymentBtn').addEventListener('click', function () {
     var amount = parseFloat(document.getElementById('payAmount').value);
     var errEl  = document.getElementById('paymentError');
     errEl.style.display = 'none';
 
-    var key = currentAdmNo + '|' + currentTerm;
-    var rec = records[key];
-
+    if (!currentLookup) { errEl.textContent = 'Please look up a student first.'; errEl.style.display = 'block'; return; }
     if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = 'block'; return; }
-    if (amount > rec.balance)   { errEl.textContent = 'Amount cannot exceed balance of ' + fmt(rec.balance) + '.'; errEl.style.display = 'block'; return; }
-
-    // Use standardised receipt counter (RCA-RCP-XXXX)
-    var customReceipt = document.getElementById('payReceiptNo').value.trim();
-    var receiptNo     = customReceipt || window.nextReceiptNo();
+    if (amount > currentLookup.balance) { errEl.textContent = 'Amount cannot exceed balance of ' + fmt(currentLookup.balance) + '.'; errEl.style.display = 'block'; return; }
 
     var method     = document.getElementById('payMethod').value;
     var date       = document.getElementById('payDate').value || new Date().toISOString().split('T')[0];
     var parentName = document.getElementById('payParentName').value.trim();
     var notes      = document.getElementById('payNotes').value.trim();
-    var recorder   = (window.CURRENT_USER && window.CURRENT_USER.full_name) || 'Accountant';
+    var customReceipt = document.getElementById('payReceiptNo').value.trim();
+    var receiptNo  = customReceipt || ('RCA-RCP-' + Date.now().toString().slice(-6));
 
-    var payment = {
-      date:              date,
-      amount:            amount,
-      method:            method,
-      payment_type:      'manual',
-      gateway:           null,
-      transaction_id:    null,
-      gateway_reference: null,
-      payment_status:    'success',
-      receipt_no:        receiptNo,
-      recorded_by:       recorder,
-      parent_name:       parentName,
-      notes:             notes
-    };
+    document.getElementById('savePaymentBtn').disabled = true;
 
-    rec.payments.push(payment);
-    rec.amount_paid += amount;
-    rec.balance     -= amount;
-    rec.status       = rec.balance <= 0 ? 'paid' : 'partial';
-    if (window.RCA) window.RCA.save('payments');
-    if (window.logActivity) window.logActivity('payment', 'Recorded payment ' + receiptNo + ' — ' + fmt(amount) + ' for ' + currentAdmNo, 'payments');
+    window.RCA_API.call('/payments', {
+      method: 'POST',
+      body: {
+        admission_no: currentAdmNo,
+        amount: amount,
+        fee_type: 'school_fees',
+        term: currentTerm,
+        session: currentLookup.session,
+        payment_date: date,
+        payment_method: method,
+        reference: receiptNo,
+        status: (currentLookup.amount_paid + amount) >= currentLookup.grand_total ? 'paid' : 'partial'
+      }
+    }).then(function() {
+      document.getElementById('savePaymentBtn').disabled = false;
 
-    var student = allStudents.find(function(s) { return s.admission_no === currentAdmNo; });
-    window.SESSION_PAYMENTS.unshift({
-      admission_no:  currentAdmNo,
-      student_name:  student ? student.full_name : currentAdmNo,
-      class_name:    student ? student.class_name : '',
-      term:          currentTerm,
-      amount:        amount,
-      method:        method,
-      receipt_no:    receiptNo,
-      parent_name:   parentName,
-      status:        rec.status
+      window.SESSION_PAYMENTS.unshift({
+        admission_no:  currentAdmNo,
+        student_name:  currentLookup.full_name,
+        class_name:    currentLookup.class_name,
+        term:          currentTerm,
+        amount:        amount,
+        method:        method,
+        receipt_no:    receiptNo,
+        parent_name:   parentName,
+        status: (currentLookup.amount_paid + amount) >= currentLookup.grand_total ? 'paid' : 'partial'
+      });
+
+      sessionStorage.setItem('rca_last_receipt', JSON.stringify({
+        admission_no: currentAdmNo,
+        term: currentTerm,
+        receipt_no: receiptNo,
+        payment: { amount: amount, method: method, payment_date: date, receipt_no: receiptNo, parent_name: parentName, notes: notes }
+      }));
+
+      document.getElementById('successMsg').textContent =
+        fmt(amount) + ' recorded for ' + currentLookup.full_name + ' — ' + TERM_LABELS[currentTerm] + '. Receipt: ' + receiptNo;
+      document.getElementById('paymentFormCard').style.display = 'none';
+      document.getElementById('successCard').style.display     = 'block';
+      renderRecentPayments();
+    }).catch(function(e) {
+      document.getElementById('savePaymentBtn').disabled = false;
+      errEl.textContent = 'Could not save payment: ' + e.message;
+      errEl.style.display = 'block';
     });
-
-    sessionStorage.setItem('rca_last_receipt', JSON.stringify({
-      admission_no: currentAdmNo,
-      term:         currentTerm,
-      receipt_no:   receiptNo,
-      payment:      payment
-    }));
-
-    var studentName = student ? student.full_name : currentAdmNo;
-    document.getElementById('successMsg').textContent =
-      fmt(amount) + ' recorded for ' + studentName + ' — ' + TERM_LABELS[currentTerm] + '. Receipt: ' + receiptNo;
-    document.getElementById('paymentFormCard').style.display = 'none';
-    document.getElementById('successCard').style.display     = 'block';
-    renderRecentPayments();
   });
 
   document.getElementById('cancelPaymentBtn').addEventListener('click', function () {
@@ -715,7 +669,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('lookupError').style.display = 'none';
   });
 
-  /* ── Recent payments table ── */
   function renderRecentPayments() {
     var BADGE = { paid: 'badge-paid', partial: 'badge-partial', unpaid: 'badge-unpaid' };
     var tbody = document.getElementById('recentPaymentsBody');
@@ -742,18 +695,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   renderRecentPayments();
 
-  /* ── Auto-lookup if URL contains ?adm=&term= (from debtors table) ── */
   var urlParams = new URLSearchParams(window.location.search);
   var urlAdm    = urlParams.get('adm');
   var urlTerm   = urlParams.get('term');
   if (urlAdm) {
-    // Switch to admission number tab and pre-fill
     window.switchLookupTab('adm');
     document.getElementById('lookupAdmNo').value = urlAdm.toUpperCase();
     if (urlTerm && document.getElementById('lookupTerm').querySelector('[value="' + urlTerm + '"]')) {
       document.getElementById('lookupTerm').value = urlTerm;
     }
-    // Trigger lookup automatically
     setTimeout(function() { doLookup(urlAdm, document.getElementById('lookupTerm').value); }, 100);
   }
 });
