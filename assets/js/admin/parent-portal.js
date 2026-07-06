@@ -19,6 +19,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
   const SESSION = '2025/2026';
 
+  /* ============================================
+     PAGE NAVIGATION (switches between .pp-page sections)
+     ============================================ */
+  window.showPage = function(pageId, linkEl) {
+    document.querySelectorAll('.pp-page').forEach(p => p.style.display = 'none');
+    const target = document.getElementById('page-' + pageId);
+    if (target) target.style.display = 'block';
+
+    document.querySelectorAll('[data-page]').forEach(l => l.classList.remove('active'));
+    if (linkEl) linkEl.classList.add('active');
+    else {
+      const matching = document.querySelector(`[data-page="${pageId}"]`);
+      if (matching) matching.classList.add('active');
+    }
+  };
+
   let myChildren = [];
   let selectedChild = null;
   let selectedResultChild = null;
@@ -209,7 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     content.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Loading…</p>';
 
-    const child = myChildren[0]; // primary child shown; could add tabs later if needed
+    const child = myChildren[0];
     try {
       const data = await window.RCA_API.call(`/attendance/summary/${encodeURIComponent(child.admission_no)}`);
       const rows = data.summary || [];
