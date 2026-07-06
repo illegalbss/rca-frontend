@@ -33,7 +33,7 @@ html, body { height: 100%; }
   top: 0; left: 0;
   width: 240px;
   height: 100%;
-  background: #0f1b2d;
+  background: var(--color-primary-dark);
   z-index: 0;
   pointer-events: none;
 }
@@ -42,7 +42,7 @@ html, body { height: 100%; }
    SIDEBAR — fixed, always full height, no gap
    ============================================ */
 .admin-sidebar {
-  background: #0f1b2d;
+  background: var(--color-primary-dark);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -89,7 +89,7 @@ html, body { height: 100%; }
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-light) 100%);
   color: #fff;
   font-weight: 700;
   font-size: 1rem;
@@ -179,7 +179,7 @@ html, body { height: 100%; }
 }
 
 .sidebar-link.active {
-  background: #1d4ed8;
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -188,7 +188,7 @@ html, body { height: 100%; }
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: 3px;
-  background: #f4b400;
+  background: var(--color-secondary);
 }
 
 .badge-soon {
