@@ -65,7 +65,7 @@
 
   async function getStudentResults(studentId, term = 'term2') {
     try {
-      return await apiCall(`/students/${studentId}/results?term=${term}`);
+      return await apiCall(`/students/${encodeURIComponent(studentId)}/results?term=${term}`);
     } catch (e) {
       console.warn('API unavailable, using localStorage:', e.message);
       const student = (window.SAMPLE_STUDENTS || []).find(s => s.id == studentId || s.admission_no == studentId);
@@ -91,7 +91,7 @@
 
   async function saveScore(studentId, subjectCode, term, scores) {
     try {
-      return await apiCall(`/scores/${studentId}/${subjectCode}/${term}`, {
+      return await apiCall(`/scores/${encodeURIComponent(studentId)}/${subjectCode}/${term}`, {
         method: 'PUT',
         body: scores
       });
@@ -281,7 +281,7 @@
 
   async function getAttendanceSummary(studentId) {
     try {
-      const data = await apiCall(`/attendance/summary/${studentId}`);
+      const data = await apiCall(`/attendance/summary/${encodeURIComponent(studentId)}`);
       return data.summary;
     } catch (e) {
       console.warn('API unavailable:', e.message);

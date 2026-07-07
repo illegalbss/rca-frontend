@@ -1,33 +1,28 @@
 /* ============================================
    SCORE ENTRY — score-entry.js
    ============================================
-   Depends on window.SAMPLE_STUDENTS, window.SCHOOL_CLASSES,
-   window.SCHOOL_SUBJECTS, window.CA_COMPONENT_MAX, window.EXAM_MAX,
-   window.computeFinalScore, and window.SAMPLE_RESULTS
-   (see script order in score-entry.html).
+   Roster comes from RCA_API.getStudents(); scores for the selected
+   class+subject+term come from RCA_API.getScores() and are cached in
+   `results`, keyed by admission_no -> subjectId, using the same
+   computeFinalScore() from subjects-and-grading.js so a freshly-typed
+   score and one loaded from the database compute identically.
 
    CORE IDEA: pick a class + subject, see every pupil's scores in
    an editable grid. Typing in any score field immediately
    recalculates that row's CA Total, Final Score, and Grade -
    no "calculate" button needed, since computeFinalScore() is cheap
    to re-run on every keystroke for a class-sized list (~40 rows).
-
-   This page WRITES into the same SAMPLE_RESULTS object that
-   sample-results.js generated, using the exact same computeFinalScore()
-   function from subjects-and-grading.js - so a score entered here
-   and a score from the generator are computed identically, and
-   the Report Card page (built next) can read from this same object.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  const allStudents = window.SAMPLE_STUDENTS || [];
+  let allStudents  = await window.RCA_API.getStudents();
   const allClasses  = window.SCHOOL_CLASSES || [];
   const allSubjects = window.SCHOOL_SUBJECTS || [];
   const caMax        = window.CA_COMPONENT_MAX || { test: 10, assessment: 10, project: 10, midterm: 10 };
   const examMax       = window.EXAM_MAX || 60;
   const computeFinalScore = window.computeFinalScore;
-  const results        = window.SAMPLE_RESULTS || {};
+  const results        = {}; // populated per class+subject+term by loadScores()
 
   let hasUnsavedChanges = false;
 
@@ -141,9 +136,28 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
+     LOAD real scores for the current class+subject+term from the API
+     and populate the `results` cache that getResultRecord() reads from.
+     -------------------------------------------- */
+  async function loadScores(className, subjectId, term) {
+    const rows = await window.RCA_API.getScores(className, subjectId, term);
+    (rows || []).forEach(r => {
+      if (!results[r.admission_no]) results[r.admission_no] = {};
+      const blank = {
+        test: Number(r.test) || 0,
+        assessment: Number(r.assessment) || 0,
+        project: Number(r.project) || 0,
+        midterm: Number(r.midterm) || 0,
+        exam: Number(r.exam) || 0
+      };
+      results[r.admission_no][subjectId] = { ...blank, ...computeFinalScore(blank) };
+    });
+  }
+
+  /* --------------------------------------------
      CORE RENDER
      -------------------------------------------- */
-  function renderTable() {
+  async function renderTable() {
     const className = classSelect.value;
     const subjectId = subjectSelect.value;
     if (!className || !subjectId) return;
@@ -160,6 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
       tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-danger);padding:2rem">&#128683; You are not assigned to this subject.</td></tr>';
       return;
     }
+
+    await loadScores(className, subjectId, termSelect.value);
 
     let students = allStudents.filter(s => s.class_name === className);
 
@@ -186,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tableBody.innerHTML = students.map(student => {
       const r = getResultRecord(student.admission_no, subjectId);
       return `
-        <tr data-admission="${student.admission_no}">
+        <tr class="score-row" data-admission="${student.admission_no}">
           <td class="col-avatar" data-label=""><div class="row-avatar">${getInitials(student.full_name)}</div></td>
           <td class="pupil-name-cell" data-label="">${student.full_name}</td>
           <td data-label="Test /${caMax.test}"><input type="number" class="score-input ca-input" data-component="test" min="0" max="${caMax.test}" value="${r.test}"></td>
@@ -356,9 +372,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const term        = termSelect.value;
 
       // Get all score rows and send each to API
-      const rows = document.querySelectorAll('.score-row');
+      const rows = tableBody.querySelectorAll('.score-row');
       for (const row of rows) {
-        const studentId = row.dataset.admissionNo;
+        const studentId = row.getAttribute('data-admission');
         if (!studentId) continue;
         const inputs = row.querySelectorAll('input[type="number"]');
         if (!inputs.length) continue;
