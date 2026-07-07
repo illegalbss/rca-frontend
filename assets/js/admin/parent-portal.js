@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     list.innerHTML = myChildren.map(c => `
       <div class="pp-card" style="padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:12px">
-        <div style="width:52px;height:52px;border-radius:50%;background:#1d4ed8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">
+        <div style="width:52px;height:52px;border-radius:50%;background:var(--color-primary-dark);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">
           ${c.full_name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase()}
         </div>
         <div>
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     wrap.style.display = 'block';
     tabs.innerHTML = myChildren.map((c, i) => `
-      <button data-adm="${c.admission_no}" class="pp-child-tab" style="padding:8px 16px;border-radius:8px;border:2px solid ${i===0?'#1d4ed8':'#e5e7eb'};background:${i===0?'#eff6ff':'#fff'};color:${i===0?'#1d4ed8':'#374151'};font-weight:600;font-size:0.82rem;cursor:pointer">
+      <button data-adm="${c.admission_no}" class="pp-child-tab" style="padding:8px 16px;border-radius:8px;border:2px solid ${i===0?'var(--color-primary)':'#e5e7eb'};background:${i===0?'rgba(107,15,26,0.08)':'#fff'};color:${i===0?'var(--color-primary)':'#374151'};font-weight:600;font-size:0.82rem;cursor:pointer">
         ${c.full_name}
       </button>
     `).join('');
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         tabs.querySelectorAll('.pp-child-tab').forEach(b => {
           b.style.borderColor = '#e5e7eb'; b.style.background = '#fff'; b.style.color = '#374151';
         });
-        btn.style.borderColor = '#1d4ed8'; btn.style.background = '#eff6ff'; btn.style.color = '#1d4ed8';
+        btn.style.borderColor = 'var(--color-primary)'; btn.style.background = 'rgba(107,15,26,0.08)'; btn.style.color = 'var(--color-primary)';
         onSelect(myChildren.find(c => c.admission_no === btn.dataset.adm));
       });
     });
@@ -139,8 +139,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       cards.innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px">
-          <div style="background:#eff6ff;border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:1.1rem;font-weight:700;color:#1d4ed8">${fmt(data.grand_total)}</div>
+          <div style="background:rgba(107,15,26,0.08);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:1.1rem;font-weight:700;color:var(--color-primary)">${fmt(data.grand_total)}</div>
             <div style="font-size:0.72rem;color:#6b7280">Total Fee (${TERM_LABELS.term2})</div>
           </div>
           <div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center">
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#059669;font-size:1.3rem">${thisTerm.present}</div><div style="font-size:0.75rem;color:#6b7280">Present</div></div>
           <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#dc2626;font-size:1.3rem">${thisTerm.absent}</div><div style="font-size:0.75rem;color:#6b7280">Absent</div></div>
           <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#d97706;font-size:1.3rem">${thisTerm.late}</div><div style="font-size:0.75rem;color:#6b7280">Late</div></div>
-          <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#1d4ed8;font-size:1.3rem">${thisTerm.pct}%</div><div style="font-size:0.75rem;color:#6b7280">Attendance Rate</div></div>
+          <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:var(--color-primary);font-size:1.3rem">${thisTerm.pct}%</div><div style="font-size:0.75rem;color:#6b7280">Attendance Rate</div></div>
         </div>`;
     } catch (e) {
       content.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem">Attendance data not available yet.</p>`;

@@ -19,7 +19,7 @@
   top: 0; left: 0;
   width: 220px;
   min-height: 100%;
-  background: #1a3a5c;
+  background: var(--color-primary-dark);
   z-index: 0;
   pointer-events: none;
 }
@@ -28,7 +28,7 @@
 .pp-sidebar {
   width: 220px;
   flex-shrink: 0;
-  background: #1a3a5c;
+  background: var(--color-primary-dark);
   position: relative;
   z-index: 1;
   display: flex;
@@ -128,7 +128,7 @@
   background: none;
   border: none;
   font-size: 1.4rem;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
   cursor: pointer;
   padding: 4px;
 }
@@ -137,7 +137,7 @@
   font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
 }
 
 .pp-topbar-right {
@@ -173,7 +173,7 @@
 .pp-user-avatar {
   width: 34px; height: 34px;
   border-radius: 50%;
-  background: #1a3a5c;
+  background: var(--color-primary-dark);
   color: #fff;
   font-weight: 700;
   font-size: 0.8rem;
@@ -186,7 +186,7 @@
 .pp-user-name {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
 }
 
 /* ---- Content area ---- */
@@ -215,7 +215,7 @@
 .pp-welcome h2 {
   font-family: var(--font-heading);
   font-size: 1.4rem;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
   margin-bottom: 2px;
 }
 
@@ -250,7 +250,7 @@
   font-family: var(--font-heading);
   font-size: 1.6rem;
   font-weight: 700;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
   display: block;
   margin-bottom: 4px;
 }
@@ -261,7 +261,7 @@
 
 .pp-stat-link {
   font-size: 0.75rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   text-decoration: none;
   cursor: pointer;
   background: none;
@@ -300,12 +300,12 @@
   font-family: var(--font-heading);
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
 }
 
 .pp-card-link {
   font-size: 0.75rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   text-decoration: none;
   cursor: pointer;
   background: none;
@@ -405,7 +405,7 @@
 .pp-child-avatar-lg {
   width: 52px; height: 52px;
   border-radius: 50%;
-  background: #1a3a5c;
+  background: var(--color-primary-dark);
   color: #fff;
   font-weight: 700;
   font-size: 1.1rem;
@@ -429,7 +429,7 @@
 
 .pp-view-profile-btn {
   font-size: 0.75rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   background: none;
   border: none;
   cursor: pointer;
@@ -445,7 +445,7 @@
   align-items: center;
   gap: 8px;
   font-size: 0.8rem;
-  color: #3b82f6;
+  color: var(--color-primary);
   font-weight: 500;
   cursor: pointer;
   background: none;
@@ -528,7 +528,7 @@
   font-family: var(--font-heading);
   font-size: 0.9rem;
   font-weight: 700;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
 }
 
 .pp-table {
@@ -595,7 +595,7 @@
   font-family: var(--font-heading);
   font-size: 1.4rem;
   font-weight: 700;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
   display: block;
 }
 
@@ -625,7 +625,7 @@
 
 .pp-newsletter-img {
   height: 120px;
-  background: linear-gradient(135deg, #1a3a5c 0%, #2d7a47 100%);
+  background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-secondary) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -646,14 +646,14 @@
 }
 
 .pp-payment-gate-icon { font-size: 3rem; margin-bottom: 12px; }
-.pp-payment-gate h3  { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: #1a3a5c; }
+.pp-payment-gate h3  { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; color: var(--color-primary-dark); }
 .pp-payment-gate p   { font-size: 0.875rem; color: #64748b; margin-bottom: 12px; }
 
 .pp-fee-amount {
   font-family: var(--font-heading);
   font-size: 2.2rem;
   font-weight: 700;
-  color: #1a3a5c;
+  color: var(--color-primary-dark);
   margin: 12px 0;
 }
 
