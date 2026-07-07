@@ -1,21 +1,20 @@
 /* ============================================
    DISCIPLINE RECORDS — discipline.js
    ============================================
-   Depends on window.SAMPLE_STUDENTS, window.SCHOOL_CLASSES,
-   and window.SAMPLE_DISCIPLINE (see script order in
-   discipline.html).
+   Roster comes from RCA_API.getStudents(); incidents come from the
+   real `discipline` table via RCA_API.getDiscipline()/logDiscipline().
 
    Same two-view pattern as students.js: a class picker, then
    a per-class detail view - but here the detail view is an
    INCIDENT LOG (filterable by severity) rather than a pupil
    roster, and there's a NEW piece: a modal FORM for logging
-   new incidents, which appends to our in-memory data array.
+   new incidents, which POSTs to the real backend.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
   // Only count ACTIVE students
-  const allStudents = (window.SAMPLE_STUDENTS || []).filter(s =>
+  const allStudents = (await window.RCA_API.getStudents()).filter(s =>
     s.status !== 'archived' && s.status !== 'inactive' && s.status !== 'removed'
   );
 
@@ -46,14 +45,28 @@ document.addEventListener('DOMContentLoaded', () => {
     allClasses = [];
   }
 
-  // We keep this as a mutable array (let, not const-locked-down) because
-  // logging a new incident needs to ADD to it - unlike Students/Teachers/
-  // Classes pages, which only ever read existing sample data.
-  let allIncidents = window.SAMPLE_DISCIPLINE || [];
+  // Fetched from the real `discipline` table and re-fetched after
+  // logging a new incident so every view stays in sync with the DB.
+  let allIncidents = [];
+
+  async function loadIncidents() {
+    const rows = await window.RCA_API.getDiscipline();
+    allIncidents = rows.map(r => ({
+      id: r.id,
+      student_admission_no: r.admission_no,
+      student_name: r.student_name || r.admission_no,
+      class_name: r.class_name,
+      date: r.incident_date,
+      severity: r.severity,
+      description: r.description,
+      action_taken: r.action_taken,
+      reported_by: r.reported_by_name || '—',
+      parent_notified: r.parent_notified
+    }));
+  }
 
   let currentClass = null;
   let currentSeverityFilter = 'all';
-  let nextIncidentId = allIncidents.length + 1;
 
   /* --------------------------------------------
      ELEMENT REFERENCES
@@ -326,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
     document.getElementById('incidentCloseBtn').addEventListener('click', () => overlay.remove());
 
-    document.getElementById('incidentForm').addEventListener('submit', e => {
+    document.getElementById('incidentForm').addEventListener('submit', async e => {
       e.preventDefault();
       const admNo    = document.getElementById('incident_student').value;
       const date     = document.getElementById('incident_date').value;
@@ -344,19 +357,28 @@ document.addEventListener('DOMContentLoaded', () => {
       errEl.style.display = 'none';
 
       const student = allStudents.find(s => s.admission_no === admNo);
-      allIncidents.push({
-        id: nextIncidentId++,
-        student_admission_no: admNo,
-        student_name: student?.full_name || admNo,
-        class_name: currentClass,
-        date, severity, description: desc,
-        action_taken: action,
-        reported_by: 'You (current session)',
-        parent_notified: notified
-      });
+      const submitBtn = overlay.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      try {
+        await window.RCA_API.logDiscipline({
+          admission_no: admNo,
+          class_name: currentClass,
+          date, severity,
+          description: desc,
+          action_taken: action,
+          parent_notified: notified
+        });
+      } catch (err) {
+        submitBtn.disabled = false;
+        errEl.textContent = 'Could not save incident: ' + err.message;
+        errEl.style.display = 'block';
+        return;
+      }
 
       if (window.logActivity) window.logActivity('create', `Discipline incident logged: ${student?.full_name || admNo} (${currentClass}) — ${capitalize(severity)}`, 'discipline');
       overlay.remove();
+      await loadIncidents();
       renderIncidentTable();
       renderClassCards();
     });
@@ -377,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* --------------------------------------------
      INITIALIZE
      -------------------------------------------- */
+  await loadIncidents();
   renderClassCards();
 
 });

@@ -304,6 +304,24 @@
   }
 
   /* ============================================
+     DISCIPLINE
+     ============================================ */
+  async function getDiscipline(className) {
+    try {
+      const qs = className ? `?class=${encodeURIComponent(className)}` : '';
+      const data = await apiCall(`/discipline${qs}`);
+      return data.incidents;
+    } catch (e) {
+      console.warn('API unavailable:', e.message);
+      return [];
+    }
+  }
+
+  async function logDiscipline(incident) {
+    return apiCall('/discipline', { method: 'POST', body: incident });
+  }
+
+  /* ============================================
      CHANGE PASSWORD
      ============================================ */
   async function changePassword(currentPassword, newPassword) {
@@ -354,6 +372,10 @@
 
     // Logs
     getActivityLogs,
+
+    // Discipline
+    getDiscipline,
+    logDiscipline,
 
     // Auth
     changePassword,
