@@ -134,12 +134,22 @@
   <script src="../assets/js/admin/parent-manager.js"></script>
   <script src="../assets/js/admin/login.js"></script>
   <script>
-    // Populate brand stats from real data
-    document.addEventListener('DOMContentLoaded', () => {
+    // Populate brand stats from the real database — no login required,
+    // this hits a public, unauthenticated stats endpoint.
+    document.addEventListener('DOMContentLoaded', async () => {
       const p = document.getElementById('brandStatPupils');
       const s = document.getElementById('brandStatStaff');
-      if (p && window.SAMPLE_STUDENTS) p.textContent = window.SAMPLE_STUDENTS.length;
-      if (s && window.SAMPLE_TEACHERS) s.textContent = window.SAMPLE_TEACHERS.length;
+      const c = document.getElementById('brandStatClasses');
+      try {
+        const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
+        const res = await fetch(`${apiUrl}/public/stats`);
+        const data = await res.json();
+        if (p && typeof data.pupils === 'number')  p.textContent = data.pupils;
+        if (s && typeof data.staff === 'number')   s.textContent = data.staff;
+        if (c && typeof data.classes === 'number') c.textContent = data.classes;
+      } catch (e) {
+        console.warn('Could not load live stats:', e.message);
+      }
     });
   </script>
 </body>
