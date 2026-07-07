@@ -208,7 +208,47 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      content.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem">Results for ${child.full_name} — ${TERM_LABELS[term]} will appear here once your school's results system is fully connected.</p>`;
+      // Results aren't released to parents until the Head Teacher has
+      // approved this class's results for the term (result_approvals).
+      const approvals = (await window.RCA_API.getApprovals(term)) || [];
+      const approval = approvals.find(a => a.class_name === child.class_name);
+      if (!approval || approval.status !== 'approved') {
+        content.innerHTML = `
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:20px;text-align:center;color:#1e40af">
+            📋 Results for ${TERM_LABELS[term]} haven't been approved for release yet. Please check back soon.
+          </div>`;
+        return;
+      }
+
+      const resultsData = await window.RCA_API.getStudentResults(child.admission_no, term);
+      const scores = resultsData?.scores || [];
+
+      if (scores.length === 0) {
+        content.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem">No scores recorded yet for ${child.full_name} — ${TERM_LABELS[term]}.</p>`;
+        return;
+      }
+
+      const total = scores.reduce((sum, s) => sum + Number(s.final_score || 0), 0);
+      const average = (total / scores.length).toFixed(1);
+
+      content.innerHTML = `
+        <div style="margin-bottom:14px;text-align:center">
+          <span style="background:var(--color-primary);color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:700">Average: ${average}%</span>
+        </div>
+        <table class="data-table" style="width:100%">
+          <thead><tr><th>Subject</th><th>CA (/40)</th><th>Exam (/60)</th><th>Total (/100)</th><th>Grade</th></tr></thead>
+          <tbody>
+            ${scores.map(s => `<tr>
+              <td>${s.subject_name || s.subject_id}</td>
+              <td>${Number(s.ca_total)}</td>
+              <td>${Number(s.exam)}</td>
+              <td><strong>${Number(s.final_score)}</strong></td>
+              <td>${s.grade}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        ${resultsData.comment ? `<p style="margin-top:14px;font-size:0.82rem;color:#374151"><strong>Class Teacher's Remark:</strong> "${resultsData.comment}"</p>` : ''}
+      `;
     } catch (e) {
       content.innerHTML = `<p style="color:#dc2626;font-size:0.85rem">Could not check results access: ${e.message}</p>`;
     }
@@ -340,6 +380,103 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ============================================
+     NEWSLETTER PAGE — published announcements of type 'newsletter'
+     ============================================ */
+  async function renderNewsletterPage() {
+    const grid = document.getElementById('newsletterGrid');
+    if (!grid) return;
+    grid.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Loading…</p>';
+
+    let items = [];
+    try {
+      const data = await window.RCA_API.call('/announcements');
+      items = (data.announcements || [])
+        .filter(a => a.type === 'newsletter' && a.status === 'published')
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    } catch (e) {
+      grid.innerHTML = `<p style="color:#dc2626;font-size:0.85rem">Could not load newsletters: ${e.message}</p>`;
+      return;
+    }
+
+    grid.innerHTML = items.length
+      ? items.map(n => `
+          <div class="pp-card" style="padding:18px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px">
+              <strong style="font-size:0.95rem;color:#111827">📰 ${n.title}</strong>
+              <span style="font-size:0.72rem;color:#9ca3af;white-space:nowrap">${new Date(n.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>
+            </div>
+            <p style="font-size:0.85rem;color:#374151;line-height:1.6;white-space:pre-wrap">${n.body}</p>
+            <div style="margin-top:10px;font-size:0.75rem;color:#6b7280">— ${n.author || 'Administration'}</div>
+          </div>`).join('')
+      : '<p style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:24px">No newsletters published yet.</p>';
+  }
+
+  /* ============================================
+     SCHOOL INFORMATION PAGE (static reference content)
+     ============================================ */
+  function renderSchoolInfoPage() {
+    const content = document.getElementById('schoolInfoContent');
+    if (!content) return;
+
+    const sections = [
+      { title: '🏫 Contact & Address', rows: [
+        ['Address', '20/22 Amaigbo Lane, Uwani, Enugu State'],
+        ['Phone', '08108419563, 09026324650'],
+      ]},
+      { title: '⏰ School Hours', rows: [
+        ['Resumption', '7:30 AM'],
+        ['Closing (Nursery)', '1:00 PM'],
+        ['Closing (Primary)', '2:00 PM'],
+      ]},
+      { title: '👕 Uniform', rows: [
+        ['Mon – Thu', 'Regular school uniform with the school crest'],
+        ['Friday', 'House/sports wear'],
+      ]},
+      { title: '📅 Termly Requirements', rows: [
+        ['Fees', 'Due at the start of each term — see Fee Schedule for the current breakdown'],
+        ['Supplies', 'Exercise books and stationery as listed on the term\'s supply list'],
+      ]},
+    ];
+
+    content.innerHTML = sections.map(s => `
+      <div style="margin-bottom:20px">
+        <div style="font-weight:700;font-size:0.85rem;color:#111827;margin-bottom:10px">${s.title}</div>
+        <div class="ar-view-grid">
+          ${s.rows.map(([label, value]) => `
+            <div class="ar-info-row"><span class="ar-info-label">${label}</span><span class="ar-info-value">${value}</span></div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  /* ============================================
+     PROFILE PAGE — the logged-in parent's own account
+     ============================================ */
+  function renderProfilePage() {
+    const content = document.getElementById('profileContent');
+    if (!content) return;
+
+    const rows = [
+      ['Full Name', user.full_name],
+      ['Email', user.email],
+      ['Phone', user.phone || '—'],
+      ['Role', 'Parent / Guardian'],
+      ['Status', (user.status || 'active').charAt(0).toUpperCase() + (user.status || 'active').slice(1)],
+      ['Linked Children', myChildren.length ? myChildren.map(c => c.full_name).join(', ') : 'None linked yet'],
+    ];
+
+    content.innerHTML = `
+      <div class="ar-view-grid">
+        ${rows.map(([label, value]) => `
+          <div class="ar-info-row"><span class="ar-info-label">${label}</span><span class="ar-info-value">${value || '—'}</span></div>
+        `).join('')}
+      </div>
+      <p style="margin-top:16px;font-size:0.78rem;color:#9ca3af">To update your contact details, please contact the school's ICT Administrator.</p>
+    `;
+  }
+
+  /* ============================================
      INIT
      ============================================ */
   myChildren = await loadMyChildren();
@@ -349,4 +486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderAttendance();
   renderDashboardWidgets();
   renderAnnouncementsPage();
+  renderNewsletterPage();
+  renderSchoolInfoPage();
+  renderProfilePage();
 });
