@@ -1,9 +1,10 @@
 /* ============================================
    TEACHER MANAGEMENT — teachers.js
    ============================================
-   Depends on window.SAMPLE_TEACHERS (from sample-teachers.js,
-   which itself depends on sample-students.js for the class list -
-   see the script order comment in teachers.html).
+   Staff come from the real `users` table (primary_role != 'parent')
+   via RCA_API.getUsers(). Edits save through PUT /api/users/:id —
+   ict_admin only; head_teacher gets a read-only view plus a link to
+   User Management for full account changes.
 
    Simpler than students.js because staff count is small (~19-22) -
    no need for class-grouping or drill-down views. Instead:
@@ -11,9 +12,33 @@
    2. Clicking any card opens a MODAL with full details
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  const allTeachers = window.SAMPLE_TEACHERS || [];
+  const allSubjects = window.SCHOOL_SUBJECTS || [];
+  function subjectLabel(code) {
+    var s = allSubjects.find(function (x) { return x.id === code; });
+    return s ? s.name : code;
+  }
+
+  var users = await window.RCA_API.getUsers({ status: 'all' });
+  const allTeachers = (users || []).filter(function (u) { return u.primary_role !== 'parent'; }).map(function (u) {
+    return {
+      id: u.id,
+      staff_id: u.staff_id,
+      full_name: u.full_name,
+      email: u.email,
+      phone: u.phone,
+      primary_role: u.primary_role,
+      legacy_role: u.job_title || u.primary_role,
+      date_joined: u.created_at,
+      assigned_classes: u.linked_classes || [],
+      subjects: (u.linked_subjects || []).map(subjectLabel),
+      roles: [u.primary_role]
+    };
+  });
+
+  const cuRoles0 = (window.CURRENT_USER && (window.CURRENT_USER.roles || [window.CURRENT_USER.role])) || [];
+  const canEditStaff = cuRoles0.includes('ict_admin');
 
   /* --------------------------------------------
      ELEMENT REFERENCES
@@ -193,8 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
 
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
-        <button onclick="window._editStaffProfile('${teacher.staff_id}')" style="padding:9px 20px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:0.85rem;font-weight:600;cursor:pointer">Edit Profile</button>
-        <button onclick="window.location.href='user-management.html'" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Manage Accounts</button>
+        ${canEditStaff ? `<button onclick="window._editStaffProfile('${teacher.staff_id}')" style="padding:9px 20px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:0.85rem;font-weight:600;cursor:pointer">Edit Profile</button>` : ''}
+        ${canEditStaff ? `<button onclick="window.location.href='user-management.html'" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Manage Accounts</button>` : ''}
       </div>
     `);
   }
@@ -221,11 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <input id="${id}" type="${type}" value="${val}" style="width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem;outline:none">
           </div>`).join('')}
         <div>
-          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:5px">Role</label>
-          <select id="ep_role" style="width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem">
-            ${['Head Teacher','ICT Administrator','Form Teacher','Subject Teacher','Accountant'].map(r =>
-              `<option value="${r}" ${(teacher.legacy_role||teacher.primary_role)===r?'selected':''}>${r}</option>`).join('')}
-          </select>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:5px">Job Title</label>
+          <input id="ep_role" type="text" value="${teacher.legacy_role || ''}" placeholder="e.g. Head Teacher" style="width:100%;padding:10px 13px;border:1.5px solid #d1d5db;border-radius:8px;font-size:0.88rem">
         </div>
         <div>
           <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:5px">Assigned Class(es)</label>
@@ -237,18 +259,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end">
         <button onclick="window._cancelEditProfile('${staffId}')" style="padding:9px 20px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:0.85rem;font-weight:600;cursor:pointer">Cancel</button>
-        <button onclick="window._saveStaffProfile('${staffId}')" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Save Changes</button>
+        <button id="ep_save_btn" onclick="window._saveStaffProfile('${staffId}')" style="padding:9px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">Save Changes</button>
       </div>
     `);
   };
 
-  window._saveStaffProfile = function(staffId) {
+  window._saveStaffProfile = async function(staffId) {
     const teacher = allTeachers.find(t => t.staff_id === staffId);
     if (!teacher) return;
     const name  = document.getElementById('ep_name').value.trim();
     const phone = document.getElementById('ep_phone').value.trim();
     const email = document.getElementById('ep_email').value.trim();
-    const role  = document.getElementById('ep_role').value;
+    const role  = document.getElementById('ep_role').value.trim();
     const cls   = document.getElementById('ep_class').value.split(',').map(s => s.trim()).filter(Boolean);
     const msgEl = document.getElementById('ep_msg');
     if (!name) {
@@ -256,8 +278,22 @@ document.addEventListener('DOMContentLoaded', () => {
       msgEl.style.cssText = 'display:block;padding:9px 13px;border-radius:8px;font-size:0.82rem;margin-bottom:14px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5';
       return;
     }
+    const saveBtn = document.getElementById('ep_save_btn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+      await window.RCA_API.updateUser(teacher.id, {
+        full_name: name, phone, email, job_title: role, linked_classes: cls
+      });
+    } catch (e) {
+      if (saveBtn) saveBtn.disabled = false;
+      msgEl.textContent = 'Could not save: ' + e.message;
+      msgEl.style.cssText = 'display:block;padding:9px 13px;border-radius:8px;font-size:0.82rem;margin-bottom:14px;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5';
+      return;
+    }
+
     teacher.full_name = name; teacher.phone = phone; teacher.email = email;
-    teacher.legacy_role = role; teacher.primary_role = role;
+    teacher.legacy_role = role;
     teacher.assigned_classes = cls;
     msgEl.textContent = 'Profile updated successfully.';
     msgEl.style.cssText = 'display:block;padding:9px 13px;border-radius:8px;font-size:0.82rem;margin-bottom:14px;background:#d1fae5;color:#065f46;border:1px solid #6ee7b7';
