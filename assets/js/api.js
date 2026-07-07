@@ -76,6 +76,13 @@
     }
   }
 
+  async function saveClassReview(studentId, term, ratings, comment) {
+    return apiCall(`/students/${encodeURIComponent(studentId)}/review`, {
+      method: 'PUT',
+      body: { term, ratings, comment }
+    });
+  }
+
   /* ============================================
      SCORES
      ============================================ */
@@ -338,6 +345,7 @@
     // Students
     getStudents,
     getStudentResults,
+    saveClassReview,
 
     // Scores
     getScores,

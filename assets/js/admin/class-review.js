@@ -3,23 +3,36 @@
    ============================================
    Used by the Class Teacher after Subject Teachers have submitted
    scores. Three jobs per pupil:
-   1. Show a read-only academic summary (from SAMPLE_RESULTS)
+   1. Show a read-only academic summary (from the real scores table,
+      via RCA_API.getStudentResults())
    2. Let the teacher rate each of the 13 behaviour traits 1-5
    3. Let the teacher write a free-text comment
-   Once every pupil is reviewed, submit the whole class to the
-   Head Teacher (advances workflow status from 'submitted' -> 'reviewed').
+   Both save straight to the real behavior_ratings/class_comments
+   tables via RCA_API.saveClassReview(). The real result_approvals
+   table only tracks draft/submitted/approved/returned — there's no
+   separate "reviewed" stage, so this page doesn't advance approval
+   status; that happens on the Approvals page once a Head Teacher
+   approves a class that's been submitted.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  const allStudents = window.SAMPLE_STUDENTS  || [];
+  let allStudents    = await window.RCA_API.getStudents();
   const allClasses  = window.SCHOOL_CLASSES   || [];
-  const allSubjects = window.SCHOOL_SUBJECTS  || [];
-  const results       = window.SAMPLE_RESULTS || {};
   const traits         = window.BEHAVIOR_TRAITS || [];
   const ratingScale     = window.RATING_SCALE || [];
-  const behaviorRatings  = window.BEHAVIOR_RATINGS || {};
   const scoreToGrade      = window.scoreToGrade;
+
+  // Cache of admission_no -> results for the current term, populated
+  // on demand so the pupil list and the open pupil panel don't refetch.
+  let reviewCache = {};
+  async function getReview(admissionNo, term) {
+    const key = `${admissionNo}|${term}`;
+    if (!reviewCache[key]) {
+      reviewCache[key] = await window.RCA_API.getStudentResults(admissionNo, term);
+    }
+    return reviewCache[key];
+  }
 
   const classSelect  = document.getElementById('classSelect');
   const termSelect    = document.getElementById('termSelect');
@@ -87,37 +100,37 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStatus.className = 'save-status ' + (cls || '');
   }
 
-  /* ---- Approval banner ---- */
-  function renderApprovalBanner() {
-    if (!window.getApprovalRecord) return;
+  /* ---- Approval banner (read-only status — approval itself happens
+     on the Approvals page once a Head Teacher reviews a submitted class) ---- */
+  async function renderApprovalBanner() {
+    if (!window.loadApprovals || !window.getApprovalRecord) return;
+    await window.loadApprovals(termSelect.value);
     const record = window.getApprovalRecord(classSelect.value, termSelect.value);
     const info = window.APPROVAL_STATUS_INFO[record.status];
     approvalBanner.className = `approval-banner tone-${info.tone}`;
     const messages = {
       draft:     'No scores submitted by subject teachers yet — nothing to review.',
-      submitted: 'Subject teachers have submitted scores. Please review each pupil below.',
-      reviewed:  'You have already submitted this class for head teacher approval.',
-      approved:  'Head teacher has approved these results.',
-      published: 'Results are published and visible to parents and students.',
-      returned:  'Head teacher returned this for corrections. Please review and resubmit.'
+      submitted: 'Subject teachers have submitted scores. Please review each pupil below; a Head Teacher will approve on the Approvals page.',
+      approved:  'Head teacher has approved these results — visible to parents and students.',
+      returned:  'Head teacher returned this for corrections. Please review and resubmit scores on the Score Entry page.'
     };
     approvalBanner.innerHTML = `<strong>Status: ${info.label}.</strong> ${messages[record.status] || ''}`;
-    const canReview = ['submitted', 'returned'].includes(record.status);
-    submitToHTBtn.disabled = !canReview;
+    if (submitToHTBtn) submitToHTBtn.style.display = 'none';
   }
 
   /* ---- Pupil list ---- */
-  function renderPupilList() {
+  async function renderPupilList() {
     const className = classSelect.value;
+    const term = termSelect.value;
     const studentsInClass = allStudents
       .filter(s => s.class_name === className)
       .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
-    const reviewed = new Set(
-      studentsInClass
-        .filter(s => (behaviorRatings[s.admission_no]?.comment || '').length > 0)
-        .map(s => s.admission_no)
-    );
+    const flags = await Promise.all(studentsInClass.map(async s => {
+      const data = await getReview(s.admission_no, term);
+      return { admissionNo: s.admission_no, hasComment: !!(data?.comment && data.comment.length > 0) };
+    }));
+    const reviewed = new Set(flags.filter(f => f.hasComment).map(f => f.admissionNo));
 
     const total = studentsInClass.length;
     const doneCount = reviewed.size;
@@ -141,27 +154,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ---- Open one pupil's review ---- */
-  function openPupilReview(admissionNo) {
+  async function openPupilReview(admissionNo) {
     currentPupilAdmNo = admissionNo;
+    const term = termSelect.value;
     const student = allStudents.find(s => s.admission_no === admissionNo);
-    const pupilResults = results[admissionNo] || {};
-    const ratingRecord = behaviorRatings[admissionNo] || { ratings: {}, comment: '' };
+    const data = await getReview(admissionNo, term);
+    const scores = data?.scores || [];
+
+    const ratingsMap = {};
+    (data?.behavior || []).forEach(b => { ratingsMap[b.trait_code] = b.rating; });
+    const ratingRecord = { ratings: ratingsMap, comment: data?.comment || '' };
 
     /* --- Academic summary --- */
-    const subjectRows = allSubjects.map(subject => {
-      const r = pupilResults[subject.id];
-      if (!r) return '';
-      return `<tr>
-        <td>${subject.name}</td>
-        <td>${r.caTotal}</td>
-        <td>${r.examScore}</td>
-        <td><strong>${r.finalScore}</strong></td>
+    const subjectRows = scores.map(r => `<tr>
+        <td>${r.subject_name || r.subject_id}</td>
+        <td>${Number(r.ca_total)}</td>
+        <td>${Number(r.exam)}</td>
+        <td><strong>${Number(r.final_score)}</strong></td>
         <td class="rc-grade-cell ${r.grade}">${r.grade}</td>
-      </tr>`;
-    }).join('');
+      </tr>`).join('');
 
-    const allScores = allSubjects.map(s => (pupilResults[s.id] || {}).finalScore || 0);
-    const avg = allScores.length ? (allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
+    const avg = scores.length ? (scores.reduce((a, r) => a + Number(r.final_score || 0), 0) / scores.length) : 0;
 
     /* --- Behaviour traits grid --- */
     const traitsHTML = traits.map(trait => {
@@ -201,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="mini-label">Overall Grade</span>
         </div>
         <div class="mini-summary-stat">
-          <span class="mini-num">${allSubjects.length}</span>
+          <span class="mini-num">${scores.length}</span>
           <span class="mini-label">Subjects</span>
         </div>
       </div>
@@ -245,18 +258,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const labelEl = document.getElementById(`traitLabel-${traitId}`);
         if (labelEl) labelEl.textContent = ratingScale.find(r => r.value === val)?.label || '';
 
-        if (!behaviorRatings[admissionNo]) behaviorRatings[admissionNo] = { ratings: {}, comment: '' };
-        behaviorRatings[admissionNo].ratings[traitId] = val;
+        ratingRecord.ratings[traitId] = val;
         saveStatus_set('Unsaved changes', 'unsaved');
       });
     });
 
     /* Save this pupil button */
-    document.getElementById('savePupilBtn').addEventListener('click', () => {
+    document.getElementById('savePupilBtn').addEventListener('click', async () => {
       const comment = document.getElementById('teacherComment').value.trim();
-      if (!behaviorRatings[admissionNo]) behaviorRatings[admissionNo] = { ratings: {}, comment: '' };
-      behaviorRatings[admissionNo].comment = comment;
+      const saveBtn = document.getElementById('savePupilBtn');
+      saveBtn.disabled = true;
 
+      try {
+        await window.RCA_API.saveClassReview(admissionNo, term, ratingRecord.ratings, comment);
+      } catch (e) {
+        saveBtn.disabled = false;
+        saveStatus_set('Save failed: ' + e.message, 'unsaved');
+        return;
+      }
+
+      // Keep the cache in sync so the pupil list's "reviewed" tick
+      // reflects this save without a refetch.
+      const key = `${admissionNo}|${term}`;
+      if (reviewCache[key]) reviewCache[key].comment = comment;
+
+      saveBtn.disabled = false;
       const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       saveStatus_set(`Saved at ${now}`, 'saved');
       renderPupilList(); /* refresh tick marks */
@@ -267,17 +293,6 @@ document.addEventListener('DOMContentLoaded', () => {
       item.classList.toggle('active', item.getAttribute('data-admission') === admissionNo);
     });
   }
-
-  /* ---- Submit class to Head Teacher ---- */
-  submitToHTBtn.addEventListener('click', () => {
-    const record = window.getApprovalRecord(classSelect.value, termSelect.value);
-    record.status = 'reviewed';
-    record.reviewed_by = window.CURRENT_USER?.full_name || 'Class Teacher';
-    if (window.RCA) { window.RCA.save('behavior'); window.RCA.save('approvals'); }
-    record.reviewed_at = new Date().toISOString();
-    renderApprovalBanner();
-    saveStatus_set('Submitted to Head Teacher', 'saved');
-  });
 
   /* ---- Event listeners ---- */
   classSelect.addEventListener('change', () => {
