@@ -26,14 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     return announcementsCache;
   }
 
-  function getEvents() {
-    try { return JSON.parse(localStorage.getItem('rca_events') || '[]'); }
-    catch(e) { return []; }
-  }
-
-  function saveEvents(arr) {
-    localStorage.setItem('rca_events', JSON.stringify(arr));
-    window.SCHOOL_EVENTS = arr;
+  let eventsCache = [];
+  async function getEvents() {
+    eventsCache = (await window.RCA_API.getEvents()) || [];
+    return eventsCache;
   }
 
   /* ============================================
@@ -160,14 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ============================================
      EVENTS
      ============================================ */
-  function renderEvents() {
+  async function renderEvents() {
     const list = document.getElementById('eventsList');
     if (!list) return;
 
     const addBtn = document.getElementById('addEventBtn');
     if (addBtn) addBtn.style.display = canManage ? 'inline-flex' : 'none';
 
-    const all = getEvents();
+    const all = await getEvents();
 
     if (all.length === 0) {
       list.innerHTML = `
@@ -208,8 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           ${canManage ? `
             <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-              <button onclick="editEvent('${ev.id}')" style="padding:5px 10px;background:#fff;border:1px solid #d1d5db;border-radius:6px;font-size:0.72rem;cursor:pointer">✏️</button>
-              <button onclick="deleteEvent('${ev.id}')" style="padding:5px 10px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:6px;font-size:0.72rem;cursor:pointer">🗑</button>
+              <button onclick="editEvent(${ev.id})" style="padding:5px 10px;background:#fff;border:1px solid #d1d5db;border-radius:6px;font-size:0.72rem;cursor:pointer">✏️</button>
+              <button onclick="deleteEvent(${ev.id})" style="padding:5px 10px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:6px;font-size:0.72rem;cursor:pointer">🗑</button>
             </div>
           ` : ''}
         </div>`;
@@ -375,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('closeEvtModal2').onclick = () => modal.remove();
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 
-    document.getElementById('saveEvtBtn').onclick = () => {
+    document.getElementById('saveEvtBtn').onclick = async () => {
       const title    = document.getElementById('evt_title').value.trim();
       const date     = document.getElementById('evt_date').value;
       const time     = document.getElementById('evt_time').value;
@@ -385,19 +381,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!title || !date) { alert('Please enter a title and date.'); return; }
 
-      const all = getEvents();
-      if (existing) {
-        const idx = all.findIndex(e => e.id === existing.id);
-        if (idx > -1) all[idx] = { ...all[idx], title, event_date: date, time, location, description: desc, audience };
-      } else {
-        all.push({
-          id: 'evt-' + Date.now(),
-          title, event_date: date, time, location,
-          description: desc, audience,
-          created_at: new Date().toISOString()
-        });
+      const saveBtn = document.getElementById('saveEvtBtn');
+      saveBtn.disabled = true;
+
+      const payload = { title, event_date: date, time, location, description: desc, audience };
+
+      try {
+        if (existing) {
+          await window.RCA_API.updateEvent(existing.id, payload);
+        } else {
+          await window.RCA_API.createEvent(payload);
+        }
+      } catch (e) {
+        saveBtn.disabled = false;
+        alert('Could not save event: ' + e.message);
+        return;
       }
-      saveEvents(all);
+
       modal.remove();
       renderEvents();
       showToast('Event saved ✅');
@@ -425,13 +425,18 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.editEvent = (id) => {
-    const ev = getEvents().find(e => e.id === id);
+    const ev = eventsCache.find(e => e.id === id);
     if (ev) showEventModal(ev);
   };
 
-  window.deleteEvent = (id) => {
+  window.deleteEvent = async (id) => {
     if (!confirm('Delete this event?')) return;
-    saveEvents(getEvents().filter(e => e.id !== id));
+    try {
+      await window.RCA_API.deleteEvent(id);
+    } catch (e) {
+      alert('Could not delete event: ' + e.message);
+      return;
+    }
     renderEvents();
     showToast('Event deleted');
   };

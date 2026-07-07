@@ -272,6 +272,31 @@
   }
 
   /* ============================================
+     EVENTS
+     ============================================ */
+  async function getEvents() {
+    try {
+      const data = await apiCall('/events');
+      return data.events;
+    } catch (e) {
+      console.warn('API unavailable:', e.message);
+      return [];
+    }
+  }
+
+  async function createEvent(data) {
+    return apiCall('/events', { method: 'POST', body: data });
+  }
+
+  async function updateEvent(id, data) {
+    return apiCall(`/events/${id}`, { method: 'PATCH', body: data });
+  }
+
+  async function deleteEvent(id) {
+    return apiCall(`/events/${id}`, { method: 'DELETE' });
+  }
+
+  /* ============================================
      ATTENDANCE
      ============================================ */
   async function getAttendance(className, date) {
@@ -408,6 +433,12 @@
     createAnnouncement,
     updateAnnouncement,
     deleteAnnouncement,
+
+    // Events
+    getEvents,
+    createEvent,
+    updateEvent,
+    deleteEvent,
 
     // Attendance
     getAttendance,
