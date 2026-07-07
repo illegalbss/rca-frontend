@@ -168,6 +168,16 @@
     }
   }
 
+  async function getStaffDirectory() {
+    try {
+      const data = await apiCall('/users/staff-directory');
+      return data.staff;
+    } catch (e) {
+      console.warn('API unavailable:', e.message);
+      return [];
+    }
+  }
+
   async function createUser(userData) {
     try {
       return await apiCall('/users', { method: 'POST', body: userData });
@@ -384,6 +394,7 @@
 
     // Users
     getUsers,
+    getStaffDirectory,
     createUser,
     updateUser,
     resetPassword,

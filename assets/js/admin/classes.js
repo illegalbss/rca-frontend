@@ -1,24 +1,37 @@
 /* ============================================
    CLASS MANAGEMENT — classes.js
    ============================================
-   Depends on window.SCHOOL_CLASSES, window.SAMPLE_STUDENTS
-   (both from sample-students.js) and window.SAMPLE_TEACHERS
-   (from sample-teachers.js). See script order in classes.html.
-
-   KEY CONCEPT: this page has NO data generator of its own.
-   It DERIVES everything by combining the existing students
-   and teachers data, joined together by class_name. This is
-   exactly how a real database query works once we reach
-   Phase 3/4: instead of three separate disconnected lists,
-   you write a JOIN that combines rows from multiple tables
-   based on a shared column (here, the class name).
+   Students come from RCA_API.getStudents(); staff come from
+   RCA_API.getStaffDirectory() (a lightweight, any-staff-readable
+   endpoint). This page has no data of its own — it DERIVES
+   everything by joining students + staff on class_name, exactly like
+   a real database JOIN.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  const allStudents = window.SAMPLE_STUDENTS || [];
-  const allTeachers = window.SAMPLE_TEACHERS || [];
-  const allUsers    = window.SAMPLE_USERS    || [];
+  const allStudents = await window.RCA_API.getStudents();
+  const rawStaff     = await window.RCA_API.getStaffDirectory();
+  const allSubjects  = window.SCHOOL_SUBJECTS || [];
+  function subjectLabels(codes) {
+    return (codes || []).map(function (code) {
+      var s = allSubjects.find(function (x) { return x.id === code; });
+      return s ? s.name : code;
+    });
+  }
+  // Normalize to the field names the rest of this file already uses.
+  const allTeachers = (rawStaff || []).map(function (u) {
+    return {
+      staff_id: u.staff_id,
+      full_name: u.full_name,
+      phone: u.phone || '—',
+      legacy_role: u.job_title || u.primary_role,
+      primary_role: u.primary_role,
+      roles: [u.primary_role],
+      assigned_classes: u.linked_classes || [],
+      subjects: subjectLabels(u.linked_subjects)
+    };
+  });
   const allClasses  = window.SCHOOL_CLASSES  || [];
 
   // RBAC: determine visible classes for this user
@@ -81,31 +94,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function getClassData(className) {
     const studentsInClass = allStudents.filter(s => s.class_name === className);
 
-    // Find the form teacher from SAMPLE_USERS (real names) first;
-    // fall back to SAMPLE_TEACHERS for extra detail fields (phone, subjects).
-    const userTeacher = allUsers.find(u => {
-      const roles = u.roles || [u.role];
-      if (!roles.includes('class_teacher')) return false;
-      if (u.form_class) return u.form_class === className;
-      return (u.linked_classes || []).includes(className);
-    });
-
-    const classTeacher = userTeacher
-      ? { ...(allTeachers.find(t => t.email === userTeacher.email) || {}), ...userTeacher,
-          full_name: userTeacher.full_name, staff_id: userTeacher.id }
-      : allTeachers.find(t =>
-          (t.roles ? t.roles.includes('class_teacher') : t.legacy_role === 'Class Teacher') &&
-          t.assigned_classes && t.assigned_classes.includes(className)
-        );
+    const classTeacher = allTeachers.find(t =>
+      t.primary_role === 'class_teacher' && t.assigned_classes.includes(className)
+    );
 
     // Specialist staff who teach THIS class but aren't ITS class teacher
     // (e.g. the ICT Administrator might teach Basic 1 AND four other classes)
     const otherStaff = allTeachers.filter(t =>
-      (t.roles ? !t.roles.includes('class_teacher') || t.roles.includes('subject_teacher') : t.legacy_role !== 'Class Teacher') && t.assigned_classes.includes(className)
+      t.primary_role !== 'class_teacher' && t.assigned_classes.includes(className)
     );
 
-    const maleCount = studentsInClass.filter(s => s.gender === 'male').length;
-    const femaleCount = studentsInClass.filter(s => s.gender === 'female').length;
+    const maleCount = studentsInClass.filter(s => (s.gender || '').toLowerCase() === 'male').length;
+    const femaleCount = studentsInClass.filter(s => (s.gender || '').toLowerCase() === 'female').length;
 
     return {
       className,
