@@ -191,9 +191,10 @@
   /* ============================================
      APPROVALS
      ============================================ */
-  async function getApprovals() {
+  async function getApprovals(term) {
     try {
-      const data = await apiCall('/approvals');
+      const qs = term ? `?term=${encodeURIComponent(term)}` : '';
+      const data = await apiCall(`/approvals${qs}`);
       return data.approvals;
     } catch (e) {
       console.warn('API unavailable, using localStorage:', e.message);

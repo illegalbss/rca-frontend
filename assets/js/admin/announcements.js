@@ -7,7 +7,10 @@
    Who can VIEW:
      - Staff: all published announcements
      - Parents: announcements marked for parents
-   Storage: localStorage (rca_announcements, rca_events)
+   Announcements: real backend (window.RCA_API), falling back to the
+   local cache if the API is unreachable.
+   Events: still localStorage-only — there's no backend endpoint for
+   events yet (window.RCA_API has no event methods).
 */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -15,15 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ============================================
      DATA HELPERS
      ============================================ */
-  function getAnnouncements() {
-    try { return JSON.parse(localStorage.getItem('rca_announcements') || '[]'); }
-    catch(e) { return []; }
-  }
+  let announcementsCache = [];
 
-  function saveAnnouncements(arr) {
-    localStorage.setItem('rca_announcements', JSON.stringify(arr));
-    // Also update window.ANNOUNCEMENTS for other pages
-    window.ANNOUNCEMENTS = arr;
+  async function getAnnouncements() {
+    const all = await window.RCA_API.getAnnouncements();
+    announcementsCache = all || [];
+    return announcementsCache;
   }
 
   function getEvents() {
@@ -97,11 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ============================================
      ANNOUNCEMENTS
      ============================================ */
-  function renderAnnouncements() {
+  async function renderAnnouncements() {
     const list = document.getElementById('announcementsList');
     if (!list) return;
 
-    const all = getAnnouncements();
+    const all = await getAnnouncements();
 
     // Show add button only to managers
     const addBtn = document.getElementById('addAnnouncementBtn');
@@ -148,8 +148,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <span style="font-size:0.75rem;color:#6b7280">— ${ann.author || 'Administration'}</span>
             ${canManage ? `
               <div style="display:flex;gap:8px">
-                <button onclick="editAnnouncement('${ann.id}')" style="padding:5px 12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600">✏️ Edit</button>
-                <button onclick="deleteAnnouncement('${ann.id}')" style="padding:5px 12px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600">🗑 Delete</button>
+                <button onclick="editAnnouncement(${ann.id})" style="padding:5px 12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600">✏️ Edit</button>
+                <button onclick="deleteAnnouncement(${ann.id})" style="padding:5px 12px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:6px;font-size:0.75rem;cursor:pointer;font-weight:600">🗑 Delete</button>
               </div>
             ` : ''}
           </div>
@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('closeAnnModal2').onclick = () => modal.remove();
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 
-    document.getElementById('saveAnnBtn').onclick = () => {
+    document.getElementById('saveAnnBtn').onclick = async () => {
       const title  = document.getElementById('ann_title').value.trim();
       const body   = document.getElementById('ann_body').value.trim();
       const type   = document.getElementById('ann_type').value;
@@ -292,19 +292,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (document.getElementById('aud_website').checked) audience.push('website');
       if (audience.length === 0) { alert('Please select at least one audience.'); return; }
 
-      const all = getAnnouncements();
-      if (existing) {
-        const idx = all.findIndex(a => a.id === existing.id);
-        if (idx > -1) all[idx] = { ...all[idx], title, body, type, author, audience, updated_at: new Date().toISOString() };
-      } else {
-        all.push({
-          id: 'ann-' + Date.now(),
-          title, body, type, author, audience,
-          created_at: new Date().toISOString(),
-          status: 'published'
-        });
+      const saveBtn = document.getElementById('saveAnnBtn');
+      saveBtn.disabled = true;
+
+      try {
+        if (existing) {
+          await window.RCA_API.updateAnnouncement(existing.id, { title, body, type, author, audience });
+        } else {
+          await window.RCA_API.createAnnouncement({ title, body, type, author, audience, status: 'published' });
+        }
+      } catch (e) {
+        saveBtn.disabled = false;
+        alert('Could not save announcement: ' + e.message);
+        return;
       }
-      saveAnnouncements(all);
+
       if (window.logActivity) {
         const verb = existing ? 'updated' : 'published';
         window.logActivity(existing ? 'update' : 'publish', `Announcement ${verb}: "${title}"`, 'announcements');
@@ -406,13 +408,18 @@ document.addEventListener('DOMContentLoaded', () => {
      GLOBAL ACTIONS (edit/delete called from HTML)
      ============================================ */
   window.editAnnouncement = (id) => {
-    const ann = getAnnouncements().find(a => a.id === id);
+    const ann = announcementsCache.find(a => a.id === id);
     if (ann) showAnnouncementModal(ann);
   };
 
-  window.deleteAnnouncement = (id) => {
+  window.deleteAnnouncement = async (id) => {
     if (!confirm('Delete this announcement?')) return;
-    saveAnnouncements(getAnnouncements().filter(a => a.id !== id));
+    try {
+      await window.RCA_API.deleteAnnouncement(id);
+    } catch (e) {
+      alert('Could not delete announcement: ' + e.message);
+      return;
+    }
     renderAnnouncements();
     showToast('Announcement deleted');
   };
@@ -456,18 +463,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabEl = document.querySelector(`.comm-tab[data-tab="${param}"]`);
     if (tabEl) tabEl.click();
   })();
-
-  /* ============================================
-     INIT — CLEAR OLD FAKE DATA & RENDER
-     ============================================ */
-  // Clear old fake announcements if they have the old format
-  const existing = getAnnouncements();
-  const hasFakeData = existing.some(a => a.id === 'ann-1' || a.id === 'ann-2' || a.id === 'ann-3');
-  if (hasFakeData) {
-    saveAnnouncements([]);
-    saveEvents([]);
-    console.log('RCA: Cleared old fake announcements and events');
-  }
 
   // Initial render
   renderAnnouncements();

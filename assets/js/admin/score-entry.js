@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const user = window.CURRENT_USER;
     const ur   = user ? (user.roles || [user.role]) : [];
     const isSuperUser = ur.includes('ict_admin') || ur.includes('head_teacher');
-    const locked = !canEditScores() || (!isSuperUser && ['submitted','reviewed','approved','published'].includes(approval.status));
+    const locked = !canEditScores() || (!isSuperUser && ['submitted','approved'].includes(approval.status));
 
     tableBody.querySelectorAll('.score-input').forEach(inp => {
       inp.disabled = locked;
@@ -402,23 +402,15 @@ document.addEventListener('DOMContentLoaded', () => {
         message = 'This class/term has not been submitted for review yet.';
         break;
       case 'submitted':
-        message = 'Submitted and awaiting the class teacher\'s review.';
-        canSubmit = false;
-        break;
-      case 'reviewed':
-        message = 'Reviewed by the class teacher, awaiting head teacher approval.';
+        message = 'Submitted and awaiting head teacher approval.';
         canSubmit = false;
         break;
       case 'approved':
-        message = 'Approved by the head teacher, awaiting publication.';
-        canSubmit = false;
-        break;
-      case 'published':
-        message = 'Published — visible to parents and students. Editing now will not change what they see until republished.';
+        message = 'Approved by the head teacher — visible to parents and students.';
         canSubmit = false;
         break;
       case 'returned':
-        message = `Sent back for correction${record.return_reason ? ': ' + record.return_reason : ''}. Please review and resubmit.`;
+        message = 'Sent back for correction. Please review and resubmit.';
         canSubmit = true;
         break;
     }
@@ -430,43 +422,39 @@ document.addEventListener('DOMContentLoaded', () => {
     submitForReviewBtn.textContent = record.status === 'returned' ? 'Resubmit for Review' : 'Submit for Review';
   }
 
-  submitForReviewBtn.addEventListener('click', () => {
+  submitForReviewBtn.addEventListener('click', async () => {
     const className = classSelect.value;
     const term = termSelect.value;
-    const record = window.getApprovalRecord(className, term);
 
-    record.status = 'submitted';
-    record.submitted_by = window.CURRENT_USER ? window.CURRENT_USER.full_name : 'Subject Teacher';
-    record.submitted_at = new Date().toISOString();
-    record.return_reason = null;
-
-    markSaved();
-    if (window.RCA) window.RCA.save('results');
-    if (window.logActivity) window.logActivity('create', `Scores submitted for review: ${className} — ${subjectSelect.options[subjectSelect.selectedIndex]?.text || subjectSelect.value} (${term})`, 'scores');
-    renderApprovalBanner();
-    lockTableIfNeeded();
-    if (window.RCA) { window.RCA.save('results'); window.RCA.save('approvals'); }
-
-    // Phase 4: submit to real database
-    if (window.RCA_API) {
-      window.RCA_API.submitScores(className, subjectSelect.value, term)
-        .catch(e => console.warn('Score submit API failed:', e.message));
+    submitForReviewBtn.disabled = true;
+    try {
+      await window.RCA_API.submitScores(className, subjectSelect.value, term);
+    } catch (e) {
+      submitForReviewBtn.disabled = false;
+      alert('Could not submit scores: ' + e.message);
+      return;
     }
+
+    if (window.logActivity) window.logActivity('create', `Scores submitted for review: ${className} — ${subjectSelect.options[subjectSelect.selectedIndex]?.text || subjectSelect.value} (${term})`, 'scores');
+
+    await refreshApprovalAndRender();
   });
 
   /* --------------------------------------------
      EVENT LISTENERS
      -------------------------------------------- */
+  async function refreshApprovalAndRender() {
+    await window.loadApprovals(termSelect.value);
+    renderTable();
+    renderApprovalBanner();
+  }
+
   classSelect.addEventListener('change', () => {
     searchInput.value = '';
-    renderTable();
-    renderApprovalBanner();
+    refreshApprovalAndRender();
   });
   subjectSelect.addEventListener('change', renderTable);
-  termSelect.addEventListener('change', () => {
-    renderTable();
-    renderApprovalBanner();
-  });
+  termSelect.addEventListener('change', refreshApprovalAndRender);
   searchInput.addEventListener('input', renderTable);
 
   window.addEventListener('beforeunload', (event) => {
@@ -516,8 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const defaultClass  = permittedCls.find(c => c.startsWith('Basic')) || permittedCls[0] || '';
   classSelect.value   = defaultClass;
   subjectSelect.value = permittedSubs.length > 0 ? permittedSubs[0].id : '';
-  renderTable();
-  renderApprovalBanner();
+  refreshApprovalAndRender();
   markSaved(); // starts in a "saved" state since nothing's been edited yet
 
 });
