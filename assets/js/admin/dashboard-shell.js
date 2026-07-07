@@ -53,9 +53,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Look up the FULL current user record so pages can check
   // linked_classes, linked_subjects, roles array, etc.
+  //
+  // Prefer window.CURRENT_USER as already set by the early IIFE above from
+  // sessionStorage's rca_user_data (the real login payload — e.g. a parent
+  // account's linked_children). A real account won't exist in the hardcoded
+  // SAMPLE_USERS demo fixture, so falling straight to that lookup would
+  // silently replace the real record with an incomplete one.
   const currentUserId = sessionStorage.getItem('rca_user_id');
   const allUsers = window.SAMPLE_USERS || [];
-  const currentUser = allUsers.find(u => u.id === currentUserId) || {
+  const currentUser = window.CURRENT_USER || allUsers.find(u => u.id === currentUserId) || {
     roles: [currentRole],
     primary_role: currentRole,
     role: currentRole,
