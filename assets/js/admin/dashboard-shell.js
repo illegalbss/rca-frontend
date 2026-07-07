@@ -51,9 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return; // stop running the rest of this script
   }
 
-  // Look up the FULL current user record so pages can check
-  // linked_classes, linked_subjects, roles array, etc.
-  //
   // Prefer window.CURRENT_USER as already set by the early IIFE above from
   // sessionStorage's rca_user_data (the real login payload — e.g. a parent
   // account's linked_children). A real account won't exist in the hardcoded
