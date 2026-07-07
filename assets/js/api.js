@@ -329,6 +329,31 @@
   }
 
   /* ============================================
+     CALENDAR
+     ============================================ */
+  async function getCalendarEvents() {
+    try {
+      const data = await apiCall('/calendar');
+      return data.events;
+    } catch (e) {
+      console.warn('API unavailable:', e.message);
+      return [];
+    }
+  }
+
+  async function createCalendarEvent(data) {
+    return apiCall('/calendar', { method: 'POST', body: data });
+  }
+
+  async function updateCalendarEvent(id, data) {
+    return apiCall(`/calendar/${id}`, { method: 'PUT', body: data });
+  }
+
+  async function deleteCalendarEvent(id) {
+    return apiCall(`/calendar/${id}`, { method: 'DELETE' });
+  }
+
+  /* ============================================
      CHANGE PASSWORD
      ============================================ */
   async function changePassword(currentPassword, newPassword) {
@@ -384,6 +409,12 @@
     // Discipline
     getDiscipline,
     logDiscipline,
+
+    // Calendar
+    getCalendarEvents,
+    createCalendarEvent,
+    updateCalendarEvent,
+    deleteCalendarEvent,
 
     // Auth
     changePassword,

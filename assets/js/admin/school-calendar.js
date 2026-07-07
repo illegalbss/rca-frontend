@@ -1,32 +1,29 @@
 /* ============================================
    SCHOOL CALENDAR — school-calendar.js
    Royal Crystal Academy — 2025/2026
+   ============================================
+   Entries come from the real `calendar_events` table via
+   RCA_API.getCalendarEvents()/createCalendarEvent()/updateCalendarEvent()/
+   deleteCalendarEvent(). The `events` table is a separate one used by the
+   Announcements page's "Events" tab, not this page.
 */
 
-/* Load calendar events from localStorage — no fake data */
-function loadCalendarEvents() {
-  try {
-    const stored = localStorage.getItem('rca_calendar_events');
-    if (stored) return JSON.parse(stored);
-  } catch(e) {}
-  return [];
+async function loadCalendarEvents() {
+  const events = await window.RCA_API.getCalendarEvents();
+  // Normalize the API's event_date/description fields to the date/note
+  // names the rest of this file already uses.
+  return events.map(e => ({
+    id: e.id,
+    title: e.title,
+    date: e.event_date,
+    end_date: e.end_date,
+    category: e.category,
+    note: e.description,
+    color: e.color
+  }));
 }
 
-function saveCalendarEvents(events) {
-  localStorage.setItem('rca_calendar_events', JSON.stringify(events));
-  window.SCHOOL_EVENTS = events;
-}
-
-// Clear any old fake events
-const _storedCal = localStorage.getItem('rca_calendar_events');
-if (!_storedCal) {
-  // First load — start fresh, no fake data
-  saveCalendarEvents([]);
-}
-
-window.SCHOOL_EVENTS = loadCalendarEvents();
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
   const curUser  = window.CURRENT_USER;
   const curRoles = curUser ? (curUser.roles || [curUser.role]) : [];
@@ -35,7 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (canManage) {
     const addBtn = document.getElementById('addEventBtn');
     if (addBtn) addBtn.style.display = 'block';
+    const addCalBtn = document.getElementById('addCalEventBtn');
+    if (addCalBtn) addCalBtn.style.display = 'inline-flex';
   }
+
+  window.SCHOOL_EVENTS = await loadCalendarEvents();
 
   // Calendar state
   const today   = new Date();
@@ -173,14 +174,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* ---- Nav buttons ---- */
-  document.getElementById('calPrev').addEventListener('click', () => {
+  document.getElementById('calPrev')?.addEventListener('click', () => {
     viewMonth--;
     if (viewMonth < 0) { viewMonth = 11; viewYear--; }
     renderCalendar();
     showUpcoming();
   });
 
-  document.getElementById('calNext').addEventListener('click', () => {
+  document.getElementById('calNext')?.addEventListener('click', () => {
     viewMonth++;
     if (viewMonth > 11) { viewMonth = 0; viewYear++; }
     renderCalendar();
@@ -188,15 +189,19 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ---- Add event (ICT Admin / Head Teacher) ---- */
-  document.getElementById('addEventBtn')?.addEventListener('click', () => {
+  document.getElementById('addEventBtn')?.addEventListener('click', async () => {
     const title    = prompt('Event Title:');
     if (!title) return;
     const dateStr  = prompt('Event Date (YYYY-MM-DD):', new Date().toISOString().split('T')[0]);
     if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) { alert('Invalid date format.'); return; }
 
-    window.SCHOOL_EVENTS.push({ date: dateStr, title, color:'#7c3aed', category:'event' });
-    if (window.RCA) window.RCA.save('events');
-    window.SCHOOL_EVENTS.sort((a,b) => a.date.localeCompare(b.date));
+    try {
+      await window.RCA_API.createCalendarEvent({ title, date: dateStr, category: 'event', color: '#7c3aed' });
+    } catch (e) {
+      alert('Could not save event: ' + e.message);
+      return;
+    }
+    window.SCHOOL_EVENTS = await loadCalendarEvents();
 
     // Switch calendar to that month
     const d = new Date(dateStr + 'T12:00:00');
@@ -205,6 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCalendar();
     showEventsForDate(dateStr);
   });
+
+  // Expose so the add/edit/delete modal handlers (defined outside this
+  // closure, since they're called from inline onclick="") can refresh
+  // the calendar after a save.
+  window.renderCalendar = renderCalendar;
+  window.renderUpcoming = showUpcoming;
 
   /* ---- Init ---- */
   renderCalendar();
@@ -277,7 +288,7 @@ window.showCalendarEventModal = function(existing = null) {
   document.getElementById('closeCalModal2').onclick = () => modal.remove();
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 
-  document.getElementById('saveCalEvent').onclick = () => {
+  document.getElementById('saveCalEvent').onclick = async () => {
     const title    = document.getElementById('cal_title').value.trim();
     const date     = document.getElementById('cal_date').value;
     const endDate  = document.getElementById('cal_end_date').value;
@@ -286,20 +297,24 @@ window.showCalendarEventModal = function(existing = null) {
 
     if (!title || !date) { alert('Please enter a title and date.'); return; }
 
-    const events = loadCalendarEvents();
-    if (existing) {
-      const idx = events.findIndex(e => e.id === existing.id);
-      if (idx > -1) events[idx] = { ...events[idx], title, date, end_date: endDate, category, note, color: categoryColors[category] };
-    } else {
-      events.push({
-        id: 'cal-' + Date.now(),
-        title, date, end_date: endDate, category, note,
-        color: categoryColors[category]
-      });
+    const saveBtn = document.getElementById('saveCalEvent');
+    saveBtn.disabled = true;
+
+    const payload = { title, date, end_date: endDate || null, category, note, color: categoryColors[category] };
+
+    try {
+      if (existing) {
+        await window.RCA_API.updateCalendarEvent(existing.id, payload);
+      } else {
+        await window.RCA_API.createCalendarEvent(payload);
+      }
+    } catch (e) {
+      saveBtn.disabled = false;
+      alert('Could not save calendar entry: ' + e.message);
+      return;
     }
 
-    saveCalendarEvents(events);
-    window.SCHOOL_EVENTS = events;
+    window.SCHOOL_EVENTS = await loadCalendarEvents();
     modal.remove();
 
     // Refresh calendar
@@ -315,11 +330,15 @@ window.showCalendarEventModal = function(existing = null) {
   };
 };
 
-window.deleteCalendarEvent = function(id) {
+window.deleteCalendarEvent = async function(id) {
   if (!confirm('Remove this entry from the calendar?')) return;
-  const events = loadCalendarEvents().filter(e => e.id !== id);
-  saveCalendarEvents(events);
-  window.SCHOOL_EVENTS = events;
+  try {
+    await window.RCA_API.deleteCalendarEvent(id);
+  } catch (e) {
+    alert('Could not delete calendar entry: ' + e.message);
+    return;
+  }
+  window.SCHOOL_EVENTS = await loadCalendarEvents();
   if (typeof renderCalendar === 'function') renderCalendar();
   if (typeof renderUpcoming === 'function') renderUpcoming();
 };
