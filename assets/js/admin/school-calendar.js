@@ -9,18 +9,26 @@
 */
 
 async function loadCalendarEvents() {
-  const events = await window.RCA_API.getCalendarEvents();
-  // Normalize the API's event_date/description fields to the date/note
-  // names the rest of this file already uses.
-  return events.map(e => ({
-    id: e.id,
-    title: e.title,
-    date: e.event_date,
-    end_date: e.end_date,
-    category: e.category,
-    note: e.description,
-    color: e.color
-  }));
+  try {
+    const events = await window.RCA_API.getCalendarEvents();
+    // Normalize the API's event_date/description fields to the date/note
+    // names the rest of this file already uses.
+    return (events || []).map(e => ({
+      id: e.id,
+      title: e.title,
+      date: e.event_date,
+      end_date: e.end_date,
+      category: e.category,
+      note: e.description,
+      color: e.color
+    }));
+  } catch (e) {
+    // Whatever the failure — stale cached script, network error, bad
+    // response shape — never let it abort the rest of this page's
+    // setup (button wiring, nav, etc. all run after this call).
+    console.warn('Could not load calendar events:', e.message);
+    return [];
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
