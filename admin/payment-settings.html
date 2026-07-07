@@ -328,8 +328,10 @@
             </div>
             <div class="ps-form-group">
               <label class="ps-form-label">Secret Key</label>
-              <input type="password" id="gatewaySecretKey" class="ps-form-input" placeholder="sk_live_xxxxxxxxxxxxxxxx" disabled>
-              <span class="ps-form-hint">Store securely — never share publicly</span>
+              <div style="padding:10px 13px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.8rem;color:#6b7280">
+                Set as a server environment variable (e.g. <code>PAYSTACK_SECRET_KEY</code>) when the gateway is activated — never entered here.
+              </div>
+              <span class="ps-form-hint">A gateway secret key must never be stored in the browser</span>
             </div>
             <div class="ps-form-group" style="grid-column:1/-1">
               <label class="ps-form-label">Webhook URL (auto-generated)</label>
@@ -451,7 +453,7 @@
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
 
   /* ── ICT Admin guard ── */
   var cu      = window.CURRENT_USER;
@@ -465,7 +467,12 @@ document.addEventListener('DOMContentLoaded', function () {
     return;
   }
 
-  var settings = window.PAYMENT_SETTINGS || {};
+  var settings = {};
+  try {
+    settings = await window.RCA_API.call('/settings/payment');
+  } catch (e) {
+    console.warn('Could not load payment settings:', e.message);
+  }
 
   /* ── Load current settings into UI ── */
   var modeVal = settings.mode || 'manual';
@@ -498,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   function enableGatewayFields(enabled) {
-    ['gatewaySelect','gatewayPublicKey','gatewaySecretKey','webhookUrl'].forEach(function (id) {
+    ['gatewaySelect','gatewayPublicKey','webhookUrl'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.disabled = !enabled;
     });
@@ -507,20 +514,28 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   /* ── Save ── */
-  document.getElementById('saveSettingsBtn').addEventListener('click', function () {
+  document.getElementById('saveSettingsBtn').addEventListener('click', async function () {
     var mode = document.querySelector('input[name="paymentMode"]:checked').value;
+    var saveBtn = document.getElementById('saveSettingsBtn');
+    saveBtn.disabled = true;
 
-    window.PAYMENT_SETTINGS = {
+    var payload = {
       mode:                 mode,
       online_gateway:       document.getElementById('gatewaySelect').value,
       online_public_key:    document.getElementById('gatewayPublicKey').value.trim(),
       receipt_prefix:       (document.getElementById('receiptPrefix').value.trim() || 'RCA-RCP').toUpperCase(),
-      enable_result_unlock: document.getElementById('toggleResultUnlock').checked,
-      last_updated:         new Date().toISOString(),
-      last_updated_by:      cu ? cu.full_name : 'ICT Admin'
+      enable_result_unlock: document.getElementById('toggleResultUnlock').checked
     };
 
-    if (window.RCA) window.RCA.save('payment_settings');
+    try {
+      await window.RCA_API.call('/settings/payment', { method: 'PUT', body: payload });
+    } catch (e) {
+      saveBtn.disabled = false;
+      alert('Could not save settings: ' + e.message);
+      return;
+    }
+
+    saveBtn.disabled = false;
     if (window.logActivity) window.logActivity('settings', 'Updated payment settings — mode: ' + mode, 'system');
 
     var badge = document.getElementById('savedBadge');
