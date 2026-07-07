@@ -1,9 +1,15 @@
 /* ============================================
    REPORT CARDS — report-card.js
    ============================================
-   Depends on window.SAMPLE_STUDENTS, window.SCHOOL_CLASSES,
-   window.SCHOOL_SUBJECTS, window.SAMPLE_RESULTS, and
-   window.scoreToGrade (see script order in report-card.html).
+   Roster comes from RCA_API.getStudents(); a pupil's scores/behaviour
+   ratings/class comment come from RCA_API.getStudentResults(admissionNo,
+   term), which reads the real scores/behavior_ratings/class_comments
+   tables (see students.js's GET /:admissionNo/results route).
+
+   Note: the real class_comments table only stores one comment per
+   pupil/term (written by the class teacher) — there's no separate
+   Head Teacher comment column, so the HT remark is always the
+   auto-generated one based on the pupil's average.
 
    CORE IDEA: pick a class, then a pupil within that class, and
    we build a complete report card document - every subject's
@@ -11,27 +17,41 @@
    simple position-in-class calculation, and a remarks line
    generated from the average. Clicking Print uses the browser's
    native print dialog along with our @media print CSS rules.
-
-   IMPORTANT: this page reads from the EXACT SAME window.SAMPLE_RESULTS
-   object that score-entry.js writes into. If you edit a pupil's
-   scores on the Score Entry page and then come to THIS page within
-   the same browser tab session (without a full page reload), you'd
-   see the updated numbers - because both pages share one in-memory
-   object. A full page reload resets it back to freshly-generated
-   sample data, since neither page persists to storage yet.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  const allStudents    = window.SAMPLE_STUDENTS  || [];
-  const allClasses     = window.SCHOOL_CLASSES   || [];
-  const allSubjects    = window.SCHOOL_SUBJECTS  || [];
-  const results        = window.SAMPLE_RESULTS   || {};
-  const behaviorRatings = window.BEHAVIOR_RATINGS || {};
-  const traits          = window.BEHAVIOR_TRAITS  || [];
+  let allStudents       = await window.RCA_API.getStudents();
+  const allClasses      = window.SCHOOL_CLASSES   || [];
+  const traits           = window.BEHAVIOR_TRAITS  || [];
   const scoreToGrade    = window.scoreToGrade;
   const gradeToLabel    = window.gradeToLabel;
   const ratingValueToLabel = window.ratingValueToLabel;
+
+  // Cache of admission_no -> { average, scores, behavior, comment } for
+  // the currently selected term, so class-position ranking doesn't
+  // refetch a classmate's results more than once.
+  let resultsCache = {};
+
+  async function getResults(admissionNo, term) {
+    const key = `${admissionNo}|${term}`;
+    if (!resultsCache[key]) {
+      const data = await window.RCA_API.getStudentResults(admissionNo, term);
+      const scores = data?.scores || [];
+      const totalScore = scores.reduce((sum, r) => sum + Number(r.final_score || 0), 0);
+      const average = scores.length ? totalScore / scores.length : 0;
+      resultsCache[key] = {
+        scores,
+        behavior: data?.behavior || [],
+        comment: data?.comment || null,
+        average,
+        totalScore,
+        overallGrade: scoreToGrade(average),
+        subjectsCount: scores.length
+      };
+    }
+    return resultsCache[key];
+  }
 
   /* --------------------------------------------
      ELEMENT REFERENCES
@@ -76,44 +96,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
-     COMPUTE A PUPIL'S OVERALL SUMMARY ACROSS ALL SUBJECTS
-     -------------------------------------------- */
-  function computeOverallSummary(admissionNo) {
-    const pupilResults = results[admissionNo] || {};
-    const subjectScores = allSubjects.map(subject => pupilResults[subject.id]).filter(Boolean);
-
-    if (subjectScores.length === 0) {
-      return { average: 0, overallGrade: 'F', totalScore: 0, subjectsCount: 0 };
-    }
-
-    const totalScore = subjectScores.reduce((sum, r) => sum + r.finalScore, 0);
-    const average = totalScore / subjectScores.length;
-
-    return {
-      average,
-      overallGrade: scoreToGrade(average),
-      totalScore,
-      subjectsCount: subjectScores.length
-    };
-  }
-
-  /* --------------------------------------------
      COMPUTE A PUPIL'S POSITION WITHIN THEIR CLASS
-     -------------------------------------------- 
+     --------------------------------------------
      Ranks every pupil in the class by their average score
      (highest first), then finds where this pupil lands.
      Ties share the same position (standard competition ranking) -
      e.g. two pupils tied for 2nd both show "2nd", and the next
      pupil down shows "4th", not "3rd".
   */
-  function computeClassPosition(admissionNo, className) {
+  async function computeClassPosition(admissionNo, className, term) {
     const studentsInClass = allStudents.filter(s => s.class_name === className);
 
-    const rankedAverages = studentsInClass
-      .map(s => ({ admissionNo: s.admission_no, average: computeOverallSummary(s.admission_no).average }))
-      .sort((a, b) => b.average - a.average);
+    const rankedAverages = (await Promise.all(
+      studentsInClass.map(async s => ({
+        admissionNo: s.admission_no,
+        average: (await getResults(s.admission_no, term)).average
+      }))
+    )).sort((a, b) => b.average - a.average);
 
-    const thisStudentAverage = rankedAverages.find(r => r.admissionNo === admissionNo).average;
+    const thisStudentAverage = rankedAverages.find(r => r.admissionNo === admissionNo)?.average || 0;
 
     // Position = 1 + count of pupils with a STRICTLY higher average
     const position = 1 + rankedAverages.filter(r => r.average > thisStudentAverage).length;
@@ -164,35 +165,35 @@ document.addEventListener('DOMContentLoaded', () => {
   /* --------------------------------------------
      BUILD THE FULL REPORT CARD HTML
      -------------------------------------------- */
-  function renderReportCard() {
+  async function renderReportCard() {
     const admissionNo = pupilSelect.value;
     const className = classSelect.value;
-    const termLabel = TERM_LABELS[termSelect.value];
+    const term = termSelect.value;
+    const termLabel = TERM_LABELS[term];
 
     if (!admissionNo) {
       reportCardEl.innerHTML = '<p style="text-align:center;color:#777;padding:2rem;">No pupils found in this class.</p>';
       return;
     }
 
-    const student = allStudents.find(s => s.admission_no === admissionNo);
-    const pupilResults = results[admissionNo] || {};
-    const summary = computeOverallSummary(admissionNo);
-    const { position, classSize } = computeClassPosition(admissionNo, className);
-    const ratings = behaviorRatings[admissionNo] || { ratings: {}, comment: '' };
+    reportCardEl.innerHTML = '<p style="text-align:center;color:#777;padding:2rem;">Loading…</p>';
 
-    const subjectRows = allSubjects.map(subject => {
-      const r = pupilResults[subject.id];
-      if (!r) return '';
-      return `
-        <tr>
-          <td class="rc-subject-cell">${subject.name}</td>
-          <td>${r.caTotal}</td>
-          <td>${r.examScore}</td>
-          <td><strong>${r.finalScore}</strong></td>
-          <td class="rc-grade-cell ${r.grade}">${r.grade}</td>
-        </tr>
-      `;
-    }).join('');
+    const student = allStudents.find(s => s.admission_no === admissionNo);
+    const summary = await getResults(admissionNo, term);
+    const { position, classSize } = await computeClassPosition(admissionNo, className, term);
+
+    const behaviorMap = {};
+    (summary.behavior || []).forEach(b => { behaviorMap[b.trait_code] = b.rating; });
+
+    const subjectRows = summary.scores.map(r => `
+      <tr>
+        <td class="rc-subject-cell">${r.subject_name || r.subject_id}</td>
+        <td>${Number(r.ca_total)}</td>
+        <td>${Number(r.exam)}</td>
+        <td><strong>${Number(r.final_score)}</strong></td>
+        <td class="rc-grade-cell ${r.grade}">${r.grade}</td>
+      </tr>
+    `).join('');
 
     reportCardEl.innerHTML = `
       <div class="rc-header">
@@ -274,25 +275,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       <div class="rc-remarks">
         <span class="rc-remarks-label">Class Teacher's Remark</span>
-        ${ratings.comment
-          ? `"${ratings.comment}"`
+        ${summary.comment
+          ? `"${summary.comment}"`
           : generateRemark(summary.average)
         }
       </div>
 
       <div class="rc-remarks rc-ht-remarks">
         <span class="rc-remarks-label">Head Teacher's Comment</span>
-        ${ratings.ht_comment
-          ? `"${ratings.ht_comment}"`
-          : generateHtComment(summary.average)
-        }
+        ${generateHtComment(summary.average)}
       </div>
 
       <div class="rc-behavior-section">
         <div class="rc-behavior-title">Behavioural &amp; Affective Assessment</div>
         <div class="rc-behavior-grid">
           ${traits.map(trait => {
-            const val = ratings.ratings[trait.id] || 0;
+            const val = behaviorMap[trait.id] || 0;
             const dots = [1,2,3,4,5].map(n =>
               `<span class="rc-dot ${n <= val ? 'filled' : ''}"></span>`
             ).join('');
