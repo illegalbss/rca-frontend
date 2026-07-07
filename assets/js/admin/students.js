@@ -23,6 +23,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Track which class is currently being viewed in detail (null = none)
   let currentClass = null;
 
+  // Matches the backend's own role requirements: POST /students
+  // (creating a pupil) is ict_admin only — not even Head Teacher.
+  // PUT /students/:admissionNo (edit/remove) allows Head Teacher too.
+  // No form or subject teacher can add, edit, or remove pupils either way.
+  const _cuRoles = window.CURRENT_USER ? (window.CURRENT_USER.roles || [window.CURRENT_USER.role]) : [];
+  const canAddStudents  = _cuRoles.includes('ict_admin');
+  const canEditStudents = _cuRoles.includes('ict_admin') || _cuRoles.includes('head_teacher');
+
   /* --------------------------------------------
      ELEMENT REFERENCES
      -------------------------------------------- */
@@ -95,20 +103,42 @@ document.addEventListener('DOMContentLoaded', () => {
      one card showing that count + a male/female breakdown.
   */
   function renderClassCards() {
-    // Filter classes visible to this user
+    // Filter classes visible to this user. The student ROSTER is
+    // pastoral data, not a teaching assignment — only the class
+    // teacher (form teacher) responsible for a class gets to browse
+    // its full pupil list here. A subject teacher who isn't also a
+    // form teacher has no reason to see any class's roster at all
+    // (they still get a class+subject picker on Score Entry, which
+    // uses the broader linked_classes/linked_subjects assignment).
     const currentUser = window.CURRENT_USER;
     const currentRoles = currentUser ? (currentUser.roles || [currentUser.role]) : [];
     const isAdmin = currentRoles.includes('ict_admin') || currentRoles.includes('head_teacher') || currentRoles.includes('proprietor');
-    const myClasses = currentUser?.linked_classes || [];
-    const visibleClasses = isAdmin ? allClasses :
-      allClasses.filter(cls => myClasses.some(mc => mc.trim().toLowerCase() === cls.trim().toLowerCase()));
-    totalPupilsPill.textContent = `${allStudents.length} pupils total`;
+    const isFormTeacher = currentUser?.primary_role === 'class_teacher';
+    const myFormClass = isFormTeacher ? (currentUser.form_class || (currentUser.linked_classes || [])[0]) : null;
+
+    const visibleClasses = isAdmin ? allClasses
+      : myFormClass ? allClasses.filter(cls => cls.trim().toLowerCase() === myFormClass.trim().toLowerCase())
+      : [];
+
+    if (visibleClasses.length === 0 && !isAdmin) {
+      nurseryCardsWrap.innerHTML = '';
+      primaryCardsWrap.innerHTML = `<p style="padding:24px;color:#6b7280;text-align:center;grid-column:1/-1">
+        You don't have access to the student roster. Only form teachers (for their own class) and
+        the ICT Administrator / Head Teacher can view pupil records. Contact the ICT Administrator if you believe this is an error.
+      </p>`;
+      totalPupilsPill.textContent = '';
+      return;
+    }
+
+    totalPupilsPill.textContent = isAdmin
+      ? `${allStudents.length} pupils total`
+      : `${allStudents.filter(s => visibleClasses.includes(s.class_name)).length} pupils in your class`;
 
     // Clear existing cards to prevent duplicates on re-render
     nurseryCardsWrap.innerHTML = '';
     primaryCardsWrap.innerHTML = '';
 
-    allClasses.forEach(className => {
+    visibleClasses.forEach(className => {
       // .filter() returns a NEW array containing only students
       // whose class_name matches this one
       const studentsInClass = allStudents.filter(s =>
@@ -241,8 +271,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <td class="col-actions">
           <div class="row-actions">
             <button class="row-action-btn" onclick="window._viewStudent('${student.admission_no}')">View</button>
-            <button class="row-action-btn" onclick="window._editStudent('${student.admission_no}')">Edit</button>
-            <button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="window._deleteStudent('${student.admission_no}')">Remove</button>
+            ${canEditStudents ? `<button class="row-action-btn" onclick="window._editStudent('${student.admission_no}')">Edit</button>` : ''}
+            ${canEditStudents ? `<button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="window._deleteStudent('${student.admission_no}')">Remove</button>` : ''}
           </div>
         </td>
       </tr>
@@ -337,14 +367,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* --------------------------------------------
-     ADD PUPIL BUTTON (Phase 1 placeholder)
-     -------------------------------------------- 
-     We don't have a real "add to database" yet - that needs
-     Phase 2 (localStorage) at minimum, or Phase 4 (real backend)
-     for it to persist properly. For now, this confirms the
-     button works and previews what's coming.
-  */
-  document.getElementById('addPupilBtn').addEventListener('click', () => {
+     ADD PUPIL BUTTON — ICT Admin / Head Teacher only. No teacher
+     (form or subject) can add pupils to the roster, regardless of
+     which class they can view.
+     -------------------------------------------- */
+  const addPupilBtn = document.getElementById('addPupilBtn');
+  if (!canAddStudents && addPupilBtn) addPupilBtn.style.display = 'none';
+  addPupilBtn?.addEventListener('click', () => {
     window._addStudent(currentClass);
   });
 

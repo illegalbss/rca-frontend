@@ -900,12 +900,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   });
 
-  /* RBAC: restrict Add for non-admins */
+  /* RBAC: restrict Add for non-admins — matches the backend's own
+     requireRole('ict_admin') on POST /students (creating a pupil is
+     ict_admin only, not even Head Teacher). */
   var cu     = window.CURRENT_USER;
   var cuRoles = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
-  var canEdit = cuRoles.some(function (role) {
-    return ['ict_admin', 'head_teacher', 'proprietor'].includes(role);
-  });
+  var canEdit = cuRoles.includes('ict_admin');
   if (!canEdit) {
     if (addBtn) addBtn.style.display = 'none';
   }
