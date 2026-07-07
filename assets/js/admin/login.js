@@ -62,12 +62,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setLoading(true);
 
-    // ---- Try localStorage first (always works on any device) ----
+    // ---- Try the real backend FIRST ----
+    // Real accounts (actual staff/parent emails) only exist in the database,
+    // not in the hardcoded demo fixture — checking demo data first meant a
+    // real user's email would never even reach the API.
+    try {
+      const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
+      const res = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pwd })
+      });
+      const data = await res.json();
+
+      if (res.ok && data.token && data.user) {
+        storeSession(data.user, data.token);
+        return;
+      }
+
+      // API reachable but rejected the login (wrong password, deactivated,
+      // no such account) — that's authoritative, don't fall through to demo.
+      if (res.status === 401 || res.status === 403) {
+        setLoading(false);
+        showError(data.error || 'Login failed.');
+        return;
+      }
+      // Any other API error (500, etc.) — fall through to demo mode below.
+      console.warn('API login failed unexpectedly, falling back to demo mode:', data.error || res.status);
+    } catch (e) {
+      console.warn('API unreachable, falling back to demo mode:', e.message);
+    }
+
+    // ---- Demo/offline fallback: local fixture data only ----
     const allUsers = window.SAMPLE_USERS || [];
     const user = allUsers.find(u => u.email.toLowerCase() === email);
 
     if (user) {
-      // Found in local users — check password
       if (user.status === 'deactivated' || user.status === 'suspended') {
         setLoading(false);
         showError('This account has been deactivated. Contact the ICT Administrator.');
@@ -76,38 +106,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const defaultPwd = 'RCA@2026!';
       const userPwd = user.password || defaultPwd;
       if (pwd === userPwd || pwd === defaultPwd) {
-        // Get the REAL token from the API before redirecting — the previous
-        // version redirected immediately and fired this fetch in the
-        // background, so the page navigated away before the token was
-        // ever saved. We now wait for it (with a short timeout fallback).
-        let realToken = null;
-        try {
-          const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
-          const res = await fetch(`${apiUrl}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password: pwd })
-          });
-          const data = await res.json();
-          if (res.ok && data.token) {
-            realToken = data.token;
-          } else {
-            console.warn('API login did not return a token:', data.error || res.status);
-          }
-        } catch (e) {
-          console.warn('API login unreachable, continuing in local-only mode:', e.message);
-        }
-
-        storeSession(user, realToken);
-        return;
-      } else {
-        setLoading(false);
-        showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
+        storeSession(user, null);
         return;
       }
+      setLoading(false);
+      showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
+      return;
     }
 
-    // No account found in local list
+    // No account found anywhere
     setLoading(false);
     showError('No account found with that email address. Contact the ICT Administrator.');
     return;
