@@ -1,12 +1,27 @@
 /* =============================================
    ADMISSION REGISTER — admission-register.js
    Royal Crystal Academy
-   ============================================= */
+   =============================================
+   Reads/writes the real `students` table via RCA_API — this page and
+   the Students page now share the exact same records (the register
+   just shows admission-specific fields the Students page doesn't:
+   previous_school, class_passed_previous, date_of_admission/completion,
+   parent_address, docs on file). admission_no is the identifier used
+   throughout (there's no separate register-only id).
 
-document.addEventListener('DOMContentLoaded', function () {
+   Class history / audit log aren't separately tracked columns — both
+   tabs are reconstructed from activity_logs entries that mention this
+   pupil's admission number.
+*/
+
+document.addEventListener('DOMContentLoaded', async function () {
 
   /* ── DATA ─────────────────────────────────── */
-  var REGISTER = window.ADMISSION_REGISTER || [];
+  var REGISTER = [];
+
+  async function loadRegister() {
+    REGISTER = await window.RCA_API.getStudents({ status: 'all' });
+  }
 
   /* ── DOM REFS ─────────────────────────────── */
   var searchInput    = document.getElementById('arSearch');
@@ -43,27 +58,13 @@ document.addEventListener('DOMContentLoaded', function () {
       .join('').substring(0, 2).toUpperCase();
   }
 
-  function generateAdmissionNo() {
-    // Uses the same persistent counter as the Students page (see
-    // window.nextAdmissionNo in localstorage.js) so numbers issued from
-    // either screen can never collide with each other.
-    if (window.nextAdmissionNo) return window.nextAdmissionNo();
-    var year = new Date().getFullYear();
-    var allNos = [].concat(
-      REGISTER.map(function (r) { return r.admission_no || ''; }),
-      (window.SAMPLE_STUDENTS || []).map(function (s) { return s.admission_no || ''; })
-    );
-    var max = 0;
-    allNos.forEach(function (no) {
-      var m = no && no.match(/RCA\/\d+\/(\d+)/);
-      if (m) max = Math.max(max, parseInt(m[1], 10));
+  // Serial numbers aren't stored — they're just this record's rank in
+  // admission-number order, computed fresh each render.
+  function serialOf(r) {
+    var sorted = REGISTER.slice().sort(function (a, b) {
+      return (a.admission_no || '').localeCompare(b.admission_no || '');
     });
-    return 'RCA/' + year + '/' + String(max + 1).padStart(4, '0');
-  }
-
-  function getNextSerialNo() {
-    if (!REGISTER.length) return 1;
-    return Math.max.apply(null, REGISTER.map(function (r) { return r.serial_no || 0; })) + 1;
+    return sorted.findIndex(function (x) { return x.admission_no === r.admission_no; }) + 1;
   }
 
   function getStatusBadge(status) {
@@ -75,11 +76,6 @@ document.addEventListener('DOMContentLoaded', function () {
       deceased:    '<span class="ar-badge ar-badge-deceased">Deceased</span>'
     };
     return map[status] || ('<span class="ar-badge ar-badge-active">' + (status || 'Active') + '</span>');
-  }
-
-  function saveRegister() {
-    window.ADMISSION_REGISTER = REGISTER;
-    if (window.RCA) window.RCA.save('admission_register');
   }
 
   function closeModal(id) {
@@ -122,11 +118,11 @@ document.addEventListener('DOMContentLoaded', function () {
                   (r.parent_name      || '').toLowerCase().includes(term) ||
                   (r.parent_phone     || '').toLowerCase().includes(term) ||
                   (r.previous_school  || '').toLowerCase().includes(term) ||
-                  (r.current_class    || '').toLowerCase().includes(term);
+                  (r.class_name       || '').toLowerCase().includes(term);
         if (!hit) return false;
       }
-      if (cls    && r.current_class !== cls)   return false;
-      if (status && r.status        !== status) return false;
+      if (cls    && r.class_name !== cls)    return false;
+      if (status && r.status     !== status) return false;
       return true;
     });
   }
@@ -147,30 +143,30 @@ document.addEventListener('DOMContentLoaded', function () {
     if (noResultsEl) noResultsEl.style.display = 'none';
 
     var sorted = filtered.slice().sort(function (a, b) {
-      return (a.serial_no || 0) - (b.serial_no || 0);
+      return (a.admission_no || '').localeCompare(b.admission_no || '');
     });
 
-    tableBody.innerHTML = sorted.map(function (r) {
-      var genderClass = r.gender === 'female' ? 'ar-avatar-female' : 'ar-avatar-male';
+    tableBody.innerHTML = sorted.map(function (r, i) {
+      var genderClass = (r.gender || '').toLowerCase() === 'female' ? 'ar-avatar-female' : 'ar-avatar-male';
       return '<tr>' +
-        '<td class="col-serial">' + (r.serial_no || '—') + '</td>' +
+        '<td class="col-serial">' + (i + 1) + '</td>' +
         '<td class="col-admno"><span class="ar-admno">' + (r.admission_no || '—') + '</span></td>' +
         '<td class="col-name"><div style="display:flex;align-items:center;gap:10px">' +
           '<div class="row-avatar ' + genderClass + '">' + getInitials(r.full_name) + '</div>' +
           '<div><div class="ar-name">' + (r.full_name || '—') + '</div>' +
-          '<div class="ar-sub">' + (r.gender === 'female' ? 'Female' : 'Male') + '</div></div>' +
+          '<div class="ar-sub">' + ((r.gender || '').toLowerCase() === 'female' ? 'Female' : 'Male') + '</div></div>' +
         '</div></td>' +
-        '<td class="col-class">' + (r.current_class || '—') + '</td>' +
+        '<td class="col-class">' + (r.class_name || '—') + '</td>' +
         '<td class="col-dob">'        + fmtDate(r.date_of_birth)    + '</td>' +
         '<td class="col-admission">'  + fmtDate(r.date_of_admission) + '</td>' +
         '<td class="col-parent"><div class="ar-parent-name">' + (r.parent_name  || '—') + '</div>' +
           '<div class="ar-sub">' + (r.parent_phone || '') + '</div></td>' +
         '<td class="col-status">' + getStatusBadge(r.status) + '</td>' +
         '<td class="col-actions"><div class="row-actions">' +
-          '<button class="row-action-btn" onclick="AR.view(\'' + r.id + '\')">View</button>' +
-          '<button class="row-action-btn" onclick="AR.edit(\'' + r.id + '\')">Edit</button>' +
-          '<button class="row-action-btn ar-btn-promote" onclick="AR.promote(\'' + r.id + '\')" title="Promote to next class">&#8593; Promote</button>' +
-          '<button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="AR.remove(\'' + r.id + '\')">Remove</button>' +
+          '<button class="row-action-btn" onclick="AR.view(\'' + r.admission_no + '\')">View</button>' +
+          '<button class="row-action-btn" onclick="AR.edit(\'' + r.admission_no + '\')">Edit</button>' +
+          '<button class="row-action-btn ar-btn-promote" onclick="AR.promote(\'' + r.admission_no + '\')" title="Promote to next class">&#8593; Promote</button>' +
+          '<button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="AR.remove(\'' + r.admission_no + '\')">Remove</button>' +
         '</div></td>' +
       '</tr>';
     }).join('');
@@ -199,14 +195,16 @@ document.addEventListener('DOMContentLoaded', function () {
   function showFormModal(record) {
     var isEdit = !!record;
     var r = record || {
-      admission_no:     generateAdmissionNo(),
-      serial_no:        getNextSerialNo(),
+      admission_no:      null,
       date_of_admission: new Date().toISOString().split('T')[0],
-      status:           'active',
-      gender:           'male',
-      docs:             {}
+      status:            'active',
+      gender:            'male',
+      docs:              {}
     };
     var docs = r.docs || {};
+    var nameParts = (r.full_name || '').split(' ');
+    var firstName = isEdit ? nameParts[0] || '' : '';
+    var lastName  = isEdit ? nameParts.slice(1).join(' ') : '';
 
     var modal = document.getElementById('arFormModal');
     modal.innerHTML =
@@ -217,39 +215,32 @@ document.addEventListener('DOMContentLoaded', function () {
         '</div>' +
         '<div class="ar-modal-body">' +
 
-          /* Admission No + Serial */
           '<div class="ar-form-row">' +
             '<div class="ar-form-group">' +
               '<label class="ar-form-label">Admission Number</label>' +
-              '<input id="fAdmNo" class="ar-form-input" value="' + (r.admission_no || '') + '" readonly>' +
-            '</div>' +
-            '<div class="ar-form-group" style="max-width:110px">' +
-              '<label class="ar-form-label">Serial No.</label>' +
-              '<input id="fSerial" class="ar-form-input" value="' + (r.serial_no || '') + '" readonly>' +
+              '<input id="fAdmNo" class="ar-form-input" value="' + (r.admission_no || 'Assigned automatically on save') + '" readonly>' +
             '</div>' +
           '</div>' +
 
           '<div class="ar-section-divider">Pupil Information</div>' +
 
-          /* Name row */
           '<div class="ar-form-row">' +
             '<div class="ar-form-group ar-form-group-wide">' +
               '<label class="ar-form-label">First Name *</label>' +
-              '<input id="fFirstName" class="ar-form-input" placeholder="First name" value="' + (r.first_name || '') + '">' +
+              '<input id="fFirstName" class="ar-form-input" placeholder="First name" value="' + firstName + '">' +
             '</div>' +
             '<div class="ar-form-group ar-form-group-wide">' +
               '<label class="ar-form-label">Last Name / Surname *</label>' +
-              '<input id="fLastName" class="ar-form-input" placeholder="Surname / family name" value="' + (r.last_name || '') + '">' +
+              '<input id="fLastName" class="ar-form-input" placeholder="Surname / family name" value="' + lastName + '">' +
             '</div>' +
           '</div>' +
 
-          /* Gender + DOB + Date of Admission */
           '<div class="ar-form-row">' +
             '<div class="ar-form-group">' +
               '<label class="ar-form-label">Gender *</label>' +
               '<select id="fGender" class="ar-form-select">' +
-                '<option value="male"'   + (r.gender !== 'female' ? ' selected' : '') + '>Male</option>' +
-                '<option value="female"' + (r.gender === 'female' ? ' selected' : '') + '>Female</option>' +
+                '<option value="male"'   + ((r.gender || 'male').toLowerCase() !== 'female' ? ' selected' : '') + '>Male</option>' +
+                '<option value="female"' + ((r.gender || '').toLowerCase() === 'female' ? ' selected' : '') + '>Female</option>' +
               '</select>' +
             '</div>' +
             '<div class="ar-form-group">' +
@@ -262,11 +253,10 @@ document.addEventListener('DOMContentLoaded', function () {
             '</div>' +
           '</div>' +
 
-          /* Current Class + Status + Completion Date */
           '<div class="ar-form-row">' +
             '<div class="ar-form-group ar-form-group-wide">' +
               '<label class="ar-form-label">Current Class *</label>' +
-              '<select id="fClass" class="ar-form-select">' + buildClassOptions(r.current_class) + '</select>' +
+              '<select id="fClass" class="ar-form-select">' + buildClassOptions(r.class_name) + '</select>' +
             '</div>' +
             '<div class="ar-form-group">' +
               '<label class="ar-form-label">Status</label>' +
@@ -333,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     modal.classList.add('open');
 
-    document.getElementById('arFormSaveBtn').addEventListener('click', function () {
+    document.getElementById('arFormSaveBtn').addEventListener('click', async function () {
       var firstName    = (document.getElementById('fFirstName').value || '').trim().toUpperCase();
       var lastName     = (document.getElementById('fLastName').value  || '').trim().toUpperCase();
       var gender       = document.getElementById('fGender').value;
@@ -356,78 +346,34 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!doa)  { alert('Please enter the date of admission.'); return; }
       if (!cls)  { alert('Please select the current class.'); return; }
 
-      var fullName = firstName + ' ' + lastName;
-      var user = getUser();
-      var now  = new Date().toISOString();
+      var saveBtn = document.getElementById('arFormSaveBtn');
+      saveBtn.disabled = true;
 
-      if (isEdit) {
-        var changes = [];
-        if (r.first_name    !== firstName) changes.push({ field: 'first_name',    old: r.first_name,    new: firstName });
-        if (r.last_name     !== lastName)  changes.push({ field: 'last_name',     old: r.last_name,     new: lastName  });
-        if (r.gender        !== gender)    changes.push({ field: 'gender',         old: r.gender,        new: gender    });
-        if (r.current_class !== cls)       changes.push({ field: 'current_class', old: r.current_class, new: cls       });
-        if (r.status        !== status)    changes.push({ field: 'status',         old: r.status,        new: status    });
-        if ((r.parent_name  || '') !== parentName) changes.push({ field: 'parent_name', old: r.parent_name, new: parentName });
+      var payload = {
+        first_name: firstName, last_name: lastName, gender,
+        date_of_birth: dob || null, date_of_admission: doa,
+        class_name: cls, status,
+        date_of_completion: docDate || null,
+        parent_name: parentName, parent_phone: parentPhone, parent_address: parentAddr,
+        previous_school: prevSchool, class_passed_previous: prevClass,
+        docs: { passport: docPassport, birth_cert: docBirth, transfer_letter: docTransfer, others: docOthers }
+      };
 
-        r.first_name           = firstName;
-        r.last_name            = lastName;
-        r.full_name            = fullName;
-        r.gender               = gender;
-        r.date_of_birth        = dob;
-        r.date_of_admission    = doa;
-        r.current_class        = cls;
-        r.status               = status;
-        r.date_of_completion   = docDate;
-        r.parent_name          = parentName;
-        r.parent_phone         = parentPhone;
-        r.parent_address       = parentAddr;
-        r.previous_school      = prevSchool;
-        r.class_passed_previous = prevClass;
-        r.docs = { passport: docPassport, birth_cert: docBirth, transfer_letter: docTransfer, others: docOthers };
-        r.updated_at           = now;
-        r.updated_by           = user.full_name;
-        if (!r.audit_log) r.audit_log = [];
-        r.audit_log.push({ action: 'edited', by: user.full_name, at: now, changes: changes });
-        if (window.logActivity) window.logActivity('edit', 'Updated register record: ' + fullName, 'students');
-      } else {
-        /* Duplicate check */
-        var duplicate = REGISTER.find(function (x) {
-          return x.full_name === fullName && x.date_of_birth === dob;
-        });
-        if (duplicate) {
-          if (!confirm('A record with the same name and date of birth already exists (' + duplicate.admission_no + ').\n\nAdd anyway?')) return;
+      try {
+        if (isEdit) {
+          await window.RCA_API.call('/students/' + encodeURIComponent(r.admission_no), { method: 'PUT', body: payload });
+          if (window.logActivity) window.logActivity('edit', 'Updated register record: ' + firstName + ' ' + lastName, 'students');
+        } else {
+          await window.RCA_API.call('/students', { method: 'POST', body: payload });
+          if (window.logActivity) window.logActivity('create', 'Added to register: ' + firstName + ' ' + lastName, 'students');
         }
-        var newRec = {
-          id:                    'AR-' + Date.now(),
-          serial_no:             getNextSerialNo(),
-          admission_no:          r.admission_no,
-          first_name:            firstName,
-          last_name:             lastName,
-          full_name:             fullName,
-          gender:                gender,
-          date_of_birth:         dob,
-          date_of_admission:     doa,
-          parent_name:           parentName,
-          parent_phone:          parentPhone,
-          parent_address:        parentAddr,
-          previous_school:       prevSchool,
-          class_passed_previous: prevClass,
-          current_class:         cls,
-          date_of_completion:    docDate,
-          status:                status,
-          docs: { passport: docPassport, birth_cert: docBirth, transfer_letter: docTransfer, others: docOthers },
-          class_history: [{ class_name: cls, session: '2025/2026', enrolled_on: doa, enrolled_by: user.full_name }],
-          audit_log:     [{ action: 'created', by: user.full_name, at: now, changes: [] }],
-          created_at:    now,
-          created_by:    user.full_name,
-          updated_at:    now,
-          updated_by:    user.full_name
-        };
-        REGISTER.push(newRec);
-        if (window.logActivity) window.logActivity('create', 'Added to register: ' + fullName + ' (' + newRec.admission_no + ')', 'students');
+      } catch (e) {
+        saveBtn.disabled = false;
+        alert('Could not save: ' + e.message);
+        return;
       }
 
-      saveRegister();
+      await loadRegister();
       closeModal('arFormModal');
       renderTable();
     });
@@ -440,39 +386,38 @@ document.addEventListener('DOMContentLoaded', function () {
       '</span><span class="ar-info-value">' + (value || '—') + '</span></div>';
   }
 
-  function showViewModal(id) {
-    var r = REGISTER.find(function (x) { return x.id === id; });
+  // Reconstruct class-history / audit entries from activity_logs, since
+  // neither is a separately tracked column — every log whose target
+  // mentions this pupil's admission number is treated as relevant.
+  async function getPupilActivity(admissionNo) {
+    var logs = await window.RCA_API.getActivityLogs({ category: 'students', limit: 500 });
+    return (logs || []).filter(function (l) {
+      return (l.target || '').includes(admissionNo);
+    });
+  }
+
+  async function showViewModal(admissionNo) {
+    var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
     if (!r) return;
 
     var docs = r.docs || {};
-    var history  = r.class_history || [];
-    var auditLog = r.audit_log     || [];
+    var activity = await getPupilActivity(admissionNo);
 
-    var histHTML = history.length
-      ? history.map(function (h, i) {
-          var promText = h.promoted_on
-            ? fmtDate(h.promoted_on) + ' &#8594; ' + (h.promoted_to || '')
-            : '<em style="color:#9ca3af">Current class</em>';
-          return '<tr><td>' + (i + 1) + '</td><td>' + (h.class_name || '—') + '</td>' +
-            '<td>' + (h.session || '—') + '</td>' +
-            '<td>' + (h.enrolled_on ? fmtDate(h.enrolled_on) : '—') + '</td>' +
-            '<td>' + promText + '</td>' +
-            '<td>' + (h.enrolled_by || h.promoted_by || '—') + '</td></tr>';
-        }).join('')
-      : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#9ca3af">No class history recorded</td></tr>';
+    var promotions = activity.filter(function (a) { return a.action === 'promote'; });
+    var histHTML = promotions.length
+      ? promotions.map(function (a) {
+          return '<tr><td>' + new Date(a.created_at).toLocaleDateString('en-GB') + '</td>' +
+            '<td>' + (a.target || '—') + '</td><td>' + (a.user_name || '—') + '</td></tr>';
+        }).join('') +
+        '<tr><td>' + fmtDate(r.date_of_admission) + '</td><td>Admitted to ' + (r.class_name || '—') + '</td><td>' + (r.created_by || '—') + '</td></tr>'
+      : '<tr><td colspan="3" style="text-align:center;padding:20px;color:#9ca3af">No promotion history recorded</td></tr>';
 
-    var auditHTML = auditLog.length
-      ? auditLog.slice().reverse().map(function (a) {
-          var changeSummary = '';
-          if (a.changes && a.changes.length) {
-            changeSummary = a.changes.map(function (c) {
-              return c.field + ': ' + (c.old || '—') + ' &#8594; ' + (c.new || '—');
-            }).join('; ');
-          }
+    var auditHTML = activity.length
+      ? activity.slice().reverse().map(function (a) {
           return '<tr><td>' + ((a.action || '').charAt(0).toUpperCase() + (a.action || '').slice(1)) + '</td>' +
-            '<td>' + (a.by || '—') + '</td>' +
-            '<td>' + (a.at ? new Date(a.at).toLocaleString('en-GB') : '—') + '</td>' +
-            '<td style="font-size:0.73rem;color:#6b7280">' + (changeSummary || '—') + '</td></tr>';
+            '<td>' + (a.user_name || '—') + '</td>' +
+            '<td>' + (a.created_at ? new Date(a.created_at).toLocaleString('en-GB') : '—') + '</td>' +
+            '<td style="font-size:0.73rem;color:#6b7280">' + (a.target || '—') + '</td></tr>';
         }).join('')
       : '<tr><td colspan="4" style="text-align:center;padding:20px;color:#9ca3af">No audit records</td></tr>';
 
@@ -491,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function () {
       docsHTML = '<div style="padding:20px;text-align:center;color:#9ca3af">No documents marked as received</div>';
     }
 
-    var gClass = r.gender === 'female' ? 'ar-avatar-female' : 'ar-avatar-male';
+    var gClass = (r.gender || '').toLowerCase() === 'female' ? 'ar-avatar-female' : 'ar-avatar-male';
     var modal = document.getElementById('arViewModal');
 
     modal.innerHTML =
@@ -502,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function () {
             '<div>' +
               '<div class="ar-modal-title">' + (r.full_name || '—') + '</div>' +
               '<div style="font-size:0.8rem;color:#6b7280;margin-top:3px">' +
-                (r.admission_no || '') + ' &nbsp;&#183;&nbsp; ' + (r.current_class || '—') +
+                (r.admission_no || '') + ' &nbsp;&#183;&nbsp; ' + (r.class_name || '—') +
                 ' &nbsp;&#183;&nbsp; ' + getStatusBadge(r.status) +
               '</div>' +
             '</div>' +
@@ -519,17 +464,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         '<div class="ar-modal-body">' +
 
-          /* TAB: Profile */
           '<div id="vTab-info" class="ar-tab-panel">' +
             '<div style="font-weight:700;font-size:0.78rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Pupil Details</div>' +
             '<div class="ar-view-grid">' +
               arInfoRow('Admission Number', r.admission_no) +
-              arInfoRow('Serial Number', r.serial_no) +
               arInfoRow('Full Name', r.full_name) +
-              arInfoRow('Gender', r.gender === 'female' ? 'Female' : 'Male') +
+              arInfoRow('Gender', (r.gender || '').toLowerCase() === 'female' ? 'Female' : 'Male') +
               arInfoRow('Date of Birth', fmtDate(r.date_of_birth)) +
               arInfoRow('Date of Admission', fmtDate(r.date_of_admission)) +
-              arInfoRow('Current Class', r.current_class) +
+              arInfoRow('Current Class', r.class_name) +
               arInfoRow('Status', getStatusBadge(r.status)) +
               arInfoRow('Date of Completion', fmtDate(r.date_of_completion)) +
             '</div>' +
@@ -548,34 +491,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 arInfoRow('Class Passed', r.class_passed_previous) +
               '</div>' +
             '</div>' +
-            '<div style="margin-top:14px;padding-top:10px;border-top:1px solid #f3f4f6;font-size:0.73rem;color:#9ca3af">' +
-              'Added by ' + (r.created_by || '—') + ' on ' + (r.created_at ? new Date(r.created_at).toLocaleString('en-GB') : '—') +
-              (r.updated_at && r.updated_at !== r.created_at
-                ? ' &nbsp;&#183;&nbsp; Last edited by ' + (r.updated_by || '—') + ' on ' + new Date(r.updated_at).toLocaleString('en-GB')
-                : '') +
-            '</div>' +
           '</div>' +
 
-          /* TAB: Class History */
           '<div id="vTab-history" class="ar-tab-panel" style="display:none">' +
             '<div class="table-scroll">' +
               '<table class="data-table">' +
-                '<thead><tr><th>#</th><th>Class</th><th>Session</th><th>Enrolled On</th><th>Promoted</th><th>By</th></tr></thead>' +
+                '<thead><tr><th>Date</th><th>Event</th><th>By</th></tr></thead>' +
                 '<tbody>' + histHTML + '</tbody>' +
               '</table>' +
             '</div>' +
           '</div>' +
 
-          /* TAB: Documents */
           '<div id="vTab-docs" class="ar-tab-panel" style="display:none">' +
             '<div style="padding:10px 0">' + docsHTML + '</div>' +
           '</div>' +
 
-          /* TAB: Audit Log */
           '<div id="vTab-audit" class="ar-tab-panel" style="display:none">' +
             '<div class="table-scroll">' +
               '<table class="data-table">' +
-                '<thead><tr><th>Action</th><th>By</th><th>Date &amp; Time</th><th>Changes</th></tr></thead>' +
+                '<thead><tr><th>Action</th><th>By</th><th>Date &amp; Time</th><th>Details</th></tr></thead>' +
                 '<tbody>' + auditHTML + '</tbody>' +
               '</table>' +
             '</div>' +
@@ -583,8 +517,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         '</div>' + /* end modal-body */
         '<div class="ar-modal-footer">' +
-          '<button class="btn btn-outline" onclick="AR.printProfile(\'' + r.id + '\')">&#128424; Print Profile</button>' +
-          '<button class="btn btn-primary" onclick="AR.closeModal(\'arViewModal\');AR.edit(\'' + r.id + '\')">Edit Record</button>' +
+          '<button class="btn btn-outline" onclick="AR.printProfile(\'' + r.admission_no + '\')">&#128424; Print Profile</button>' +
+          '<button class="btn btn-primary" onclick="AR.closeModal(\'arViewModal\');AR.edit(\'' + r.admission_no + '\')">Edit Record</button>' +
         '</div>' +
       '</div>';
 
@@ -593,15 +527,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ── PROMOTE MODAL ────────────────────────── */
 
-  function showPromoteModal(id) {
-    var r = REGISTER.find(function (x) { return x.id === id; });
+  function showPromoteModal(admissionNo) {
+    var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
     if (!r) return;
 
     var allClasses = window.SCHOOL_CLASSES || [
       'Pre-Nursery 1','Pre-Nursery 2','Nursery 1','Nursery 2','Nursery 3',
       'Basic 1A','Basic 1B','Basic 2','Basic 3','Basic 4','Basic 5','Basic 6'
     ];
-    var currentIdx = allClasses.indexOf(r.current_class);
+    var currentIdx = allClasses.indexOf(r.class_name);
     var suggestedNext = (currentIdx >= 0 && currentIdx < allClasses.length - 1)
       ? allClasses[currentIdx + 1] : null;
 
@@ -620,15 +554,11 @@ document.addEventListener('DOMContentLoaded', function () {
         '<div class="ar-modal-body">' +
           '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 16px;margin-bottom:20px">' +
             '<div style="font-weight:700;color:#166534;font-size:0.92rem">' + (r.full_name || 'Student') + '</div>' +
-            '<div style="font-size:0.82rem;color:#16a34a;margin-top:4px">Current Class: <strong>' + (r.current_class || '—') + '</strong></div>' +
-          '</div>' +
-          '<div class="ar-form-group" style="margin-bottom:14px">' +
-            '<label class="ar-form-label">Promote to Class *</label>' +
-            '<select id="fPromoteClass" class="ar-form-select">' + classOpts + '</select>' +
+            '<div style="font-size:0.82rem;color:#16a34a;margin-top:4px">Current Class: <strong>' + (r.class_name || '—') + '</strong></div>' +
           '</div>' +
           '<div class="ar-form-group">' +
-            '<label class="ar-form-label">Academic Session</label>' +
-            '<input id="fPromoteSession" class="ar-form-input" placeholder="e.g. 2025/2026" value="2025/2026">' +
+            '<label class="ar-form-label">Promote to Class *</label>' +
+            '<select id="fPromoteClass" class="ar-form-select">' + classOpts + '</select>' +
           '</div>' +
         '</div>' +
         '<div class="ar-modal-footer">' +
@@ -639,29 +569,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     modal.classList.add('open');
 
-    document.getElementById('arPromoteConfirmBtn').addEventListener('click', function () {
+    document.getElementById('arPromoteConfirmBtn').addEventListener('click', async function () {
       var newClass = document.getElementById('fPromoteClass').value;
-      var session  = (document.getElementById('fPromoteSession').value || '').trim();
       if (!newClass) { alert('Please select the class to promote to.'); return; }
 
-      var user = getUser();
-      var now  = new Date().toISOString();
-      if (!r.class_history) r.class_history = [];
-      var last = r.class_history.length ? r.class_history[r.class_history.length - 1] : null;
-      if (last && !last.promoted_on) {
-        last.promoted_on = now.split('T')[0];
-        last.promoted_to = newClass;
-        last.promoted_by = user.full_name;
-      }
-      r.class_history.push({ class_name: newClass, session: session, enrolled_on: now.split('T')[0], enrolled_by: user.full_name });
-      if (!r.audit_log) r.audit_log = [];
-      r.audit_log.push({ action: 'promoted', by: user.full_name, at: now, changes: [{ field: 'current_class', old: r.current_class, new: newClass }] });
-      r.current_class = newClass;
-      r.updated_at    = now;
-      r.updated_by    = user.full_name;
+      var btn = document.getElementById('arPromoteConfirmBtn');
+      btn.disabled = true;
 
-      saveRegister();
+      try {
+        await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo) + '/promote', {
+          method: 'POST', body: { class_name: newClass }
+        });
+      } catch (e) {
+        btn.disabled = false;
+        alert('Could not promote: ' + e.message);
+        return;
+      }
+
       if (window.logActivity) window.logActivity('promote', 'Promoted ' + r.full_name + ' to ' + newClass, 'students');
+      await loadRegister();
       closeModal('arFormModal');
       renderTable();
     });
@@ -719,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* ── PRINT LOGIC ──────────────────────────── */
 
   function doPrint(type) {
-    var filtered  = getFiltered().slice().sort(function (a, b) { return (a.serial_no || 0) - (b.serial_no || 0); });
+    var filtered  = getFiltered().slice().sort(function (a, b) { return (a.admission_no || '').localeCompare(b.admission_no || ''); });
     var printArea = document.getElementById('arPrintArea');
     var school    = 'ROYAL CRYSTAL ACADEMY';
     var printed   = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -734,12 +660,12 @@ document.addEventListener('DOMContentLoaded', function () {
         '<th>Prev. School</th><th>Class Passed</th><th>Current Class</th><th>Status</th>' +
         '</tr></thead><tbody>' +
         filtered.map(function (r, i) {
-          return '<tr><td>' + (r.serial_no || i + 1) + '</td><td>' + (r.admission_no || '') + '</td>' +
-            '<td>' + (r.full_name || '') + '</td><td>' + (r.gender === 'female' ? 'F' : 'M') + '</td>' +
+          return '<tr><td>' + (i + 1) + '</td><td>' + (r.admission_no || '') + '</td>' +
+            '<td>' + (r.full_name || '') + '</td><td>' + ((r.gender || '').toLowerCase() === 'female' ? 'F' : 'M') + '</td>' +
             '<td>' + (r.date_of_birth || '') + '</td><td>' + (r.date_of_admission || '') + '</td>' +
             '<td>' + (r.parent_name || '') + '</td><td>' + (r.parent_phone || '') + '</td>' +
             '<td>' + (r.previous_school || '') + '</td><td>' + (r.class_passed_previous || '') + '</td>' +
-            '<td>' + (r.current_class || '') + '</td>' +
+            '<td>' + (r.class_name || '') + '</td>' +
             '<td>' + (r.status || 'active').charAt(0).toUpperCase() + (r.status || 'active').slice(1) + '</td></tr>';
         }).join('') + '</tbody></table>';
 
@@ -752,19 +678,19 @@ document.addEventListener('DOMContentLoaded', function () {
         '<th>Prev. School</th><th>Class Passed</th><th>Class</th><th>Date of Completion</th><th>Status</th>' +
         '</tr></thead><tbody>' +
         filtered.map(function (r, i) {
-          return '<tr><td>' + (r.serial_no || i + 1) + '</td><td>' + (r.admission_no || '') + '</td>' +
-            '<td>' + (r.full_name || '') + '</td><td>' + (r.gender === 'female' ? 'F' : 'M') + '</td>' +
+          return '<tr><td>' + (i + 1) + '</td><td>' + (r.admission_no || '') + '</td>' +
+            '<td>' + (r.full_name || '') + '</td><td>' + ((r.gender || '').toLowerCase() === 'female' ? 'F' : 'M') + '</td>' +
             '<td>' + (r.date_of_birth || '') + '</td><td>' + (r.date_of_admission || '') + '</td>' +
             '<td>' + (r.parent_name || '') + '</td><td>' + (r.parent_address || '') + '</td>' +
             '<td>' + (r.previous_school || '') + '</td><td>' + (r.class_passed_previous || '') + '</td>' +
-            '<td>' + (r.current_class || '') + '</td><td>' + (r.date_of_completion || '') + '</td>' +
+            '<td>' + (r.class_name || '') + '</td><td>' + (r.date_of_completion || '') + '</td>' +
             '<td>' + (r.status || 'active').charAt(0).toUpperCase() + (r.status || 'active').slice(1) + '</td></tr>';
         }).join('') + '</tbody></table>';
 
     } else if (type === 'class_register') {
       var byClass = {};
       filtered.forEach(function (r) {
-        var c = r.current_class || 'Unassigned';
+        var c = r.class_name || 'Unassigned';
         if (!byClass[c]) byClass[c] = [];
         byClass[c].push(r);
       });
@@ -777,7 +703,7 @@ document.addEventListener('DOMContentLoaded', function () {
           '<th>Sex</th><th>Date of Birth</th><th>Parent/Guardian</th><th>Phone</th></tr></thead><tbody>';
         byClass[cls].forEach(function (r, i) {
           html += '<tr><td>' + (i + 1) + '</td><td>' + (r.admission_no || '') + '</td><td>' + (r.full_name || '') + '</td>' +
-            '<td>' + (r.gender === 'female' ? 'F' : 'M') + '</td><td>' + (r.date_of_birth || '') + '</td>' +
+            '<td>' + ((r.gender || '').toLowerCase() === 'female' ? 'F' : 'M') + '</td><td>' + (r.date_of_birth || '') + '</td>' +
             '<td>' + (r.parent_name || '') + '</td><td>' + (r.parent_phone || '') + '</td></tr>';
         });
         html += '</tbody></table>';
@@ -792,8 +718,8 @@ document.addEventListener('DOMContentLoaded', function () {
         '</tr></thead><tbody>' +
         completed.map(function (r, i) {
           return '<tr><td>' + (i + 1) + '</td><td>' + (r.admission_no || '') + '</td>' +
-            '<td>' + (r.full_name || '') + '</td><td>' + (r.gender === 'female' ? 'F' : 'M') + '</td>' +
-            '<td>' + (r.current_class || '') + '</td><td>' + (r.date_of_admission || '') + '</td>' +
+            '<td>' + (r.full_name || '') + '</td><td>' + ((r.gender || '').toLowerCase() === 'female' ? 'F' : 'M') + '</td>' +
+            '<td>' + (r.class_name || '') + '</td><td>' + (r.date_of_admission || '') + '</td>' +
             '<td>' + (r.date_of_completion || '') + '</td>' +
             '<td>' + (r.status || '').charAt(0).toUpperCase() + (r.status || '').slice(1) + '</td></tr>';
         }).join('') + '</tbody></table>';
@@ -806,28 +732,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   /* ── PRINT STUDENT PROFILE ────────────────── */
 
-  function printProfile(id) {
-    var r = REGISTER.find(function (x) { return x.id === id; });
+  function printProfile(admissionNo) {
+    var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
     if (!r) return;
     var printArea = document.getElementById('arPrintArea');
     var printed   = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-
-    var histRows = (r.class_history || []).map(function (h, i) {
-      return '<tr><td>' + (i + 1) + '</td><td>' + (h.class_name || '—') + '</td>' +
-        '<td>' + (h.session || '—') + '</td>' +
-        '<td>' + (h.enrolled_on || '—') + '</td>' +
-        '<td>' + (h.promoted_on ? h.promoted_on + ' &rarr; ' + (h.promoted_to || '') : 'Current') + '</td></tr>';
-    }).join('') || '<tr><td colspan="5" style="text-align:center">No history</td></tr>';
 
     printArea.innerHTML =
       '<h2>ROYAL CRYSTAL ACADEMY</h2><h3>STUDENT PROFILE</h3><p>Printed: ' + printed + '</p>' +
       '<table class="ar-print-table" style="width:100%">' +
         '<tr><th style="width:35%">Admission Number</th><td>' + (r.admission_no || '—') + '</td></tr>' +
         '<tr><th>Full Name</th><td>' + (r.full_name || '—') + '</td></tr>' +
-        '<tr><th>Gender</th><td>' + (r.gender === 'female' ? 'Female' : 'Male') + '</td></tr>' +
+        '<tr><th>Gender</th><td>' + ((r.gender || '').toLowerCase() === 'female' ? 'Female' : 'Male') + '</td></tr>' +
         '<tr><th>Date of Birth</th><td>' + (r.date_of_birth || '—') + '</td></tr>' +
         '<tr><th>Date of Admission</th><td>' + (r.date_of_admission || '—') + '</td></tr>' +
-        '<tr><th>Current Class</th><td>' + (r.current_class || '—') + '</td></tr>' +
+        '<tr><th>Current Class</th><td>' + (r.class_name || '—') + '</td></tr>' +
         '<tr><th>Status</th><td>' + (r.status || 'active').charAt(0).toUpperCase() + (r.status || 'active').slice(1) + '</td></tr>' +
         '<tr><th>Date of Completion</th><td>' + (r.date_of_completion || '—') + '</td></tr>' +
         '<tr><th>Parent / Guardian</th><td>' + (r.parent_name || '—') + '</td></tr>' +
@@ -835,11 +754,6 @@ document.addEventListener('DOMContentLoaded', function () {
         '<tr><th>Home Address</th><td>' + (r.parent_address || '—') + '</td></tr>' +
         '<tr><th>Previous School</th><td>' + (r.previous_school || '—') + '</td></tr>' +
         '<tr><th>Class Passed</th><td>' + (r.class_passed_previous || '—') + '</td></tr>' +
-      '</table>' +
-      '<h4>Class History</h4>' +
-      '<table class="ar-print-table">' +
-        '<thead><tr><th>#</th><th>Class</th><th>Session</th><th>Enrolled</th><th>Promoted</th></tr></thead>' +
-        '<tbody>' + histRows + '</tbody>' +
       '</table>';
 
     closeModal('arViewModal');
@@ -855,18 +769,18 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function exportCSV() {
-    var filtered = getFiltered().slice().sort(function (a, b) { return (a.serial_no || 0) - (b.serial_no || 0); });
+    var filtered = getFiltered().slice().sort(function (a, b) { return (a.admission_no || '').localeCompare(b.admission_no || ''); });
     var headers  = ['S/N','Admission No','Full Name','Gender','Date of Birth','Date of Admission',
                     'Parent Name','Parent Phone','Parent Address','Previous School','Class Passed',
                     'Current Class','Date of Completion','Status'];
     var rows = filtered.map(function (r, i) {
       return makeCSVRow([
-        r.serial_no || i + 1, r.admission_no || '', r.full_name || '',
-        r.gender === 'female' ? 'Female' : 'Male',
+        i + 1, r.admission_no || '', r.full_name || '',
+        (r.gender || '').toLowerCase() === 'female' ? 'Female' : 'Male',
         r.date_of_birth || '', r.date_of_admission || '',
         r.parent_name || '', r.parent_phone || '', r.parent_address || '',
         r.previous_school || '', r.class_passed_previous || '',
-        r.current_class || '', r.date_of_completion || '',
+        r.class_name || '', r.date_of_completion || '',
         (r.status || 'active').charAt(0).toUpperCase() + (r.status || 'active').slice(1)
       ]);
     });
@@ -880,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function exportExcel() {
-    var filtered = getFiltered().slice().sort(function (a, b) { return (a.serial_no || 0) - (b.serial_no || 0); });
+    var filtered = getFiltered().slice().sort(function (a, b) { return (a.admission_no || '').localeCompare(b.admission_no || ''); });
     var headers  = ['S/N','Admission No','Full Name','Gender','Date of Birth','Date of Admission',
                     'Parent Name','Parent Phone','Parent Address','Previous School','Class Passed',
                     'Current Class','Date of Completion','Status'];
@@ -888,12 +802,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var tbl = '<table border="1"><thead><tr>' + headers.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>';
     filtered.forEach(function (r, i) {
       tbl += '<tr>' + [
-        r.serial_no || i + 1, r.admission_no || '', r.full_name || '',
-        r.gender === 'female' ? 'Female' : 'Male',
+        i + 1, r.admission_no || '', r.full_name || '',
+        (r.gender || '').toLowerCase() === 'female' ? 'Female' : 'Male',
         r.date_of_birth || '', r.date_of_admission || '',
         r.parent_name || '', r.parent_phone || '', r.parent_address || '',
         r.previous_school || '', r.class_passed_previous || '',
-        r.current_class || '', r.date_of_completion || '',
+        r.class_name || '', r.date_of_completion || '',
         (r.status || 'active').charAt(0).toUpperCase() + (r.status || 'active').slice(1)
       ].map(function (v) { return '<td>' + esc(v) + '</td>'; }).join('') + '</tr>';
     });
@@ -906,81 +820,28 @@ document.addEventListener('DOMContentLoaded', function () {
     closeModal('arPrintModal');
   }
 
-  /* ── IMPORT FROM STUDENT ROSTER ───────────── */
-
-  function importFromRoster() {
-    var students = (window.SAMPLE_STUDENTS || []).filter(function (s) {
-      return s.status === 'active' || !s.status;
-    });
-    if (!students.length) {
-      alert('No active students found in the student roster.');
-      return;
-    }
-    var existingNos = REGISTER.map(function (r) { return r.admission_no; });
-    var toImport = students.filter(function (s) {
-      return !existingNos.includes(s.admission_no);
-    });
-    if (!toImport.length) {
-      alert('All students from the roster are already in the register.');
-      return;
-    }
-    if (!confirm('Import ' + toImport.length + ' student' + (toImport.length !== 1 ? 's' : '') +
-                 ' from the student roster into the Admission Register?\n\n' +
-                 'Basic fields (name, gender, class) will be copied. You can fill in additional details (parent, previous school, DOB) by editing each record.')) return;
-
-    var user = getUser();
-    var now  = new Date().toISOString();
-    toImport.forEach(function (s) {
-      REGISTER.push({
-        id:                    'AR-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-        serial_no:             getNextSerialNo(),
-        admission_no:          s.admission_no || generateAdmissionNo(),
-        first_name:            s.first_name || '',
-        last_name:             s.last_name  || '',
-        full_name:             s.full_name  || '',
-        gender:                s.gender     || 'male',
-        date_of_birth:         s.date_of_birth || '',
-        date_of_admission:     '',
-        parent_name:           '',
-        parent_phone:          s.parent_phone || '',
-        parent_address:        '',
-        previous_school:       '',
-        class_passed_previous: '',
-        current_class:         s.class_name || '',
-        date_of_completion:    '',
-        status:                s.status === 'active' ? 'active' : 'active',
-        docs: { passport: false, birth_cert: false, transfer_letter: false, others: '' },
-        class_history: [{ class_name: s.class_name || '', session: '2025/2026', enrolled_on: '', enrolled_by: user.full_name }],
-        audit_log:     [{ action: 'imported', by: user.full_name, at: now, changes: [] }],
-        created_at:    now,
-        created_by:    user.full_name,
-        updated_at:    now,
-        updated_by:    user.full_name
-      });
-    });
-
-    saveRegister();
-    if (window.logActivity) window.logActivity('import', 'Imported ' + toImport.length + ' students from roster to Admission Register', 'students');
-    renderTable();
-    alert('Successfully imported ' + toImport.length + ' student' + (toImport.length !== 1 ? 's' : '') + '.\n\nPlease edit each record to add missing details (Date of Admission, Parent information, etc.).');
-  }
-
   /* ── PUBLIC API ───────────────────────────── */
 
   window.AR = {
     view:    showViewModal,
-    edit:    function (id) {
-      var r = REGISTER.find(function (x) { return x.id === id; });
+    edit:    function (admissionNo) {
+      var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
       if (r) showFormModal(r);
     },
-    remove:  function (id) {
-      var r = REGISTER.find(function (x) { return x.id === id; });
+    remove:  async function (admissionNo) {
+      var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
       if (!r) return;
-      if (!confirm('Permanently remove "' + (r.full_name || 'this student') + '" from the register?\n\nThis cannot be undone.')) return;
-      REGISTER = REGISTER.filter(function (x) { return x.id !== id; });
-      window.ADMISSION_REGISTER = REGISTER;
-      saveRegister();
-      if (window.logActivity) window.logActivity('delete', 'Removed from register: ' + (r.full_name || id), 'students');
+      if (!confirm('Remove "' + (r.full_name || 'this student') + '" from the active register?\n\nThis archives the record — it can be restored from User Management if needed.')) return;
+
+      try {
+        await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo), { method: 'PUT', body: { status: 'archived' } });
+      } catch (e) {
+        alert('Could not remove: ' + e.message);
+        return;
+      }
+
+      if (window.logActivity) window.logActivity('delete', 'Removed from register: ' + (r.full_name || admissionNo), 'students');
+      await loadRegister();
       renderTable();
     },
     promote: showPromoteModal,
@@ -1027,7 +888,9 @@ document.addEventListener('DOMContentLoaded', function () {
   var importBtn = document.getElementById('arImportBtn');
   if (addBtn)    addBtn.addEventListener('click',    function () { showFormModal(null); });
   if (printBtn)  printBtn.addEventListener('click',  showPrintModal);
-  if (importBtn) importBtn.addEventListener('click', importFromRoster);
+  // Admission Register and Students now share the same underlying
+  // records — there's no separate roster left to import from.
+  if (importBtn) importBtn.style.display = 'none';
 
   /* Close modals on overlay click */
   ['arFormModal', 'arViewModal', 'arPrintModal'].forEach(function (mid) {
@@ -1037,17 +900,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  /* RBAC: restrict Add/Import for non-admins */
+  /* RBAC: restrict Add for non-admins */
   var cu     = window.CURRENT_USER;
   var cuRoles = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
   var canEdit = cuRoles.some(function (role) {
     return ['ict_admin', 'head_teacher', 'proprietor'].includes(role);
   });
   if (!canEdit) {
-    if (addBtn)    addBtn.style.display    = 'none';
-    if (importBtn) importBtn.style.display = 'none';
+    if (addBtn) addBtn.style.display = 'none';
   }
 
-  /* Initial render */
+  /* Initial load + render */
+  await loadRegister();
   renderTable();
 });
