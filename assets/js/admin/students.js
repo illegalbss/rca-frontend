@@ -493,15 +493,6 @@ Status:       ${student.status}
       allStudents.push(newStudent);
       if (window.RCA) window.RCA.save('students');
 
-      // Save to Supabase via API
-      if (window.RCA_SYNC) {
-        window.RCA_SYNC.saveStudent(newStudent).then(saved => {
-          if (saved?.admission_no) {
-            newStudent.admission_no = saved.admission_no;
-          }
-        });
-      }
-
       // Phase 4: save to real database
       // (backend accepts first_name + last_name and combines them into full_name)
       if (window.RCA_API) {
