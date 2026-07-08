@@ -160,9 +160,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     return `
       <div class="fee-field">
         <label>${label}</label>
-        <input type="number" class="form-control" data-term="${term}" data-field="${key}"
+        <input type="number" class="form-control fee-total-input" data-term="${term}" data-field="${key}"
                value="${value ?? 0}" ${canEdit ? '' : 'readonly style="background:#f9fafb"'}>
       </div>`;
+  }
+
+  function computeTotals(term) {
+    const val = (field) => Number(document.querySelector(`[data-term="${term}"][data-field="${field}"]`)?.value || 0);
+    const standard = val('school_fees') + val('utility_bill') + val('lesson_fee') + val('levy_amount');
+    const sibling  = val('school_fees_sibling') + val('utility_bill') + val('lesson_fee') + val('levy_amount');
+    return { standard, sibling };
+  }
+
+  function renderTotals(term) {
+    const el = document.getElementById(`total-${term}`);
+    if (!el) return;
+    const { standard, sibling } = computeTotals(term);
+    el.innerHTML = `
+      <span>Standard total: <strong>${fmt(standard)}</strong></span>
+      <span style="margin-left:16px">Sibling-discount total: <strong>${fmt(sibling)}</strong></span>
+    `;
   }
 
   container.innerHTML = terms.map(t => `
@@ -179,11 +196,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${fieldHtml(t.term, 'lesson_fee', 'Lesson Fee', t.lesson_fee)}
         ${fieldHtml(t.term, 'levy_amount', 'Levy Amount', t.levy_amount)}
         <div class="fee-field">
-          <label>Levy Label <span style="font-weight:400;color:#9ca3af">(e.g. Sports Levy)</span></label>
+          <label>Levy Label <span style="font-weight:400;color:#9ca3af">(e.g. Sports Levy — leave blank if no levy this term)</span></label>
           <input type="text" class="form-control" data-term="${t.term}" data-field="levy_label"
                  value="${t.levy_label || ''}" ${canEdit ? '' : 'readonly style="background:#f9fafb"'}>
         </div>
       </div>
+      <div id="total-${t.term}" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border);font-size:0.85rem;color:var(--color-text-muted)"></div>
       ${canEdit ? `
         <div class="fee-save-row">
           <button class="btn btn-primary btn-sm" onclick="saveFeeTerm('${t.term}')">Save ${TERM_LABELS[t.term] || t.term}</button>
@@ -191,6 +209,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       ` : ''}
     </div>
   `).join('');
+
+  terms.forEach(t => {
+    renderTotals(t.term);
+    document.querySelectorAll(`[data-term="${t.term}"].fee-total-input`).forEach(input => {
+      input.addEventListener('input', () => renderTotals(t.term));
+    });
+  });
 
   window.saveFeeTerm = async function(term) {
     const inputs = document.querySelectorAll(`[data-term="${term}"]`);
