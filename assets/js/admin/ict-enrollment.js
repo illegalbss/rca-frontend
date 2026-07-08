@@ -178,7 +178,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         <p style="font-size:0.78rem;color:#6b7280;margin-bottom:14px">Who has and hasn't paid the ICT/Portal Fee this term — this money doesn't go through the school account, so it's kept separate from Finance Reports.</p>
         <div id="ictReportStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px"></div>
         <input type="text" id="ictReportSearch" class="form-control" placeholder="Search name or admission no…" style="margin-bottom:12px">
-        <div id="ictReportList" style="max-height:360px;overflow-y:auto"></div>
+        <div id="ictReportList" style="max-height:280px;overflow-y:auto;margin-bottom:16px"></div>
+        <div style="font-size:0.82rem;font-weight:700;color:#111827;margin-bottom:8px;padding-top:8px;border-top:1px solid #f3f4f6">Recorded Payments <span style="font-weight:400;color:#9ca3af">(delete a wrongly-recorded one here)</span></div>
+        <div id="ictReportTransactions" style="max-height:280px;overflow-y:auto"></div>
       </div>
 
       <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px">
@@ -275,7 +277,32 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>`;
         }).join('')
       : '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">No pupils found.</p>';
+
+    const txBox = document.getElementById('ictReportTransactions');
+    if (txBox) {
+      txBox.innerHTML = data.transactions.length
+        ? data.transactions.map(t => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">
+              <div style="min-width:0">
+                <div style="font-size:0.82rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.full_name} — ${fmt(t.amount)}</div>
+                <div style="font-size:0.72rem;color:#9ca3af">${t.class_name} · ${t.admission_no} · ${new Date(t.payment_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})} · ${t.payment_method}</div>
+              </div>
+              <button class="btn btn-sm btn-outline" style="font-size:0.7rem;color:#dc2626;flex-shrink:0" onclick="window._ictFeePaymentDelete(${t.id},'${t.full_name.replace(/'/g, "\\'")}')">Delete</button>
+            </div>`).join('')
+        : '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">No payments recorded yet.</p>';
+    }
   }
+
+  window._ictFeePaymentDelete = async function(id, pupilName) {
+    if (!confirm(`Delete this ICT fee payment for ${pupilName}? This cannot be undone.`)) return;
+    try {
+      await window.RCA_API.call(`/payments/${id}`, { method: 'DELETE' });
+    } catch (e) {
+      alert('Could not delete payment: ' + e.message);
+      return;
+    }
+    loadAndRenderIctFeeReport();
+  };
 
   function wireIctFeeReport() {
     const termSelect = document.getElementById('ictReportTerm');
