@@ -225,6 +225,26 @@ document.addEventListener('DOMContentLoaded', () => {
         else badge.style.display = 'none';
       })
       .catch(() => {});
+
+    window.RCA_API.call('/applications')
+      .then(data => {
+        const badge = document.getElementById('applicationsBadge');
+        if (!badge) return;
+        const count = data.pending_count || 0;
+        if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+        else badge.style.display = 'none';
+      })
+      .catch(() => {});
+
+    window.RCA_API.call('/contact')
+      .then(data => {
+        const badge = document.getElementById('contactBadge');
+        if (!badge) return;
+        const count = data.unread_count || 0;
+        if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+        else badge.style.display = 'none';
+      })
+      .catch(() => {});
   }
 
   /* --------------------------------------------

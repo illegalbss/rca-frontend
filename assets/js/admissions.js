@@ -4,11 +4,11 @@
    ============================================
    Handles the online application form:
    - Validates all required fields
-   - Generates a unique reference number
-   - Saves application to localStorage
-   - Submits to backend API if available
-   - Shows success message with reference
-   - Notifies ICT Admin via activity log
+   - Submits to the real backend (POST /api/applications, no login
+     required) — the server generates the reference number
+   - Shows success message with that reference, or a clear error if
+     the submission failed, so a visitor never thinks it went through
+     when it didn't
 */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -18,13 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn   = form?.querySelector('button[type="submit"]');
 
   if (!form) return;
-
-  /* ---- Generate reference number ---- */
-  function generateRef() {
-    const year = new Date().getFullYear();
-    const rand = Math.floor(Math.random() * 90000) + 10000;
-    return `RCA-APP-${year}-${rand}`;
-  }
 
   /* ---- Show field error ---- */
   function showError(input, msg) {
@@ -76,32 +69,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return valid;
   }
 
-  /* ---- Save application ---- */
-  function saveApplication(data) {
-    try {
-      const existing = JSON.parse(localStorage.getItem('rca_applications') || '[]');
-      existing.push(data);
-      localStorage.setItem('rca_applications', JSON.stringify(existing));
-    } catch(e) {
-      console.warn('Could not save to localStorage:', e);
+  /* ---- Submission error banner (created on demand) ---- */
+  function showSubmitError(msg) {
+    let box = document.getElementById('admissionFormError');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'admissionFormError';
+      box.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.85rem';
+      form.prepend(box);
     }
-  }
-
-  /* ---- Submit to API ---- */
-  async function submitToAPI(data) {
-    try {
-      const apiUrl = window.RCA_CONFIG?.API_URL || 'https://rca-backend-3r1c.onrender.com/api';
-      const res = await fetch(`${apiUrl}/applications`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      if (res.ok) return await res.json();
-    } catch(e) {
-      // API not available — local save is enough
-      console.warn('API not available, application saved locally only');
-    }
-    return null;
+    box.textContent = msg;
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   /* ---- Form submit ---- */
@@ -109,23 +88,16 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
 
     if (!validate()) {
-      // Scroll to first error
       const firstError = form.querySelector('[style*="dc2626"]');
       firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
-    // Loading state
+    document.getElementById('admissionFormError')?.remove();
     submitBtn.textContent = 'Submitting...';
     submitBtn.disabled = true;
 
-    const refNumber = generateRef();
-
-    // Build application data
     const application = {
-      ref:             refNumber,
-      submitted_at:    new Date().toISOString(),
-      status:          'pending',
       pupil_name:      document.getElementById('pupil_full_name').value.trim(),
       pupil_dob:       document.getElementById('pupil_dob').value,
       pupil_gender:    document.getElementById('pupil_gender').value,
@@ -138,32 +110,23 @@ document.addEventListener('DOMContentLoaded', () => {
       additional_info: document.getElementById('additional_info')?.value.trim() || '',
     };
 
-    // Save locally
-    saveApplication(application);
-
-    // Try API
-    await submitToAPI(application);
-
-    // Also log to admin activity log
+    let result;
     try {
-      const logs = JSON.parse(localStorage.getItem('rca_v1_activity_log') || '[]');
-      logs.unshift({
-        user: 'Public Website',
-        role: 'public',
-        action: 'create',
-        category: 'admissions',
-        target: `New application: ${application.pupil_name} — ${application.class_applying} (Ref: ${refNumber})`,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('rca_v1_activity_log', JSON.stringify(logs.slice(0, 200)));
-    } catch(e) {}
+      result = await window.RCA_API.call('/applications', { method: 'POST', body: application });
+    } catch (err) {
+      showSubmitError(
+        'Could not submit your application: ' + err.message +
+        '. Please try again, or call the school office directly at 08036 721390.'
+      );
+      submitBtn.textContent = 'Submit Application';
+      submitBtn.disabled = false;
+      return;
+    }
 
-    // Show success
+    // Show success with the real, server-generated reference number
     form.style.display = 'none';
     successBox.style.display = 'block';
-    document.getElementById('refCode').textContent = refNumber;
-
-    // Scroll to success message
+    document.getElementById('refCode').textContent = result.ref;
     successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
 

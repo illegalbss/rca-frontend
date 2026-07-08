@@ -2,10 +2,10 @@
    CONTACT FORM — contact.js
    Royal Crystal Academy
    ============================================
-   Validates and submits the contact form.
-   Saves message to localStorage so ICT Admin
-   can see it in the admin dashboard.
-   Also tries to submit to backend API.
+   Validates and submits the contact form to the real backend
+   (POST /api/contact, no login required). Shows a clear error if the
+   submission fails, so a visitor never thinks it went through when it
+   didn't.
 */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function validate() {
     let valid = true;
 
-    // Clear all errors first
     form.querySelectorAll('.field-error').forEach(e => e.remove());
     form.querySelectorAll('.form-control').forEach(i => i.style.borderColor = '');
 
@@ -68,28 +67,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return valid;
   }
 
-  /* ---- Save to localStorage ---- */
-  function saveMessage(data) {
-    try {
-      const msgs = JSON.parse(localStorage.getItem('rca_contact_messages') || '[]');
-      msgs.unshift(data);
-      localStorage.setItem('rca_contact_messages', JSON.stringify(msgs.slice(0, 100)));
-    } catch(e) {}
-  }
-
-  /* ---- Submit to API ---- */
-  async function submitToAPI(data) {
-    try {
-      const apiUrl = window.RCA_CONFIG?.API_URL || 'https://rca-backend-3r1c.onrender.com/api';
-      const res = await fetch(`${apiUrl}/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      return res.ok;
-    } catch(e) {
-      return false; // API not available, local save is enough
+  /* ---- Submission error banner (created on demand) ---- */
+  function showSubmitError(msg) {
+    let box = document.getElementById('contactFormError');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'contactFormError';
+      box.style.cssText = 'background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.85rem';
+      form.prepend(box);
     }
+    box.textContent = msg;
+    box.style.display = 'block';
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   /* ---- Form Submit ---- */
@@ -101,41 +90,30 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    document.getElementById('contactFormError')?.remove();
     submitBtn.textContent = 'Sending...';
     submitBtn.disabled = true;
 
     const msgData = {
-      id:         'MSG-' + Date.now(),
-      name:       document.getElementById('contact_name').value.trim(),
-      email:      document.getElementById('contact_email').value.trim(),
-      phone:      document.getElementById('contact_phone')?.value.trim() || '',
-      subject:    document.getElementById('contact_subject').value,
-      message:    document.getElementById('contact_message').value.trim(),
-      sent_at:    new Date().toISOString(),
-      status:     'unread',
+      name:    document.getElementById('contact_name').value.trim(),
+      email:   document.getElementById('contact_email').value.trim(),
+      phone:   document.getElementById('contact_phone')?.value.trim() || '',
+      subject: document.getElementById('contact_subject').value,
+      message: document.getElementById('contact_message').value.trim(),
     };
 
-    // Save locally
-    saveMessage(msgData);
-
-    // Try API (don't block on it)
-    await submitToAPI(msgData);
-
-    // Also log to admin activity
     try {
-      const logs = JSON.parse(localStorage.getItem('rca_v1_activity_log') || '[]');
-      logs.unshift({
-        user: 'Public Website',
-        role: 'public',
-        action: 'create',
-        category: 'contact',
-        target: `New message from ${msgData.name} (${msgData.subject}): ${msgData.message.substring(0, 60)}...`,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('rca_v1_activity_log', JSON.stringify(logs.slice(0, 200)));
-    } catch(e) {}
+      await window.RCA_API.call('/contact', { method: 'POST', body: msgData });
+    } catch (err) {
+      showSubmitError(
+        'Could not send your message: ' + err.message +
+        '. Please try again, or call the school office directly at 08036 721390.'
+      );
+      submitBtn.textContent = 'Send Message';
+      submitBtn.disabled = false;
+      return;
+    }
 
-    // Show success
     form.style.display = 'none';
     successBox.style.display = 'block';
     successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
