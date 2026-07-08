@@ -170,8 +170,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function computeTotals(term) {
     const val = (field) => Number(document.querySelector(`[data-term="${term}"][data-field="${field}"]`)?.value || 0);
-    const standard = val('school_fees') + val('utility_bill') + val('lesson_fee') + val('levy_amount');
-    const sibling  = val('school_fees_sibling') + val('utility_bill') + val('lesson_fee') + val('levy_amount');
+    const standard = val('school_fees') + val('utility_bill') + val('lesson_fee') + val('levy_amount') + val('ict_fee');
+    const sibling  = val('school_fees_sibling') + val('utility_bill') + val('lesson_fee') + val('levy_amount') + val('ict_fee');
     return { standard, sibling };
   }
 
@@ -203,7 +203,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           <input type="text" class="form-control" data-term="${t.term}" data-field="levy_label"
                  value="${t.levy_label || ''}" ${canEdit ? '' : 'readonly style="background:#f9fafb"'}>
         </div>
+        ${fieldHtml(t.term, 'ict_fee', 'ICT / Portal Fee', t.ict_fee)}
       </div>
+      <p style="font-size:0.75rem;color:#9ca3af;margin-top:6px">The ICT / Portal Fee covers website and results-portal maintenance, and applies to every pupil — it's required (along with the rest of the fees below) before a parent can view results online.</p>
       <div id="total-${t.term}" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border);font-size:0.85rem;color:var(--color-text-muted)"></div>
       ${canEdit ? `
         <div class="fee-save-row">

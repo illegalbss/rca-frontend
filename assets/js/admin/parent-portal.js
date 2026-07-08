@@ -752,7 +752,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       let feesBody = '<p style="font-size:0.82rem;color:#374151;margin:0 0 14px">The following charges apply to every child per term. All fees are payable at the start of each term.</p>';
 
       terms.forEach(t => {
-        const total = Number(t.school_fees) + Number(t.utility_bill) + Number(t.lesson_fee) + Number(t.levy_amount || 0);
+        const ictFee = Number(t.ict_fee || 0);
+        const total = Number(t.school_fees) + Number(t.utility_bill) + Number(t.lesson_fee) + Number(t.levy_amount || 0) + ictFee;
         const isBasic6Levy = t.levy_basic6_amount && Number(t.levy_basic6_amount) > 0;
         feesBody += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-bottom:12px">'
           + '<div style="font-size:0.8rem;font-weight:800;color:#1a3a5c;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0">'
@@ -761,13 +762,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           + siRow('Utility Bill', fmt(t.utility_bill))
           + siRow('Lesson Fee', fmt(t.lesson_fee))
           + (t.levy_amount > 0 ? siRow(t.levy_label || 'Levy', fmt(t.levy_amount), '#7c3aed') : '')
+          + (ictFee > 0 ? siRow('ICT / Portal Fee', fmt(ictFee)) : '')
           + '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;margin-top:2px">'
           + '<span style="font-size:0.88rem;font-weight:700;color:#1a3a5c">Total (per child)</span>'
           + '<span style="font-size:1rem;font-weight:700;color:#065f46">' + fmt(total) + '</span>'
           + '</div>'
           + (isBasic6Levy
             ? '<div style="margin-top:8px;font-size:0.75rem;color:#7c3aed;background:#f5f3ff;border-radius:6px;padding:6px 10px">'
-              + '&#127891; <strong>Basic 6 (graduating pupils)</strong> pay ' + fmt(t.levy_basic6_amount) + ' ' + (t.levy_basic6_label || 'graduation levy') + ' — total <strong>' + fmt(Number(t.school_fees) + Number(t.utility_bill) + Number(t.lesson_fee) + Number(t.levy_basic6_amount)) + '</strong>.</div>'
+              + '&#127891; <strong>Basic 6 (graduating pupils)</strong> pay ' + fmt(t.levy_basic6_amount) + ' ' + (t.levy_basic6_label || 'graduation levy') + ' — total <strong>' + fmt(Number(t.school_fees) + Number(t.utility_bill) + Number(t.lesson_fee) + Number(t.levy_basic6_amount) + ictFee) + '</strong>.</div>'
+            : '')
+          + (ictFee > 0
+            ? '<p style="margin-top:8px;font-size:0.72rem;color:#6b7280">The ICT / Portal Fee covers website and results-portal maintenance, and must be paid (along with the rest of the fees above) before results are available online.</p>'
             : '')
           + '</div>';
       });

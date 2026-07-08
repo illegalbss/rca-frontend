@@ -31,14 +31,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   let applications = [];
   let filterStatus = '';
   let fee = 0;
+  let allStudents = [];
+  let feeSchedule = [];
+  const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
 
   async function loadAll() {
-    const [appsData, feeData] = await Promise.all([
+    const [appsData, feeData, studentsData, scheduleData] = await Promise.all([
       window.RCA_API.call('/ict-enrollments' + (filterStatus ? `?enrollment_status=${filterStatus}` : '')),
-      window.RCA_API.call('/settings/payment')
+      window.RCA_API.call('/settings/payment'),
+      window.RCA_API.getStudents(),
+      window.RCA_API.call('/payments/fee-schedule')
     ]);
     applications = appsData.applications || [];
     fee = feeData.ict_practical_fee || 0;
+    allStudents = studentsData || [];
+    feeSchedule = scheduleData.terms || [];
     updateBadge(appsData.pending_count || 0);
   }
 
@@ -112,7 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px;margin-bottom:20px">
-        <div style="font-size:0.75rem;color:#6b7280;margin-bottom:4px">ICT Practical Programme Fee (per term)</div>
+        <div style="font-size:0.75rem;color:#6b7280;margin-bottom:4px">ICT Practical Programme Fee (per term) — the after-school coding/ICT club</div>
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
           <div style="font-family:var(--font-heading);font-size:1.4rem;font-weight:700;color:#111827" id="ictFeeDisplay">${fmt(fee)}</div>
           ${isIctAdmin ? `
@@ -121,6 +128,42 @@ document.addEventListener('DOMContentLoaded', async () => {
               <button class="btn btn-primary btn-sm" id="ictFeeSaveBtn">Save Fee</button>
             </div>` : ''}
         </div>
+      </div>
+
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px;margin-bottom:20px">
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#111827;margin-bottom:4px">Record ICT / Portal Fee Payment</div>
+        <p style="font-size:0.78rem;color:#6b7280;margin-bottom:16px">This is the separate termly website/results-portal fee every pupil pays (not the Practical Programme fee above) — required, along with the rest of a pupil's fees, before their results unlock for parents. Edit the amount on the <a href="fees.html" style="color:var(--color-primary,#6b0f1a)">Fee Schedule</a> page.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px">
+          <div class="form-group" style="position:relative">
+            <label>Pupil</label>
+            <input type="text" id="ictPayPupilSearch" class="form-control" placeholder="Search name or admission no…" autocomplete="off">
+            <div id="ictPayPupilResults" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);max-height:220px;overflow-y:auto;z-index:10"></div>
+          </div>
+          <div class="form-group">
+            <label>Term</label>
+            <select id="ictPayTerm" class="form-control">
+              <option value="term1">First Term</option>
+              <option value="term2" selected>Second Term</option>
+              <option value="term3">Third Term</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Amount (₦)</label>
+            <input type="number" id="ictPayAmount" class="form-control" min="0">
+          </div>
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select id="ictPayMethod" class="form-control">
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="POS">POS</option>
+              <option value="Online">Online</option>
+            </select>
+          </div>
+        </div>
+        <div id="ictPaySelectedPupil" style="font-size:0.8rem;color:#374151;margin-bottom:12px"></div>
+        <div id="ictPayError" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:8px 12px;font-size:0.8rem;margin-bottom:12px"></div>
+        <button class="btn btn-primary btn-sm" id="ictPaySubmitBtn">Record Payment</button>
       </div>
 
       <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px">
@@ -164,6 +207,113 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('ictAddApplicationBtn')?.addEventListener('click', openAddApplicationModal);
+
+    wireIctFeePaymentForm();
+  }
+
+  /* ============================================
+     RECORD ICT / PORTAL FEE PAYMENT
+     ============================================ */
+  let selectedPupil = null;
+
+  function ictFeeAmountForTerm(term) {
+    const sched = feeSchedule.find(t => t.term === term);
+    return sched ? Number(sched.ict_fee || 0) : 0;
+  }
+
+  function wireIctFeePaymentForm() {
+    const searchInput  = document.getElementById('ictPayPupilSearch');
+    const resultsBox   = document.getElementById('ictPayPupilResults');
+    const termSelect   = document.getElementById('ictPayTerm');
+    const amountInput  = document.getElementById('ictPayAmount');
+    const selectedInfo = document.getElementById('ictPaySelectedPupil');
+    const errorBox     = document.getElementById('ictPayError');
+    const submitBtn    = document.getElementById('ictPaySubmitBtn');
+    if (!searchInput) return;
+
+    selectedPupil = null;
+    amountInput.value = ictFeeAmountForTerm(termSelect.value);
+
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      selectedPupil = null;
+      selectedInfo.textContent = '';
+      if (!q) { resultsBox.style.display = 'none'; return; }
+
+      const matches = allStudents.filter(s =>
+        s.full_name.toLowerCase().includes(q) || s.admission_no.toLowerCase().includes(q)
+      ).slice(0, 8);
+
+      if (!matches.length) {
+        resultsBox.innerHTML = '<div style="padding:10px 12px;font-size:0.8rem;color:#9ca3af">No pupils found.</div>';
+        resultsBox.style.display = 'block';
+        return;
+      }
+
+      resultsBox.innerHTML = matches.map(s => `
+        <div class="ict-pay-result" data-adm="${s.admission_no}" style="padding:8px 12px;font-size:0.82rem;cursor:pointer;border-bottom:1px solid #f3f4f6">
+          <strong>${s.full_name}</strong> <span style="color:#9ca3af">— ${s.class_name} · ${s.admission_no}</span>
+        </div>`).join('');
+      resultsBox.style.display = 'block';
+
+      resultsBox.querySelectorAll('.ict-pay-result').forEach(row => {
+        row.addEventListener('click', () => {
+          const s = allStudents.find(x => x.admission_no === row.dataset.adm);
+          selectedPupil = s;
+          searchInput.value = `${s.full_name} (${s.admission_no})`;
+          selectedInfo.textContent = `Selected: ${s.full_name} — ${s.class_name}`;
+          resultsBox.style.display = 'none';
+        });
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!resultsBox.contains(e.target) && e.target !== searchInput) resultsBox.style.display = 'none';
+    });
+
+    termSelect.addEventListener('change', () => {
+      amountInput.value = ictFeeAmountForTerm(termSelect.value);
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      errorBox.style.display = 'none';
+
+      if (!selectedPupil) {
+        errorBox.textContent = 'Please search for and select a pupil first.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      const amount = Number(amountInput.value);
+      if (!amount || amount <= 0) {
+        errorBox.textContent = 'Please enter a valid amount.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      try {
+        await window.RCA_API.call('/payments', {
+          method: 'POST',
+          body: {
+            admission_no: selectedPupil.admission_no,
+            amount,
+            fee_type: 'ict_fee',
+            term: termSelect.value,
+            payment_method: document.getElementById('ictPayMethod').value
+          }
+        });
+      } catch (e) {
+        errorBox.textContent = 'Could not record payment: ' + e.message;
+        errorBox.style.display = 'block';
+        submitBtn.disabled = false;
+        return;
+      }
+
+      selectedPupil = null;
+      searchInput.value = '';
+      selectedInfo.textContent = '✅ Payment recorded.';
+      submitBtn.disabled = false;
+    });
   }
 
   /* ============================================
