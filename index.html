@@ -158,19 +158,19 @@
     <div class="stats-grid">
       <div class="stat-item reveal">
         <div class="stat-icon">👥</div>
-        <div class="stat-number" data-target="400">0</div>
+        <div class="stat-number" id="statPupils" data-target="400">0</div>
         <div class="stat-plus">+</div>
         <div class="stat-label">Active Pupils</div>
       </div>
       <div class="stat-item reveal reveal-delay-1">
         <div class="stat-icon">👨‍🏫</div>
-        <div class="stat-number" data-target="20">0</div>
+        <div class="stat-number" id="statStaff" data-target="20">0</div>
         <div class="stat-plus">+</div>
         <div class="stat-label">Dedicated Staff</div>
       </div>
       <div class="stat-item reveal reveal-delay-2">
         <div class="stat-icon">💻</div>
-        <div class="stat-number" data-target="10">0</div>
+        <div class="stat-number" data-target="20">0</div>
         <div class="stat-plus">+</div>
         <div class="stat-label">Computers in Lab</div>
       </div>
@@ -222,7 +222,7 @@
             <div class="feature-icon">✓</div>
             <div>
               <strong>Modern ICT Laboratory</strong>
-              <p>10 computers for Basic 3–6 pupils</p>
+              <p>Up to 20 laptops for Basic 3–6 pupils</p>
             </div>
           </div>
           <div class="about-feature">
@@ -620,6 +620,27 @@
 </footer>
 
 <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="assets/js/config.js"></script>
 <script src="assets/js/main.js"></script>
+<script>
+  // Populate the pupils/staff stat cards from the real database — no
+  // login required, this hits a public, unauthenticated stats endpoint.
+  // Updates data-target before the scroll-triggered count-up animation
+  // (see main.js) reaches these elements, so the animation still plays,
+  // just counting up to the real number instead of a hardcoded one.
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
+      const res = await fetch(`${apiUrl}/public/stats`);
+      const data = await res.json();
+      const pupilsEl = document.getElementById('statPupils');
+      const staffEl  = document.getElementById('statStaff');
+      if (pupilsEl && typeof data.pupils === 'number') pupilsEl.dataset.target = data.pupils;
+      if (staffEl && typeof data.staff === 'number')   staffEl.dataset.target = data.staff;
+    } catch (e) {
+      console.warn('Could not load live stats:', e.message);
+    }
+  });
+</script>
 </body>
 </html>
