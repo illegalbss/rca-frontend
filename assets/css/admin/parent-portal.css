@@ -437,6 +437,154 @@
   text-decoration: none;
 }
 
+/* ---- Student Profile page ---- */
+.cp-back-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+}
+.cp-back-btn:hover { text-decoration: underline; }
+
+.cp-header-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 22px 26px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.cp-avatar {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  background: var(--color-primary-dark);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cp-header-info h2 {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+.cp-header-info p {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.cp-header-meta {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 4px 32px;
+  margin-left: auto;
+}
+.cp-header-meta div { display: flex; flex-direction: column; }
+.cp-meta-label {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+.cp-meta-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cp-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e5e7eb;
+  margin-bottom: 18px;
+  overflow-x: auto;
+}
+.cp-tab {
+  background: none;
+  border: none;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+}
+.cp-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+.cp-tab-panel { display: none; }
+.cp-tab-panel.active { display: block; }
+
+.cp-info-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+.cp-info-card h3 {
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  margin: 0 0 12px;
+}
+.cp-info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+}
+.cp-info-row:last-child { border-bottom: none; }
+.cp-info-row span:first-child { color: #6b7280; }
+.cp-info-row span:last-child { color: #111827; font-weight: 600; text-align: right; }
+
+.cp-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+}
+.cp-doc-row:last-child { border-bottom: none; }
+.cp-doc-status {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  color: #fff;
+}
+.cp-doc-status.yes { background: #059669; }
+.cp-doc-status.no  { background: #d1d5db; color: #6b7280; }
+
+@media (max-width: 600px) {
+  .cp-header-card { flex-direction: column; text-align: center; }
+  .cp-header-meta { margin-left: 0; grid-template-columns: repeat(2, 1fr); width: 100%; }
+}
+
 /* ---- Quick Links ---- */
 .pp-quick-links { display: flex; flex-direction: column; gap: 8px; }
 

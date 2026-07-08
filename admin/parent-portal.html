@@ -140,6 +140,32 @@
         <div class="pp-children-list" id="childrenList"></div>
       </section>
 
+      <!-- ===== STUDENT PROFILE PAGE ===== -->
+      <section class="pp-page" id="page-child-profile">
+        <button class="cp-back-btn" onclick="showPage('children', document.querySelector('[data-page=children]'))">&#8592; Back to My Children</button>
+
+        <div class="cp-header-card">
+          <div class="cp-avatar" id="cpAvatar"></div>
+          <div class="cp-header-info">
+            <h2 id="cpName"></h2>
+            <p id="cpStudentId"></p>
+          </div>
+          <div class="cp-header-meta" id="cpHeaderMeta"></div>
+        </div>
+
+        <div class="cp-tabs" id="cpTabs">
+          <button class="cp-tab active" data-tab="profile">Profile</button>
+          <button class="cp-tab" data-tab="academic">Academic</button>
+          <button class="cp-tab" data-tab="attendance">Attendance</button>
+          <button class="cp-tab" data-tab="documents">Documents</button>
+        </div>
+
+        <div class="cp-tab-panel active" id="cpPanel-profile"></div>
+        <div class="cp-tab-panel" id="cpPanel-academic"></div>
+        <div class="cp-tab-panel" id="cpPanel-attendance"></div>
+        <div class="cp-tab-panel" id="cpPanel-documents"></div>
+      </section>
+
       <!-- ===== PAYMENTS PAGE ===== -->
       <section class="pp-page" id="page-payments">
         <div class="pp-welcome">

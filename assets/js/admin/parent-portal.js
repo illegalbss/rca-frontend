@@ -172,15 +172,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ============================================
-     CHILD DETAIL MODAL — full details + quick jump to that
-     child's Results/Payments/Attendance
+     STUDENT PROFILE PAGE — full details for one child, with
+     Profile / Academic / Attendance / Documents tabs
      ============================================ */
-  function closeChildDetailModal() {
-    document.getElementById('childDetailModal')?.remove();
-  }
-
   function jumpToChildPage(pageId, child) {
-    closeChildDetailModal();
     showPage(pageId, document.querySelector(`[data-page="${pageId}"]`));
 
     function highlightTab(tabsId) {
@@ -197,48 +192,108 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if (pageId === 'attendance') { renderAttendance(); }
   }
 
+  function switchProfileTab(tabName) {
+    document.querySelectorAll('.cp-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+    document.querySelectorAll('.cp-tab-panel').forEach(p => p.classList.toggle('active', p.id === `cpPanel-${tabName}`));
+  }
+
+  document.querySelectorAll('.cp-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchProfileTab(tab.dataset.tab));
+  });
+
+  function renderChildProfilePage(c) {
+    const initials = c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+    document.getElementById('cpAvatar').textContent = initials;
+    document.getElementById('cpName').textContent = c.full_name;
+    document.getElementById('cpStudentId').textContent = `Student ID: ${c.admission_no}`;
+
+    const dob = c.date_of_birth
+      ? new Date(c.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+    const admissionDate = (c.date_of_admission || c.enrolled_at)
+      ? new Date(c.date_of_admission || c.enrolled_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+    const gender = (c.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female';
+
+    document.getElementById('cpHeaderMeta').innerHTML = `
+      <div><span class="cp-meta-label">Class</span><span class="cp-meta-value">${c.class_name}</span></div>
+      <div><span class="cp-meta-label">Gender</span><span class="cp-meta-value">${gender}</span></div>
+      <div><span class="cp-meta-label">Date of Birth</span><span class="cp-meta-value">${dob}</span></div>
+      <div><span class="cp-meta-label">Admission Date</span><span class="cp-meta-value">${admissionDate}</span></div>
+    `;
+
+    // Profile tab — Parent/Guardian info (the real schema stores one
+    // parent/guardian contact per pupil, not separate father/mother rows)
+    document.getElementById('cpPanel-profile').innerHTML = `
+      <div class="cp-info-card">
+        <h3>Parent/Guardian Information</h3>
+        <div class="cp-info-row"><span>Name</span><span>${c.parent_name || '—'}</span></div>
+        <div class="cp-info-row"><span>Email</span><span>${c.parent_email || '—'}</span></div>
+        <div class="cp-info-row"><span>Phone</span><span>${c.parent_phone || '—'}</span></div>
+        <div class="cp-info-row"><span>Address</span><span>${c.parent_address || c.home_address || '—'}</span></div>
+      </div>
+      <div class="cp-info-card">
+        <h3>Enrollment</h3>
+        <div class="cp-info-row"><span>Status</span><span>${(c.status || 'active').charAt(0).toUpperCase() + (c.status || 'active').slice(1)}</span></div>
+      </div>
+    `;
+
+    // Academic tab
+    document.getElementById('cpPanel-academic').innerHTML = `
+      <div class="cp-info-card">
+        <h3>Academic Background</h3>
+        <div class="cp-info-row"><span>Previous School</span><span>${c.previous_school || '—'}</span></div>
+        <div class="cp-info-row"><span>Class Passed (Previous)</span><span>${c.class_passed_previous || '—'}</span></div>
+        <div class="cp-info-row"><span>Current Class</span><span>${c.class_name}</span></div>
+      </div>
+      <button class="btn btn-primary" id="cpViewResultsBtn">📋 View Full Results</button>
+    `;
+    document.getElementById('cpViewResultsBtn')?.addEventListener('click', () => jumpToChildPage('results', c));
+
+    // Attendance tab
+    const attPanel = document.getElementById('cpPanel-attendance');
+    attPanel.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Loading…</p>';
+    window.RCA_API.call(`/attendance/summary/${encodeURIComponent(c.admission_no)}`)
+      .then(data => {
+        const thisTerm = (data.summary || []).find(r => r.term === 'term2');
+        if (!thisTerm) { attPanel.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">No attendance recorded yet this term.</p>'; return; }
+        attPanel.innerHTML = `
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;text-align:center">
+            <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#059669;font-size:1.3rem">${thisTerm.present}</div><div style="font-size:0.75rem;color:#6b7280">Present</div></div>
+            <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#dc2626;font-size:1.3rem">${thisTerm.absent}</div><div style="font-size:0.75rem;color:#6b7280">Absent</div></div>
+            <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#d97706;font-size:1.3rem">${thisTerm.late}</div><div style="font-size:0.75rem;color:#6b7280">Late</div></div>
+            <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:var(--color-primary);font-size:1.3rem">${thisTerm.pct}%</div><div style="font-size:0.75rem;color:#6b7280">Attendance Rate</div></div>
+          </div>`;
+      })
+      .catch(() => { attPanel.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Attendance data not available yet.</p>'; });
+
+    // Documents tab — admission checklist (physical documents on file,
+    // not uploaded scans; matches the same c.docs object the Admission
+    // Register page reads/writes)
+    const docs = c.docs || {};
+    const docList = [
+      ['Passport Photograph', docs.passport],
+      ['Birth Certificate', docs.birth_cert],
+      ['Transfer Letter', docs.transfer_letter],
+      ['Other Documents', docs.others],
+    ];
+    document.getElementById('cpPanel-documents').innerHTML = `
+      <div class="cp-info-card">
+        <h3>Submitted Documents</h3>
+        ${docList.map(([label, has]) => `
+          <div class="cp-doc-row">
+            <span class="cp-doc-status ${has ? 'yes' : 'no'}">${has ? '✓' : '—'}</span>
+            <span>${label}</span>
+          </div>`).join('')}
+      </div>
+    `;
+
+    switchProfileTab('profile');
+  }
+
   window._openChildDetail = function(admissionNo) {
     const c = myChildren.find(x => x.admission_no === admissionNo);
     if (!c) return;
-
-    const initials = c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
-    const rows = [
-      ['Admission No.', c.admission_no],
-      ['Class', c.class_name],
-      ['Gender', (c.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'],
-      ['Date of Birth', c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'],
-      ['Status', (c.status || 'active').charAt(0).toUpperCase() + (c.status || 'active').slice(1)],
-    ];
-
-    const modal = document.createElement('div');
-    modal.id = 'childDetailModal';
-    modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML = `
-      <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px">
-          <div style="width:72px;height:72px;border-radius:50%;background:var(--color-primary-dark);color:#fff;font-weight:700;font-size:1.5rem;display:flex;align-items:center;justify-content:center">${initials}</div>
-          <div style="font-family:var(--font-heading);font-weight:700;font-size:1.05rem;color:#111827;text-align:center">${c.full_name}</div>
-        </div>
-        <div style="border-top:1px solid #f1f5f9">
-          ${rows.map(([l, v]) => `
-            <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:0.85rem">
-              <span style="color:#6b7280">${l}</span><span style="color:#111827;font-weight:600;text-align:right">${v}</span>
-            </div>`).join('')}
-        </div>
-        <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
-          <button class="btn btn-primary" style="flex:1;min-width:120px" data-jump="results">📋 Results</button>
-          <button class="btn btn-outline" style="flex:1;min-width:120px" data-jump="payments">💳 Payments</button>
-          <button class="btn btn-outline" style="flex:1;min-width:120px" data-jump="attendance">📅 Attendance</button>
-        </div>
-        <button style="width:100%;margin-top:10px;background:none;border:none;color:#9ca3af;font-size:0.8rem;cursor:pointer;padding:6px" id="childDetailCloseBtn">Close</button>
-      </div>`;
-    document.body.appendChild(modal);
-
-    modal.addEventListener('click', (e) => { if (e.target === modal) closeChildDetailModal(); });
-    document.getElementById('childDetailCloseBtn').addEventListener('click', closeChildDetailModal);
-    modal.querySelectorAll('[data-jump]').forEach(btn => {
-      btn.addEventListener('click', () => jumpToChildPage(btn.dataset.jump, c));
-    });
+    renderChildProfilePage(c);
+    showPage('child-profile');
   };
 
   /* ============================================
