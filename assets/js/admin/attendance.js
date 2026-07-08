@@ -76,37 +76,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* --------------------------------------------
      POPULATE THE CLASS DROPDOWN
-     Based on user role:
+     Attendance is a form-teacher-only responsibility — matches the
+     backend's own check on POST /attendance/mark:
      - Head Teacher / ICT Admin → all classes
-     - Form/Class Teacher → only their assigned class
-     - Subject Teacher → their assigned classes
+     - Class (form) Teacher → only their own form class
+     - Subject Teacher / anyone else → no classes at all, even if
+       they teach in that class for a subject
      -------------------------------------------- */
   function populateClassDropdown() {
     const user = window.CURRENT_USER;
     const roles = user ? (user.roles || [user.role, user.primary_role]) : [];
     const isFullAccess = roles.includes('ict_admin') || roles.includes('head_teacher');
+    const isFormTeacher = user && user.primary_role === 'class_teacher';
+    const myFormClass = isFormTeacher ? (user.form_class || (user.linked_classes || [])[0]) : null;
 
     let permittedClasses;
-
     if (isFullAccess || !user) {
       permittedClasses = allClasses;
+    } else if (myFormClass) {
+      permittedClasses = allClasses.filter(c => c.trim().toLowerCase() === myFormClass.trim().toLowerCase());
     } else {
-      // For form teachers: only their form class (attendance is a form-teacher responsibility)
-      // Use form_class if set (dual-role teachers); otherwise use linked_classes (pure form teachers)
-      const formClass = user.form_class;
-      if (formClass) {
-        permittedClasses = allClasses.filter(c => c === formClass);
-      } else {
-        const linked = user.linked_classes || [];
-        permittedClasses = allClasses.filter(cls =>
-          linked.some(lc => lc.trim().toLowerCase() === cls.trim().toLowerCase())
-        );
-      }
+      permittedClasses = [];
     }
 
-    // Fallback — if no classes resolved, show all
-    if (permittedClasses.length === 0) permittedClasses = allClasses;
+    if (permittedClasses.length === 0) {
+      classSelect.innerHTML = '<option value="">No class assigned to you</option>';
+      classSelect.disabled = true;
+      if (!document.getElementById('attendanceAccessNotice')) {
+        const notice = document.createElement('div');
+        notice.id = 'attendanceAccessNotice';
+        notice.style.cssText = 'background:#fef3c7;border:1px solid #fde68a;color:#92400e;border-radius:8px;padding:10px 16px;margin:12px 0;font-size:0.82rem';
+        notice.textContent = '🔒 Only a class\'s form teacher (or the ICT Administrator / Head Teacher) can mark attendance. Contact the ICT Administrator if you believe this is an error.';
+        document.querySelector('.attendance-toolbar')?.insertAdjacentElement('afterend', notice);
+      }
+      return;
+    }
 
+    classSelect.disabled = false;
     classSelect.innerHTML = permittedClasses
       .map(className => `<option value="${className}">${className}</option>`)
       .join('');
