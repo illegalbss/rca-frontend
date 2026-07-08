@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
     modal.innerHTML = `
-      <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:28px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
         <h3 style="margin-bottom:16px;color:var(--color-primary);font-size:1rem">Add ICT Enrollment Application</h3>
         <div class="form-group">
           <label>Pupil's Full Name *</label>
