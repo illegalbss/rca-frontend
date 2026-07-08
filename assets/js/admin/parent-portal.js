@@ -162,14 +162,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!wrap) return;
     wrap.innerHTML = myChildren.length
       ? myChildren.map(c => `
-          <div class="pp-child-dash-card">
+          <div class="pp-child-dash-card" style="cursor:pointer" onclick="window._openChildDetail('${c.admission_no}')">
             <div class="pp-child-avatar-lg">${c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase()}</div>
             <div class="pp-child-dash-name">${c.full_name}</div>
             <div class="pp-child-dash-meta">${c.class_name}</div>
-            <button class="pp-view-profile-btn" onclick="showPage('children', document.querySelector('[data-page=children]'))">View Profile</button>
+            <button class="pp-view-profile-btn" onclick="event.stopPropagation();window._openChildDetail('${c.admission_no}')">View Profile</button>
           </div>`).join('')
       : '<p style="color:#9ca3af;font-size:0.82rem">No children linked to your account yet.</p>';
   }
+
+  /* ============================================
+     CHILD DETAIL MODAL — full details + quick jump to that
+     child's Results/Payments/Attendance
+     ============================================ */
+  function closeChildDetailModal() {
+    document.getElementById('childDetailModal')?.remove();
+  }
+
+  function jumpToChildPage(pageId, child) {
+    closeChildDetailModal();
+    showPage(pageId, document.querySelector(`[data-page="${pageId}"]`));
+
+    function highlightTab(tabsId) {
+      document.getElementById(tabsId)?.querySelectorAll('.pp-child-tab').forEach(b => {
+        const active = b.dataset.adm === child.admission_no;
+        b.style.borderColor = active ? 'var(--color-primary)' : '#e5e7eb';
+        b.style.background  = active ? 'rgba(107,15,26,0.08)' : '#fff';
+        b.style.color       = active ? 'var(--color-primary)' : '#374151';
+      });
+    }
+
+    if (pageId === 'payments') { renderFeeSummary(child); highlightTab('payChildTabs'); }
+    else if (pageId === 'results') { renderResults(child); highlightTab('resultChildTabs'); }
+    else if (pageId === 'attendance') { renderAttendance(); }
+  }
+
+  window._openChildDetail = function(admissionNo) {
+    const c = myChildren.find(x => x.admission_no === admissionNo);
+    if (!c) return;
+
+    const initials = c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+    const rows = [
+      ['Admission No.', c.admission_no],
+      ['Class', c.class_name],
+      ['Gender', (c.gender || '').toLowerCase() === 'male' ? 'Male' : 'Female'],
+      ['Date of Birth', c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'],
+      ['Status', (c.status || 'active').charAt(0).toUpperCase() + (c.status || 'active').slice(1)],
+    ];
+
+    const modal = document.createElement('div');
+    modal.id = 'childDetailModal';
+    modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px">
+          <div style="width:72px;height:72px;border-radius:50%;background:var(--color-primary-dark);color:#fff;font-weight:700;font-size:1.5rem;display:flex;align-items:center;justify-content:center">${initials}</div>
+          <div style="font-family:var(--font-heading);font-weight:700;font-size:1.05rem;color:#111827;text-align:center">${c.full_name}</div>
+        </div>
+        <div style="border-top:1px solid #f1f5f9">
+          ${rows.map(([l, v]) => `
+            <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #f1f5f9;font-size:0.85rem">
+              <span style="color:#6b7280">${l}</span><span style="color:#111827;font-weight:600;text-align:right">${v}</span>
+            </div>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+          <button class="btn btn-primary" style="flex:1;min-width:120px" data-jump="results">📋 Results</button>
+          <button class="btn btn-outline" style="flex:1;min-width:120px" data-jump="payments">💳 Payments</button>
+          <button class="btn btn-outline" style="flex:1;min-width:120px" data-jump="attendance">📅 Attendance</button>
+        </div>
+        <button style="width:100%;margin-top:10px;background:none;border:none;color:#9ca3af;font-size:0.8rem;cursor:pointer;padding:6px" id="childDetailCloseBtn">Close</button>
+      </div>`;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeChildDetailModal(); });
+    document.getElementById('childDetailCloseBtn').addEventListener('click', closeChildDetailModal);
+    modal.querySelectorAll('[data-jump]').forEach(btn => {
+      btn.addEventListener('click', () => jumpToChildPage(btn.dataset.jump, c));
+    });
+  };
 
   /* ============================================
      MY CHILDREN PAGE
@@ -186,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     list.innerHTML = myChildren.map(c => `
-      <div class="pp-card" style="padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:12px">
+      <div class="pp-card" style="padding:16px 18px;display:flex;align-items:center;gap:14px;margin-bottom:12px;cursor:pointer" onclick="window._openChildDetail('${c.admission_no}')">
         <div style="width:52px;height:52px;border-radius:50%;background:var(--color-primary-dark);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">
           ${c.full_name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase()}
         </div>
