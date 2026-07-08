@@ -509,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   var cu      = window.CURRENT_USER;
   var cuRoles = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
-  var canRecord = cuRoles.some(function(r) { return r === 'ict_admin' || r === 'accountant'; });
+  var canRecord = cuRoles.some(function(r) { return r === 'ict_admin' || r === 'head_teacher' || r === 'accountant'; });
   if (!canRecord) {
     document.getElementById('paymentFormCard') && (document.getElementById('paymentFormCard').style.display = 'none');
     document.querySelector('.payment-form-card') && (document.querySelector('.payment-form-card').style.pointerEvents = 'none');

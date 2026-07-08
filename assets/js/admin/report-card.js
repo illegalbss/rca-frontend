@@ -6,10 +6,11 @@
    term), which reads the real scores/behavior_ratings/class_comments
    tables (see students.js's GET /:admissionNo/results route).
 
-   Note: the real class_comments table only stores one comment per
-   pupil/term (written by the class teacher) — there's no separate
-   Head Teacher comment column, so the HT remark is always the
-   auto-generated one based on the pupil's average.
+   The class_comments table stores both the class teacher's remark
+   (comment) and the Head Teacher's own remark (ht_comment), editable
+   by ict_admin/head_teacher via the same PUT /:admissionNo/review
+   endpoint Class Review uses. Falls back to an auto-generated remark
+   based on the pupil's average until a real one is written.
 
    CORE IDEA: pick a class, then a pupil within that class, and
    we build a complete report card document - every subject's
@@ -28,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const gradeToLabel    = window.gradeToLabel;
   const ratingValueToLabel = window.ratingValueToLabel;
 
+  const cu = window.CURRENT_USER;
+  const canEditHtComment = cu && (cu.roles || [cu.role]).some(r => ['ict_admin', 'head_teacher'].includes(r));
+
   // Cache of admission_no -> { average, scores, behavior, comment } for
   // the currently selected term, so class-position ranking doesn't
   // refetch a classmate's results more than once.
@@ -44,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         scores,
         behavior: data?.behavior || [],
         comment: data?.comment || null,
+        ht_comment: data?.ht_comment || null,
         average,
         totalScore,
         overallGrade: scoreToGrade(average),
@@ -281,9 +286,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       </div>
 
-      <div class="rc-remarks rc-ht-remarks">
+      <div class="rc-remarks rc-ht-remarks" id="htCommentBlock">
         <span class="rc-remarks-label">Head Teacher's Comment</span>
-        ${generateHtComment(summary.average)}
+        <span id="htCommentText">${summary.ht_comment ? `"${summary.ht_comment}"` : generateHtComment(summary.average)}</span>
+        ${canEditHtComment ? `<button id="editHtCommentBtn" class="no-print" style="margin-left:10px;padding:2px 10px;font-size:0.72rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">✏️ Edit</button>` : ''}
       </div>
 
       <div class="rc-behavior-section">
@@ -314,6 +320,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="rc-signature-line">Next Term Begins<br><span style="font-size:0.68rem;color:#555;font-style:italic">See School Calendar</span></div>
       </div>
     `;
+
+    document.getElementById('editHtCommentBtn')?.addEventListener('click', () => {
+      const block = document.getElementById('htCommentBlock');
+      const current = summary.ht_comment || '';
+      block.innerHTML = `
+        <span class="rc-remarks-label">Head Teacher's Comment</span>
+        <textarea id="htCommentInput" class="no-print" rows="2" style="width:100%;margin-top:6px;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;font-family:inherit">${current}</textarea>
+        <div class="no-print" style="margin-top:6px;display:flex;gap:8px">
+          <button id="saveHtCommentBtn" style="padding:5px 14px;font-size:0.75rem;background:var(--color-primary);color:#fff;border:none;border-radius:6px;cursor:pointer">Save</button>
+          <button id="cancelHtCommentBtn" style="padding:5px 14px;font-size:0.75rem;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer">Cancel</button>
+        </div>
+      `;
+      document.getElementById('cancelHtCommentBtn').addEventListener('click', () => renderReportCard());
+      document.getElementById('saveHtCommentBtn').addEventListener('click', async () => {
+        const newComment = document.getElementById('htCommentInput').value.trim();
+        const saveBtn = document.getElementById('saveHtCommentBtn');
+        saveBtn.disabled = true;
+        try {
+          await window.RCA_API.call(`/students/${encodeURIComponent(admissionNo)}/review`, {
+            method: 'PUT',
+            body: { term, ht_comment: newComment }
+          });
+        } catch (e) {
+          alert('Could not save comment: ' + e.message);
+          saveBtn.disabled = false;
+          return;
+        }
+        delete resultsCache[`${admissionNo}|${term}`];
+        renderReportCard();
+      });
+    });
   }
 
   /* --------------------------------------------

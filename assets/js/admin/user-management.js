@@ -15,6 +15,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cu       = window.CURRENT_USER;
   const cuRoles  = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];
   const isIctAdmin = cuRoles.includes('ict_admin');
+  // Head Teacher can add new staff accounts and deactivate/reactivate
+  // ("remove") them, matching POST/DELETE /api/users on the backend —
+  // but editing details or resetting a password stays ICT Admin-only.
+  const canManageAccounts = isIctAdmin || cuRoles.includes('head_teacher');
 
   const ROLE_LABELS = {
     ict_admin: 'ICT Administrator', head_teacher: 'Head Teacher',
@@ -95,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <button class="um-action-btn um-btn-view" onclick="UM.view(${u.id})">View</button>
           ${isIctAdmin ? `<button class="um-action-btn um-btn-edit" onclick="UM.edit(${u.id})">Edit</button>` : ''}
           ${isIctAdmin && u.primary_role !== 'parent' ? `<button class="um-action-btn um-btn-reset" onclick="UM.resetPassword(${u.id})">Reset PW</button>` : ''}
-          ${isIctAdmin ? `<button class="um-action-btn ${u.status === 'active' ? 'um-btn-deact' : 'um-btn-react'}" onclick="UM.toggleStatus(${u.id})">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>` : ''}
+          ${canManageAccounts ? `<button class="um-action-btn ${u.status === 'active' ? 'um-btn-deact' : 'um-btn-react'}" onclick="UM.toggleStatus(${u.id})">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>` : ''}
         </div></td>
       </tr>
     `).join('');
@@ -639,7 +643,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ============================================================
      INIT
      ============================================================ */
-  if (!isIctAdmin) {
+  if (!canManageAccounts) {
     const createBtn = document.getElementById('createUserBtn');
     if (createBtn) createBtn.style.display = 'none';
     const addParentBtn = document.querySelector('[onclick="showAddParentModal()"]');
