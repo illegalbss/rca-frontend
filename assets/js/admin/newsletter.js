@@ -6,35 +6,34 @@
    Who can APPROVE / REJECT: head_teacher, proprietor
    Who can VIEW (staff)    : all roles (published only for non-managers)
    Parents                 : see published newsletters in parent portal
+   (parent-portal.js reads /announcements filtered to type='newsletter'
+   && status='published' directly — no dependency on this file).
 
-   STORAGE
-   -------
-   Key   : rca_newsletters  (raw localStorage, NOT under rca_v1_ prefix)
-   This means newsletters survive DATA_VERSION bumps and RCA.reset() —
-   they accumulate permanently across months and academic years.
-   The only way to remove a newsletter is explicit Delete by an admin.
+   Real backend: uses the same /announcements table as the Announcements
+   tab, with type='newsletter'. Previously this whole tab was a parallel
+   localStorage-only system — anything "published" here never actually
+   reached parents, since the real parent portal reads real announcements.
 */
 
-(function () {
+document.addEventListener('DOMContentLoaded', () => {
 
   /* ============================================================
-     STORAGE — raw localStorage, survives all versioned resets
+     CACHE — loaded from the real backend, refreshed after every
+     mutating action (create/edit/submit/approve/reject/archive/delete)
   ============================================================ */
-  function getNewsletters() {
-    try { return JSON.parse(localStorage.getItem('rca_newsletters') || '[]'); }
-    catch (e) { return []; }
+  let newslettersCache = [];
+
+  async function loadNewsletters() {
+    try {
+      const data = await window.RCA_API.call('/announcements');
+      newslettersCache = (data.announcements || []).filter(a => a.type === 'newsletter');
+    } catch (e) {
+      console.warn('Could not load newsletters:', e.message);
+      newslettersCache = [];
+    }
   }
 
-  function saveNewsletters(arr) {
-    try {
-      localStorage.setItem('rca_newsletters', JSON.stringify(arr));
-    } catch (e) {
-      if (e.name === 'QuotaExceededError' || e.code === 22) {
-        alert('Storage limit reached. Please contact the ICT Administrator.');
-      }
-    }
-    window.RCA_NEWSLETTERS = arr;
-  }
+  function getNewsletters() { return newslettersCache; }
 
   /* ============================================================
      ACADEMIC SESSION HELPER
@@ -47,7 +46,7 @@
     return mo >= 8 ? `${yr}/${yr + 1}` : `${yr - 1}/${yr}`;
   }
 
-  /* List of all sessions that appear in the stored newsletters,
+  /* List of all sessions that appear in the loaded newsletters,
      plus the current one, newest first */
   function allSessions() {
     const cur   = currentSession();
@@ -118,6 +117,7 @@
 
     /* ---- Get and filter newsletters ---- */
     let all = getNewsletters()
+      .slice()
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     // Non-managers see only published
@@ -175,27 +175,27 @@
 
     const btns = [];
     if (nl.status === 'draft' && canCreate) {
-      btns.push(btn('✏️ Edit',            '#fff',    '#d1d5db', '#374151', `window.editNewsletter('${nl.id}')`));
-      btns.push(btn('📤 Submit',          '#1a3a5c', 'none',    '#fff',    `window.submitNewsletter('${nl.id}')`));
-      btns.push(btn('🗑 Delete',          '#fef2f2', '#fecaca', '#dc2626', `window.deleteNewsletter('${nl.id}')`));
+      btns.push(btn('✏️ Edit',            '#fff',    '#d1d5db', '#374151', `window.editNewsletter(${nl.id})`));
+      btns.push(btn('📤 Submit',          '#1a3a5c', 'none',    '#fff',    `window.submitNewsletter(${nl.id})`));
+      btns.push(btn('🗑 Delete',          '#fef2f2', '#fecaca', '#dc2626', `window.deleteNewsletter(${nl.id})`));
     }
     if (nl.status === 'pending_approval') {
       if (canApprove) {
-        btns.push(btn('✅ Approve',       '#059669', 'none',    '#fff',    `window.approveNewsletter('${nl.id}')`));
-        btns.push(btn('❌ Reject',        '#fef2f2', '#fecaca', '#dc2626', `window.rejectNewsletter('${nl.id}')`));
+        btns.push(btn('✅ Approve',       '#059669', 'none',    '#fff',    `window.approveNewsletter(${nl.id})`));
+        btns.push(btn('❌ Reject',        '#fef2f2', '#fecaca', '#dc2626', `window.rejectNewsletter(${nl.id})`));
       }
-      btns.push(btn('👁 Preview',         '#fff',    '#d1d5db', '#374151', `window.viewNewsletter('${nl.id}')`));
+      btns.push(btn('👁 Preview',         '#fff',    '#d1d5db', '#374151', `window.viewNewsletter(${nl.id})`));
     }
     if (nl.status === 'published') {
-      btns.push(btn('👁 View',            '#fff',    '#d1d5db', '#374151', `window.viewNewsletter('${nl.id}')`));
-      if (isManager) btns.push(btn('📦 Archive', '#f3f4f6', '#d1d5db', '#374151', `window.archiveNewsletter('${nl.id}')`));
+      btns.push(btn('👁 View',            '#fff',    '#d1d5db', '#374151', `window.viewNewsletter(${nl.id})`));
+      if (isManager) btns.push(btn('📦 Archive', '#f3f4f6', '#d1d5db', '#374151', `window.archiveNewsletter(${nl.id})`));
     }
     if (nl.status === 'rejected' && canCreate) {
-      btns.push(btn('✏️ Edit & Resubmit', '#1a3a5c', 'none',    '#fff',    `window.editNewsletter('${nl.id}')`));
-      btns.push(btn('🗑 Delete',          '#fef2f2', '#fecaca', '#dc2626', `window.deleteNewsletter('${nl.id}')`));
+      btns.push(btn('✏️ Edit & Resubmit', '#1a3a5c', 'none',    '#fff',    `window.editNewsletter(${nl.id})`));
+      btns.push(btn('🗑 Delete',          '#fef2f2', '#fecaca', '#dc2626', `window.deleteNewsletter(${nl.id})`));
     }
     if (nl.status === 'archived' && isManager) {
-      btns.push(btn('🗑 Delete',          '#fef2f2', '#fecaca', '#dc2626', `window.deleteNewsletter('${nl.id}')`));
+      btns.push(btn('🗑 Delete',          '#fef2f2', '#fecaca', '#dc2626', `window.deleteNewsletter(${nl.id})`));
     }
 
     return `
@@ -239,6 +239,11 @@
     renderNewsletters();
   };
 
+  async function refresh() {
+    await loadNewsletters();
+    renderNewsletters();
+  }
+
   /* ============================================================
      CREATE / EDIT MODAL
   ============================================================ */
@@ -249,7 +254,7 @@
 
     const modal = document.createElement('div');
     modal.id = 'nlModalOverlay';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';
 
     modal.innerHTML = `
       <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
@@ -334,7 +339,7 @@
       el.style.display = 'block';
     }
 
-    function save(submit) {
+    async function save(submit, btnEl) {
       const title   = document.getElementById('nl_title').value.trim();
       const body    = document.getElementById('nl_body').value.trim();
       const issue   = document.getElementById('nl_issue').value.trim();
@@ -355,37 +360,23 @@
         ? (canApprove ? 'published' : 'pending_approval')
         : 'draft';
 
-      const now = new Date().toISOString();
-      const all = getNewsletters();
+      const payload = { type: 'newsletter', title, body, issue, author, audience, session, status };
 
-      if (existing) {
-        const idx = all.findIndex(n => n.id === existing.id);
-        if (idx > -1) {
-          all[idx] = {
-            ...all[idx], title, body, issue, author, audience, session, status,
-            updated_at: now,
-            ...(status === 'published' && !all[idx].published_at
-              ? { published_at: now, approved_by: window.CURRENT_USER?.full_name }
-              : {}),
-          };
+      btnEl.disabled = true;
+      try {
+        if (existing) {
+          await window.RCA_API.call(`/announcements/${existing.id}`, { method: 'PATCH', body: payload });
+        } else {
+          await window.RCA_API.call('/announcements', { method: 'POST', body: payload });
         }
-      } else {
-        all.push({
-          id: 'nl-' + Date.now(),
-          title, body, issue, author, audience, session, status,
-          author_id:    window.CURRENT_USER?.id || null,
-          created_at:   now,
-          updated_at:   now,
-          submitted_at: submit ? now : null,
-          published_at: status === 'published' ? now : null,
-          approved_by:  status === 'published' ? (window.CURRENT_USER?.full_name || 'Administration') : null,
-          rejection_reason: null,
-        });
+      } catch (e) {
+        alertMsg('Could not save: ' + e.message);
+        btnEl.disabled = false;
+        return;
       }
 
-      saveNewsletters(all);
       modal.remove();
-      renderNewsletters();
+      await refresh();
 
       showToast(
         status === 'published'        ? 'Newsletter published ✅'     :
@@ -394,8 +385,8 @@
       );
     }
 
-    document.getElementById('saveNlDraftBtn').onclick  = () => save(false);
-    document.getElementById('saveNlSubmitBtn').onclick = () => save(true);
+    document.getElementById('saveNlDraftBtn').onclick  = (e) => save(false, e.target);
+    document.getElementById('saveNlSubmitBtn').onclick = (e) => save(true, e.target);
   }
 
   /* ============================================================
@@ -405,7 +396,7 @@
     document.getElementById('nlViewOverlay')?.remove();
     const modal = document.createElement('div');
     modal.id = 'nlViewOverlay';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.6);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';
 
     const displayDate = (nl.published_at || nl.created_at)
       ? new Date(nl.published_at || nl.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -445,7 +436,7 @@
     document.getElementById('nlRejectOverlay')?.remove();
     const modal = document.createElement('div');
     modal.id = 'nlRejectOverlay';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2100;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.6);z-index:2100;display:flex;align-items:center;justify-content:center;padding:16px';
 
     modal.innerHTML = `
       <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
@@ -470,17 +461,22 @@
     document.getElementById('cancelRejectNl').onclick = close;
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
 
-    document.getElementById('confirmRejectNl').onclick = () => {
+    document.getElementById('confirmRejectNl').onclick = async () => {
       const reason = document.getElementById('nlRejectReason').value.trim();
       if (!reason) { showToast('Please enter a rejection reason.', '#dc2626'); return; }
-      const all = getNewsletters();
-      const idx = all.findIndex(n => n.id === id);
-      if (idx > -1) {
-        all[idx] = { ...all[idx], status: 'rejected', rejection_reason: reason, rejected_at: new Date().toISOString() };
-        saveNewsletters(all);
+
+      try {
+        await window.RCA_API.call(`/announcements/${id}`, {
+          method: 'PATCH',
+          body: { status: 'rejected', rejection_reason: reason }
+        });
+      } catch (e) {
+        showToast('Could not reject: ' + e.message, '#dc2626');
+        return;
       }
+
       close();
-      renderNewsletters();
+      await refresh();
       showToast('Newsletter returned to author with feedback.');
     };
   }
@@ -501,45 +497,59 @@
   ============================================================ */
   window.editNewsletter    = id => { const nl = getNewsletters().find(n => n.id === id); if (nl) showNewsletterModal(nl); };
   window.viewNewsletter    = id => { const nl = getNewsletters().find(n => n.id === id); if (nl) showViewModal(nl); };
-  window.deleteNewsletter  = id => {
+
+  window.deleteNewsletter  = async id => {
     if (!confirm('Delete this newsletter permanently? It cannot be recovered.')) return;
-    saveNewsletters(getNewsletters().filter(n => n.id !== id));
-    renderNewsletters();
+    try {
+      await window.RCA_API.call(`/announcements/${id}`, { method: 'DELETE' });
+    } catch (e) {
+      showToast('Could not delete: ' + e.message, '#dc2626');
+      return;
+    }
+    await refresh();
     showToast('Newsletter deleted.');
   };
-  window.submitNewsletter  = id => {
-    const all = getNewsletters();
-    const idx = all.findIndex(n => n.id === id);
-    if (idx > -1) { all[idx].status = 'pending_approval'; all[idx].submitted_at = new Date().toISOString(); saveNewsletters(all); }
-    renderNewsletters();
+
+  window.submitNewsletter  = async id => {
+    try {
+      await window.RCA_API.call(`/announcements/${id}`, { method: 'PATCH', body: { status: 'pending_approval' } });
+    } catch (e) {
+      showToast('Could not submit: ' + e.message, '#dc2626');
+      return;
+    }
+    await refresh();
     showToast('Submitted for approval ⏳');
   };
-  window.approveNewsletter = id => {
-    const all = getNewsletters();
-    const idx = all.findIndex(n => n.id === id);
-    if (idx > -1) {
-      all[idx].status       = 'published';
-      all[idx].published_at = new Date().toISOString();
-      all[idx].approved_by  = window.CURRENT_USER?.full_name || 'Administrator';
-      saveNewsletters(all);
+
+  window.approveNewsletter = async id => {
+    try {
+      await window.RCA_API.call(`/announcements/${id}`, { method: 'PATCH', body: { status: 'published' } });
+    } catch (e) {
+      showToast('Could not approve: ' + e.message, '#dc2626');
+      return;
     }
-    renderNewsletters();
+    await refresh();
     showToast('Newsletter approved and published ✅');
   };
+
   window.rejectNewsletter  = id => showRejectModal(id);
-  window.archiveNewsletter = id => {
+
+  window.archiveNewsletter = async id => {
     if (!confirm('Archive this newsletter? It will be hidden from parents and staff but kept in the archive.')) return;
-    const all = getNewsletters();
-    const idx = all.findIndex(n => n.id === id);
-    if (idx > -1) { all[idx].status = 'archived'; all[idx].archived_at = new Date().toISOString(); saveNewsletters(all); }
-    renderNewsletters();
+    try {
+      await window.RCA_API.call(`/announcements/${id}`, { method: 'PATCH', body: { status: 'archived' } });
+    } catch (e) {
+      showToast('Could not archive: ' + e.message, '#dc2626');
+      return;
+    }
+    await refresh();
     showToast('Newsletter archived 📦');
   };
 
   /* ============================================================
      PUBLIC INIT — called by announcements.js when tab is activated
   ============================================================ */
-  window.initNewsletterTab = function () {
+  window.initNewsletterTab = async function () {
     /* Ensure the filter bar container exists */
     if (!document.getElementById('nlSessionFilter')) {
       const panel = document.getElementById('newsletterPanel');
@@ -560,13 +570,10 @@
       addBtn.style.display = canCreate ? 'inline-flex' : 'none';
       addBtn.onclick = () => showNewsletterModal(null);
     }
-    renderNewsletters();
+
+    const list = document.getElementById('newsletterList');
+    if (list) list.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:40px;font-size:0.85rem">Loading…</p>';
+    await refresh();
   };
 
-  /* ============================================================
-     EXPOSE for parent portal — reads directly from localStorage,
-     no dependency on this module's loaded state
-  ============================================================ */
-  window.RCA_NEWSLETTERS = getNewsletters();
-
-})();
+});
