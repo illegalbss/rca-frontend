@@ -35,6 +35,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
+  /* ============================================
+     MOBILE SIDEBAR TOGGLE
+     The sidebar is translated off-screen below 900px width (see
+     parent-portal.css) and only slides back in via the .open class —
+     nothing was ever wiring the hamburger button to add it, so on
+     mobile the nav was completely unreachable beyond the Dashboard.
+     ============================================ */
+  const ppSidebar = document.getElementById('ppSidebar');
+  const ppOverlay = document.getElementById('ppOverlay');
+  function closeSidebar() {
+    ppSidebar?.classList.remove('open');
+    ppOverlay?.classList.remove('open');
+  }
+  document.getElementById('ppMenuToggle')?.addEventListener('click', () => {
+    ppSidebar?.classList.toggle('open');
+    ppOverlay?.classList.toggle('open');
+  });
+  ppOverlay?.addEventListener('click', closeSidebar);
+  document.querySelectorAll('.pp-nav-link[data-page]').forEach(link => {
+    link.addEventListener('click', closeSidebar);
+  });
+
   const user = window.CURRENT_USER;
   if (!user) return;
 
@@ -56,6 +78,97 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.warn('Could not load children:', e.message);
       return [];
     }
+  }
+
+  /* ============================================
+     DASHBOARD HEADER — topbar name/avatar + welcome banner
+     ============================================ */
+  function renderDashboardHeader() {
+    const nameEl = document.getElementById('ppUserName');
+    const avatarEl = document.getElementById('ppAvatar');
+    const welcomeEl = document.getElementById('dashWelcomeName');
+    if (nameEl) nameEl.textContent = user.full_name || 'Parent';
+    if (avatarEl) avatarEl.textContent = (user.full_name || '?').split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+    if (welcomeEl) welcomeEl.textContent = (user.full_name || 'Parent').split(' ')[0];
+  }
+
+  /* ============================================
+     DASHBOARD STAT CARDS — children count, outstanding balance
+     (summed across all children, current term), most recent payment
+     ============================================ */
+  async function renderDashStats() {
+    const wrap = document.getElementById('dashStats');
+    if (!wrap) return;
+
+    wrap.innerHTML = `
+      <div class="pp-stat">
+        <div class="pp-stat-label">My Children</div>
+        <span class="pp-stat-value">${myChildren.length}</span>
+        <button class="pp-stat-link" onclick="showPage('children', document.querySelector('[data-page=children]'))">View Details</button>
+      </div>
+      <div class="pp-stat">
+        <div class="pp-stat-label">Outstanding Balance</div>
+        <span class="pp-stat-value" id="dashBalanceValue">…</span>
+        <button class="pp-stat-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">View Payments</button>
+      </div>
+      <div class="pp-stat">
+        <div class="pp-stat-label">Recent Payment</div>
+        <span class="pp-stat-value" id="dashRecentValue">…</span>
+        <span class="pp-stat-label" id="dashRecentDate"></span>
+      </div>
+    `;
+
+    if (myChildren.length === 0) {
+      document.getElementById('dashBalanceValue').textContent = fmt(0);
+      document.getElementById('dashRecentValue').textContent = 'None yet';
+      return;
+    }
+
+    let totalBalance = 0;
+    let mostRecent = null;
+    await Promise.all(myChildren.map(async (c) => {
+      try {
+        const lookup = await window.RCA_API.call(
+          `/payments/lookup?admission_no=${encodeURIComponent(c.admission_no)}&term=term2&session=${SESSION}`
+        );
+        totalBalance += Number(lookup.balance || 0);
+      } catch (e) { /* balance stays whatever we've summed so far */ }
+      try {
+        const hist = await window.RCA_API.call(`/payments?admission_no=${encodeURIComponent(c.admission_no)}`);
+        (hist.payments || []).forEach(p => {
+          if (!mostRecent || new Date(p.payment_date) > new Date(mostRecent.payment_date)) mostRecent = p;
+        });
+      } catch (e) { /* leave mostRecent as-is */ }
+    }));
+
+    const balanceEl = document.getElementById('dashBalanceValue');
+    if (balanceEl) {
+      balanceEl.textContent = fmt(totalBalance);
+      balanceEl.classList.add(totalBalance > 0 ? 'red' : 'green');
+    }
+    const recentEl = document.getElementById('dashRecentValue');
+    const recentDateEl = document.getElementById('dashRecentDate');
+    if (recentEl) recentEl.textContent = mostRecent ? fmt(mostRecent.amount) : 'None yet';
+    if (recentDateEl && mostRecent?.payment_date) {
+      recentDateEl.textContent = new Date(mostRecent.payment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+  }
+
+  /* ============================================
+     DASHBOARD "MY CHILDREN" PREVIEW CARDS
+     ============================================ */
+  function renderDashChildCards() {
+    const wrap = document.getElementById('dashChildCards');
+    if (!wrap) return;
+    wrap.innerHTML = myChildren.length
+      ? myChildren.map(c => `
+          <div class="pp-child-dash-card">
+            <div class="pp-child-avatar-lg">${c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase()}</div>
+            <div class="pp-child-dash-name">${c.full_name}</div>
+            <div class="pp-child-dash-meta">${c.class_name}</div>
+            <button class="pp-view-profile-btn" onclick="showPage('children', document.querySelector('[data-page=children]'))">View Profile</button>
+          </div>`).join('')
+      : '<p style="color:#9ca3af;font-size:0.82rem">No children linked to your account yet.</p>';
   }
 
   /* ============================================
@@ -575,8 +688,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ============================================
      INIT
      ============================================ */
+  renderDashboardHeader();
   myChildren = await loadMyChildren();
   renderChildrenList();
+  renderDashStats();
+  renderDashChildCards();
   buildChildTabs('payChildTabs', 'payChildSelector', renderFeeSummary);
   buildChildTabs('resultChildTabs', 'resultChildSelector', renderResults);
   renderAttendance();
