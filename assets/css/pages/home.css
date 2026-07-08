@@ -18,7 +18,10 @@
 /* Ensure hero slider fills the section */
 .hero-slider {
   position: absolute !important;
-  inset: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
   width: 100% !important;
   height: 100% !important;
 }
@@ -27,7 +30,10 @@
 
 .hero-slide {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
@@ -48,7 +54,10 @@
 
 .hero-slide-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background: linear-gradient(
     135deg,
     rgba(74,10,18,0.85) 0%,
@@ -644,7 +653,10 @@
 
 .gallery-overlay {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background: linear-gradient(to top, rgba(107,15,26,0.8), transparent);
   display: flex;
   align-items: flex-end;
@@ -809,7 +821,10 @@
    (upper part of the photo) stay visible rather than being cut off. */
 .hero-bg-img {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
