@@ -166,6 +166,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         <button class="btn btn-primary btn-sm" id="ictPaySubmitBtn">Record Payment</button>
       </div>
 
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#111827">ICT / Portal Fee Report</span>
+          <select id="ictReportTerm" class="form-control" style="width:auto">
+            <option value="term1">First Term</option>
+            <option value="term2" selected>Second Term</option>
+            <option value="term3">Third Term</option>
+          </select>
+        </div>
+        <p style="font-size:0.78rem;color:#6b7280;margin-bottom:14px">Who has and hasn't paid the ICT/Portal Fee this term — this money doesn't go through the school account, so it's kept separate from Finance Reports.</p>
+        <div id="ictReportStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px"></div>
+        <input type="text" id="ictReportSearch" class="form-control" placeholder="Search name or admission no…" style="margin-bottom:12px">
+        <div id="ictReportList" style="max-height:360px;overflow-y:auto"></div>
+      </div>
+
       <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px">
           <span style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#111827">Applications</span>
@@ -209,6 +224,82 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('ictAddApplicationBtn')?.addEventListener('click', openAddApplicationModal);
 
     wireIctFeePaymentForm();
+    wireIctFeeReport();
+  }
+
+  /* ============================================
+     ICT / PORTAL FEE REPORT — who's paid, who hasn't
+     ============================================ */
+  let ictReportTerm = 'term2';
+  let ictReportSearch = '';
+
+  async function loadAndRenderIctFeeReport() {
+    const statsBox = document.getElementById('ictReportStats');
+    const listBox  = document.getElementById('ictReportList');
+    if (!statsBox || !listBox) return;
+
+    listBox.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">Loading…</p>';
+
+    let data;
+    try {
+      const qs = new URLSearchParams({ term: ictReportTerm });
+      if (ictReportSearch) qs.set('search', ictReportSearch);
+      data = await window.RCA_API.call('/payments/ict-fee-report?' + qs.toString());
+    } catch (e) {
+      listBox.innerHTML = `<p style="text-align:center;color:#dc2626;padding:20px;font-size:0.85rem">Could not load report: ${e.message}</p>`;
+      return;
+    }
+
+    statsBox.innerHTML = [
+      { num: data.paid_count, label: 'Paid', color: '#059669' },
+      { num: data.unpaid_count, label: 'Unpaid', color: '#dc2626' },
+      { num: fmt(data.total_collected), label: 'Collected', color: '#7c3aed' }
+    ].map(s => `
+      <div style="background:#f9fafb;border-radius:10px;padding:12px 14px;border-left:4px solid ${s.color}">
+        <div style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;color:#111827">${s.num}</div>
+        <div style="font-size:0.72rem;color:#6b7280">${s.label}</div>
+      </div>`).join('');
+
+    listBox.innerHTML = data.pupils.length
+      ? data.pupils.map(p => {
+          const c = p.status === 'paid' ? { bg: '#d1fae5', color: '#065f46', label: 'Paid' }
+                  : p.status === 'partial' ? { bg: '#fef3c7', color: '#92400e', label: 'Partial' }
+                  : { bg: '#fee2e2', color: '#991b1b', label: 'Unpaid' };
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">
+              <div style="min-width:0">
+                <div style="font-size:0.82rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.full_name}</div>
+                <div style="font-size:0.72rem;color:#9ca3af">${p.class_name} · ${p.admission_no}</div>
+              </div>
+              <span style="background:${c.bg};color:${c.color};padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap">${c.label}</span>
+            </div>`;
+        }).join('')
+      : '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">No pupils found.</p>';
+  }
+
+  function wireIctFeeReport() {
+    const termSelect = document.getElementById('ictReportTerm');
+    const searchInput = document.getElementById('ictReportSearch');
+    if (!termSelect) return;
+
+    termSelect.value = ictReportTerm;
+    searchInput.value = ictReportSearch;
+
+    termSelect.addEventListener('change', () => {
+      ictReportTerm = termSelect.value;
+      loadAndRenderIctFeeReport();
+    });
+
+    let searchTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        ictReportSearch = searchInput.value.trim();
+        loadAndRenderIctFeeReport();
+      }, 300);
+    });
+
+    loadAndRenderIctFeeReport();
   }
 
   /* ============================================
@@ -313,6 +404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       searchInput.value = '';
       selectedInfo.textContent = '✅ Payment recorded.';
       submitBtn.disabled = false;
+      loadAndRenderIctFeeReport();
     });
   }
 
