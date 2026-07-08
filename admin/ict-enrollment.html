@@ -1,50 +1,15 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ICT Lab & Curriculum | Royal Crystal Academy</title>
+  <title>ICT Enrollment Applications | Royal Crystal Academy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/variables.css">
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/admin/dashboard-shell.css">
   <link rel="stylesheet" href="../assets/css/admin/communications.css">
-  <style>
-    /* Tab bar */
-    .ict-tab-bar {
-      display: flex;
-      gap: 4px;
-      background: #fff;
-      border-radius: 12px;
-      padding: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .ict-tab-btn {
-      padding: 8px 18px;
-      border: none;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      background: transparent;
-      color: #6b7280;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    .ict-tab-btn:hover { background: #f3f4f6; color: #374151; }
-    .ict-tab-btn.active { background: #7c3aed; color: #fff; }
-    .ict-tab-pane { display: none; }
-    .ict-tab-pane.active { display: block; }
-
-    @media print {
-      .admin-sidebar, .admin-topbar, .ict-tab-bar, .no-print { display: none !important; }
-      .admin-content { margin-left: 0 !important; }
-      .ict-tab-pane { display: block !important; }
-    }
-  </style>
 </head>
 <body>
 <div class="admin-shell">
@@ -86,9 +51,9 @@
       <a href="school-programme.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> Programme of Events</a>
       <a href="school-calendar.html" class="sidebar-link" data-roles="all"><i class="icon">○</i> School Calendar</a>
       <p class="sidebar-section-label">ICT Department</p>
-      <a href="ict-lab.html" class="sidebar-link active" data-roles="ict_admin,head_teacher"><i class="icon">⊞</i> ICT Lab & Curriculum</a>
+      <a href="ict-lab.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT Lab & Curriculum</a>
       <a href="ict-clubs.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> ICT & Coding Clubs</a>
-      <a href="ict-enrollment.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">○</i> Enrollment Applications<span id="ictEnrollBadge" class="sidebar-badge" style="display:none"></span></a>
+      <a href="ict-enrollment.html" class="sidebar-link active" data-roles="ict_admin,head_teacher"><i class="icon">⊞</i> Enrollment Applications<span id="ictEnrollBadge" class="sidebar-badge" style="display:none"></span></a>
       <p class="sidebar-section-label">System</p>
       <a href="user-management.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> User Management</a>
       <a href="activity-logs.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Activity Logs</a>
@@ -103,7 +68,7 @@
   <div class="admin-content">
     <header class="admin-topbar">
       <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
-      <h1 class="topbar-title">ICT Department</h1>
+      <h1 class="topbar-title">ICT Practical Programme — Enrollment Applications</h1>
       <span class="topbar-session">Academic Session: 2025/2026</span>
       <button class="topbar-bell">&#128276;<span class="topbar-bell-badge">4</span></button>
       <div class="topbar-user">
@@ -112,38 +77,13 @@
       </div>
     </header>
 
-    <main class="admin-main">
-
-      <!-- Tab navigation -->
-      <div class="ict-tab-bar no-print">
-        <button class="ict-tab-btn active" data-tab="dashboard">📊 Dashboard</button>
-        <button class="ict-tab-btn" data-tab="curriculum">📚 Curriculum</button>
-        <button class="ict-tab-btn" data-tab="progress">📈 Student Progress</button>
-        <button class="ict-tab-btn" data-tab="lab">💻 Computer Lab</button>
-        <button class="ict-tab-btn" data-tab="reports">🖨 Reports</button>
-      </div>
-
-      <!-- Tab panes — populated by ict-lab.js -->
-      <div class="ict-tab-pane active" id="tab-dashboard">
-        <div style="text-align:center;padding:40px;color:#9ca3af">Loading dashboard...</div>
-      </div>
-      <div class="ict-tab-pane" id="tab-curriculum"></div>
-      <div class="ict-tab-pane" id="tab-progress"></div>
-      <div class="ict-tab-pane" id="tab-lab"></div>
-      <div class="ict-tab-pane" id="tab-reports"></div>
-
-    </main>
+    <main class="admin-main" id="ictEnrollMain"></main>
   </div>
 </div>
 
 <script src="../assets/js/config.js"></script>
 <script src="../assets/js/api.js"></script>
-<script src="../assets/js/admin/sample-students.js"></script>
-<script src="../assets/js/admin/sample-teachers.js"></script>
-<script src="../assets/js/admin/sample-users.js"></script>
-<script src="../assets/js/admin/ict-data.js"></script>
-<script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
-<script src="../assets/js/admin/ict-lab.js"></script>
+<script src="../assets/js/admin/ict-enrollment.js"></script>
 </body>
 </html>

@@ -208,6 +208,26 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sidebarRole)   sidebarRole.textContent   = roleLabel;
 
   /* --------------------------------------------
+     6. ICT ENROLLMENT PENDING-APPLICATIONS BADGE
+     --------------------------------------------
+     In-app notification for new "Enroll Now" submissions from the
+     public ICT Department page — no email/SMS provider is configured,
+     so a badge next to the sidebar link (visible on every admin page)
+     plus the Activity Logs entry (see ictEnrollments.js) are it.
+  */
+  if (window.RCA_API && (userRoles.includes('ict_admin') || userRoles.includes('head_teacher'))) {
+    window.RCA_API.call('/ict-enrollments')
+      .then(data => {
+        const badge = document.getElementById('ictEnrollBadge');
+        if (!badge) return;
+        const count = data.pending_count || 0;
+        if (count > 0) { badge.textContent = count; badge.style.display = ''; }
+        else badge.style.display = 'none';
+      })
+      .catch(() => {});
+  }
+
+  /* --------------------------------------------
      LOGOUT
      -------------------------------------------- */
   const logoutBtn = document.getElementById('logoutBtn');

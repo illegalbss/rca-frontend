@@ -169,6 +169,97 @@
   font-size: var(--fs-sm);
 }
 
+/* --- Numbered lab rules (overrides the ✓ bullet from .check-list) --- */
+.check-list-numbered {
+  counter-reset: ict-rule;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.check-list-numbered li {
+  counter-increment: ict-rule;
+  padding: var(--space-sm) 0 var(--space-sm) 2rem;
+}
+.check-list-numbered li::before {
+  content: counter(ict-rule) '.';
+  color: var(--color-primary);
+  font-weight: 700;
+  width: 1.5rem;
+}
+
+/* --- Class Schedule table --- */
+.data-table {
+  border-collapse: collapse;
+}
+.data-table th, .data-table td {
+  text-align: left;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+.data-table th {
+  background: var(--color-bg);
+  font-family: var(--font-heading);
+  font-size: var(--fs-sm);
+  color: var(--color-primary);
+}
+
+/* ============================================
+   ICT ENROLLMENT SLIDE-OVER PANEL
+   ============================================ */
+.ict-enroll-overlay {
+  display: none;
+  position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 998;
+}
+.ict-enroll-overlay.open { display: block; }
+
+.ict-enroll-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 92vw;
+  background: #fff;
+  z-index: 999;
+  box-shadow: -8px 0 30px rgba(0,0,0,0.2);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.ict-enroll-panel.open { transform: translateX(0); }
+
+.ict-enroll-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.ict-enroll-panel-header h3 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  color: var(--color-primary);
+  margin: 0;
+}
+.ict-enroll-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--color-text-light);
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.ict-enroll-panel-body {
+  padding: 22px;
+}
+
 /* ---- ICT DEPARTMENT PAGE RESPONSIVE ---- */
 @media (max-width: 900px) {
   .ict-hero { min-height: auto; padding: var(--space-xl) 0; }

@@ -173,6 +173,17 @@ html, body { height: 100%; }
   flex-shrink: 0;
 }
 
+.sidebar-badge {
+  margin-left: auto;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
 .sidebar-link:hover {
   background: rgba(255,255,255,0.07);
   color: #fff;
