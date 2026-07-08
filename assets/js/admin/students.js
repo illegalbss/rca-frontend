@@ -23,12 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Track which class is currently being viewed in detail (null = none)
   let currentClass = null;
 
-  // Matches the backend's own role requirements: POST /students
-  // (creating a pupil) is ict_admin only — not even Head Teacher.
-  // PUT /students/:admissionNo (edit/remove) allows Head Teacher too.
-  // No form or subject teacher can add, edit, or remove pupils either way.
+  // Matches the backend's own role requirements: POST /students (add) and
+  // PUT /students/:admissionNo (edit/remove) both allow ict_admin or
+  // head_teacher. No form or subject teacher can add, edit, or remove
+  // pupils either way.
   const _cuRoles = window.CURRENT_USER ? (window.CURRENT_USER.roles || [window.CURRENT_USER.role]) : [];
-  const canAddStudents  = _cuRoles.includes('ict_admin');
+  const canAddStudents  = _cuRoles.includes('ict_admin') || _cuRoles.includes('head_teacher');
   const canEditStudents = _cuRoles.includes('ict_admin') || _cuRoles.includes('head_teacher');
 
   /* --------------------------------------------
