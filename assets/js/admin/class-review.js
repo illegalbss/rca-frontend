@@ -48,8 +48,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ---- Dropdowns — RBAC filtered ---- */
   // Determine which classes this user can review:
   // - ict_admin / head_teacher: all classes
-  // - class_teacher with form_class: ONLY their form_class (the class they are form teacher for)
-  // - class_teacher without form_class (Basic 1A/1B/2 form teachers): their linked_classes
+  // - class_teacher: ONLY their own form class — linked_classes[0], the same
+  //   convention used everywhere else (Students roster, Attendance). There is
+  //   no separate form_class column in the real schema, and a class_teacher's
+  //   linked_classes can also include classes they merely subject-teach —
+  //   those must NOT grant class-review rights, only the form class does.
   // - subject_teacher only: BLOCKED (page guard already redirected them)
   function getReviewableClasses() {
     const user = window.CURRENT_USER;
@@ -61,12 +64,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (roles.includes('class_teacher')) {
-      // For Basic 3-6 form+subject teachers, form_class is the single class they review
-      if (user.form_class) {
-        return [user.form_class];
-      }
-      // For Basic 1A, 1B, Basic 2 form teachers — they review their own class
-      return (user.linked_classes || []).filter(c => allClasses.includes(c));
+      const formClass = (user.linked_classes || [])[0];
+      return formClass && allClasses.includes(formClass) ? [formClass] : [];
     }
 
     return []; // no access
