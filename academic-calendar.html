@@ -97,108 +97,18 @@
   </div>
 </section>
 
-  <!-- TERM OVERVIEW CARDS -->
-  <section class="section">
-    <div class="container">
-      <h2 class="section-title">Academic Session 2025/2026</h2>
-      <div class="grid grid-3">
-        <div class="card term-card term-done">
-          <span class="term-status">Completed</span>
-          <h3>First Term</h3>
-          <p class="term-dates">September 8, 2025 — December 12, 2025</p>
-          <p class="term-weeks">14 weeks of instruction</p>
-        </div>
-        <div class="card term-card term-done">
-          <span class="term-status">Completed</span>
-          <h3>Second Term</h3>
-          <p class="term-dates">January 12, 2026 — April 3, 2026</p>
-          <p class="term-weeks">12 weeks of instruction</p>
-        </div>
-        <div class="card term-card term-active">
-          <span class="term-status">In Progress</span>
-          <h3>Third Term</h3>
-          <p class="term-dates">April 27, 2026 — July 24, 2026</p>
-          <p class="term-weeks">12 weeks of instruction</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- KEY DATES TIMELINE -->
+  <!-- KEY DATES TIMELINE — populated live from the same calendar the ICT
+       Administrator manages on the admin School Calendar page. -->
   <section class="section calendar-timeline-section">
     <div class="container">
       <h2 class="section-title">Key Dates &amp; Events</h2>
-
-      <div class="timeline">
-
-        <div class="timeline-item">
-          <div class="timeline-dot dot-done"></div>
-          <div class="card timeline-content">
-            <span class="timeline-date">September 8, 2025</span>
-            <h4>First Term Resumption</h4>
-            <p>All pupils resumed for the first term of the 2025/2026 academic session.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot dot-done"></div>
-          <div class="card timeline-content">
-            <span class="timeline-date">December 12, 2025</span>
-            <h4>First Term Ends</h4>
-            <p>Pupils proceeded on holiday. Report cards issued to parents at end-of-term assembly.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot dot-done"></div>
-          <div class="card timeline-content">
-            <span class="timeline-date">January 12, 2026</span>
-            <h4>Second Term Resumption</h4>
-            <p>Pupils returned for the second term. School fees for the term were due on resumption day.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot dot-done"></div>
-          <div class="card timeline-content">
-            <span class="timeline-date">February 16 — 20, 2026</span>
-            <h4>Mid-Term Test Week</h4>
-            <p>Continuous assessment tests for all classes, Pre-Nursery to Basic 6.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot dot-done"></div>
-          <div class="card timeline-content">
-            <span class="timeline-date">April 3, 2026</span>
-            <h4>Second Term Ends</h4>
-            <p>Examinations concluded. Report cards distributed before the short holiday began.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot dot-done"></div>
-          <div class="card timeline-content">
-            <span class="timeline-date">April 27, 2026</span>
-            <h4>Third Term Resumption</h4>
-            <p>Pupils resumed for the final term of the 2025/2026 academic session.</p>
-          </div>
-        </div>
-
-        <div class="timeline-item">
-          <div class="timeline-dot dot-upcoming"></div>
-          <div class="card timeline-content">
-            <span class="timeline-date">July 24, 2026</span>
-            <h4>Third Term Ends — Prize Giving Day</h4>
-            <p>Academic session concludes with the annual Prize Giving Day ceremony and long holiday begins.</p>
-          </div>
-        </div>
-
+      <div class="timeline" id="calTimeline">
+        <p style="text-align:center;color:var(--color-text-light)">Loading…</p>
       </div>
     </div>
   </section>
 
-  <!-- PUBLIC HOLIDAYS TABLE -->
+  <!-- PUBLIC HOLIDAYS TABLE — populated live -->
   <section class="section">
     <div class="container">
       <h2 class="section-title">Public Holidays (No School)</h2>
@@ -207,13 +117,8 @@
           <thead>
             <tr><th>Date</th><th>Holiday</th></tr>
           </thead>
-          <tbody>
-            <tr><td>October 1, 2025</td><td>Independence Day</td></tr>
-            <tr><td>December 25 - 26, 2025</td><td>Christmas / Boxing Day</td></tr>
-            <tr><td>January 1, 2026</td><td>New Year's Day</td></tr>
-            <tr><td>March 30 - 31, 2026</td><td>Eid el-Fitr</td></tr>
-            <tr><td>May 1, 2026</td><td>Workers' Day</td></tr>
-            <tr><td>June 12, 2026</td><td>Democracy Day</td></tr>
+          <tbody id="calHolidaysBody">
+            <tr><td colspan="2" style="text-align:center;color:var(--color-text-light)">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -402,6 +307,8 @@
 </footer>
 
 <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="assets/js/config.js"></script>
 <script src="assets/js/main.js"></script>
+<script src="assets/js/academic-calendar-public.js"></script>
 </body>
 </html>
