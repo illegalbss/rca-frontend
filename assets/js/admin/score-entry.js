@@ -72,7 +72,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     );
   }
 
-  function getPermittedSubjects() {
+  // className is optional — when a teacher has precise teacher_assignments
+  // pairs (e.g. English/Phonics in Basic 3-6, but Igbo only in Basic 5 & 6),
+  // passing the currently-selected class scopes the subject list to exactly
+  // what's valid for THAT class instead of the union across all of them.
+  function getPermittedSubjects(className) {
     const user = window.CURRENT_USER;
     if (!user) return allSubjects;
     const userRoles = user.roles || [user.role];
@@ -80,6 +84,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Full access roles see all subjects
     if (userRoles.includes('ict_admin') || userRoles.includes('head_teacher') || userRoles.includes('proprietor')) {
       return allSubjects;
+    }
+
+    const assignments = user.assignments || [];
+    if (assignments.length > 0) {
+      const codes = className
+        ? assignments.filter(a => a.class_name === className).map(a => a.subject_code)
+        : [...new Set(assignments.map(a => a.subject_code))];
+      return allSubjects.filter(s => codes.includes(s.id));
     }
 
     const linked = user.linked_subjects || [];
@@ -165,7 +177,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // RBAC guard: verify the selected class AND subject are both permitted
     // for this user. This prevents manipulation of the dropdown HTML.
     const permitted = getPermittedClasses();
-    const permittedSubs = getPermittedSubjects();
+    const permittedSubs = getPermittedSubjects(className);
     if (!permitted.includes(className)) {
       tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-danger);padding:2rem">&#128683; You are not assigned to this class.</td></tr>';
       return;
@@ -467,6 +479,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   classSelect.addEventListener('change', () => {
     searchInput.value = '';
+    // Re-scope the subject list to the newly-selected class, for teachers
+    // with precise per-class subject assignments (see getPermittedSubjects).
+    const prevSubject = subjectSelect.value;
+    const subjectsForClass = getPermittedSubjects(classSelect.value);
+    subjectSelect.innerHTML = subjectsForClass.length > 0
+      ? subjectsForClass.map(s => `<option value="${s.id}">${s.name}</option>`).join('')
+      : '<option value="">No subjects assigned</option>';
+    if (subjectsForClass.some(s => s.id === prevSubject)) subjectSelect.value = prevSubject;
     refreshApprovalAndRender();
   });
   subjectSelect.addEventListener('change', renderTable);

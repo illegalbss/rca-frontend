@@ -24,22 +24,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const isFullAccess = userRoles.includes('ict_admin') || userRoles.includes('head_teacher') || userRoles.includes('proprietor');
   const isFormTeacher = userRoles.includes('class_teacher');
 
-  // Discipline is a form-teacher responsibility — only show their form class.
-  // Use form_class if set (dual-role teachers); fall back to linked_classes
-  // only for pure form teachers (who have exactly one class in linked_classes).
+  // Discipline is a form-teacher responsibility — only their own form class
+  // (linked_classes[0]). There's no separate form_class column in the real
+  // schema; the rest of linked_classes may just be classes they subject-
+  // teach, which must NOT grant discipline access to those classes too.
   let allClasses;
   if (isFullAccess) {
     allClasses = window.SCHOOL_CLASSES || [];
   } else if (isFormTeacher && user) {
-    const formClass = user.form_class;
-    if (formClass) {
-      allClasses = (window.SCHOOL_CLASSES || []).filter(c => c === formClass);
-    } else {
-      const linkedClasses = user.linked_classes || [];
-      allClasses = (window.SCHOOL_CLASSES || []).filter(c =>
-        linkedClasses.some(lc => lc.trim().toLowerCase() === c.trim().toLowerCase())
-      );
-    }
+    const formClass = (user.linked_classes || [])[0];
+    allClasses = formClass ? (window.SCHOOL_CLASSES || []).filter(c => c === formClass) : [];
   } else {
     // Subject teacher only — no access to discipline
     allClasses = [];

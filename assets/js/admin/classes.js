@@ -41,8 +41,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function getVisibleClasses() {
     if (isAdmin) return allClasses;
-    const formClass = _cu?.form_class;
-    if (formClass) return allClasses.filter(c => c === formClass);
+    // class_teacher: only their own form class (linked_classes[0]) — the
+    // rest of linked_classes may just be classes they subject-teach.
+    if (_roles.includes('class_teacher')) {
+      const formClass = (_cu?.linked_classes || [])[0];
+      return formClass ? allClasses.filter(c => c === formClass) : [];
+    }
+    // subject_teacher (no class_teacher role): every class they teach
     const linked = _cu?.linked_classes || [];
     return allClasses.filter(c => linked.includes(c));
   }
@@ -94,8 +99,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   function getClassData(className) {
     const studentsInClass = allStudents.filter(s => s.class_name === className);
 
+    // A class_teacher's FIRST linked class is their form class — the rest
+    // of assigned_classes may just be classes they subject-teach, which
+    // must not make them show up as "the" class teacher of those too.
     const classTeacher = allTeachers.find(t =>
-      t.primary_role === 'class_teacher' && t.assigned_classes.includes(className)
+      t.primary_role === 'class_teacher' && t.assigned_classes[0] === className
     );
 
     // Specialist staff who teach THIS class but aren't ITS class teacher
