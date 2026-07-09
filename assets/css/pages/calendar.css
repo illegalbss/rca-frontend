@@ -171,3 +171,15 @@
   .term-timeline { flex-direction: column; }
   .cal-month-grid { font-size: 0.8rem; }
 }
+
+/* ---- "Download Calendar" — the browser's print dialog (Save as PDF)
+   in place of a server-generated file, so it always reflects whatever
+   dates are currently published. Hides everything except the dates. ---- */
+@media print {
+  .top-bar, .site-header, .nav-drawer-overlay, .nav-drawer,
+  .cta-banner, .back-to-top, .site-footer {
+    display: none !important;
+  }
+  .page-banner { padding: 1cm 0; }
+  @page { margin: 1.5cm; }
+}

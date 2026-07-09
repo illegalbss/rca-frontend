@@ -132,10 +132,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       listEl.innerHTML = eventsOnDay.map(e => `
         <div class="cal-event-item">
           <div class="cal-event-color" style="background:${e.color}"></div>
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="cal-event-title">${e.title}</div>
             <div class="cal-event-date">${fmtDate}</div>
           </div>
+          ${canManage ? `
+            <div style="display:flex;gap:4px;flex-shrink:0">
+              <button onclick="editCalendarEventById(${e.id})" style="background:none;border:1px solid #e5e7eb;border-radius:6px;padding:3px 8px;font-size:0.7rem;cursor:pointer">Edit</button>
+              <button onclick="deleteCalendarEvent(${e.id})" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:3px 8px;font-size:0.7rem;cursor:pointer">Delete</button>
+            </div>` : ''}
         </div>`).join('');
     }
   }
@@ -162,10 +167,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       const fmt = d.toLocaleDateString('en-NG', {weekday:'short',day:'numeric',month:'short'});
       return `<div class="cal-event-item">
         <div class="cal-event-color" style="background:${e.color}"></div>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="cal-event-title">${e.title}</div>
           <div class="cal-event-date">${fmt}</div>
         </div>
+        ${canManage ? `
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button onclick="editCalendarEventById(${e.id})" style="background:none;border:1px solid #e5e7eb;border-radius:6px;padding:3px 8px;font-size:0.7rem;cursor:pointer">Edit</button>
+            <button onclick="deleteCalendarEvent(${e.id})" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:3px 8px;font-size:0.7rem;cursor:pointer">Delete</button>
+          </div>` : ''}
       </div>`;
     }).join('');
   }
@@ -336,6 +346,15 @@ window.showCalendarEventModal = function(existing = null) {
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3000);
   };
+};
+
+// Looks the event up by id rather than inlining its full data into the
+// onclick attribute — several seeded titles contain an apostrophe (e.g.
+// "New Year's Day"), which would otherwise break the attribute string.
+window.editCalendarEventById = function(id) {
+  const existing = (window.SCHOOL_EVENTS || []).find(e => e.id === id);
+  if (!existing) return;
+  window.showCalendarEventModal(existing);
 };
 
 window.deleteCalendarEvent = async function(id) {

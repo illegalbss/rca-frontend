@@ -77,4 +77,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       : '<tr><td colspan="2" style="text-align:center;color:var(--color-text-light)">No holidays published yet.</td></tr>';
   }
 
+  // "Download Calendar (PDF)" — the browser's native print dialog offers
+  // "Save as PDF" as a destination, so this always reflects whatever
+  // dates are currently published, with no separate file to keep in sync.
+  document.getElementById('downloadCalendarBtn')?.addEventListener('click', () => {
+    window.print();
+  });
+
 });
