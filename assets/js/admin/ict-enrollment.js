@@ -85,10 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <button class="btn btn-sm btn-outline" style="font-size:0.72rem;color:#dc2626" onclick="window._ictEnrollUpdate(${a.id},{enrollment_status:'rejected'})">Reject</button>
           ` : ''}
           ${a.enrollment_status === 'approved' && a.payment_status !== 'paid' ? `
-            <button class="btn btn-sm btn-outline" style="font-size:0.72rem" onclick="window._ictEnrollUpdate(${a.id},{payment_status:'paid'})">Mark Paid</button>
-          ` : ''}
-          ${a.payment_status === 'paid' ? `
-            <button class="btn btn-sm btn-outline" style="font-size:0.72rem" onclick="window._ictEnrollUpdate(${a.id},{payment_status:'pending'})">Mark Unpaid</button>
+            <button class="btn btn-sm btn-outline" style="font-size:0.72rem" onclick="window._ictPracticalOpenPayModal(${a.id},'${a.pupil_full_name.replace(/'/g, "\\'")}')">Record Payment</button>
           ` : ''}
           <button class="btn btn-sm btn-outline" style="font-size:0.72rem;color:#dc2626;margin-left:auto" onclick="window._ictEnrollDelete(${a.id},'${a.pupil_full_name.replace(/'/g, "\\'")}')">Delete</button>
         </div>
@@ -128,6 +125,16 @@ document.addEventListener('DOMContentLoaded', async () => {
               <button class="btn btn-primary btn-sm" id="ictFeeSaveBtn">Save Fee</button>
             </div>` : ''}
         </div>
+      </div>
+
+      <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px;margin-bottom:20px">
+        <div style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#111827;margin-bottom:4px">Practical Programme Fee Report</div>
+        <p style="font-size:0.78rem;color:#6b7280;margin-bottom:14px">Who has paid the ICT Practical Programme fee (the after-school club — click "Record Payment" on an application below to add one). This is separate from the ICT/Portal Fee report further down.</p>
+        <div id="ictPracticalReportStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px"></div>
+        <input type="text" id="ictPracticalReportSearch" class="form-control" placeholder="Search name or class…" style="margin-bottom:12px">
+        <div id="ictPracticalReportList" style="max-height:240px;overflow-y:auto;margin-bottom:16px"></div>
+        <div style="font-size:0.82rem;font-weight:700;color:#111827;margin-bottom:8px;padding-top:8px;border-top:1px solid #f3f4f6">Recorded Payments <span style="font-weight:400;color:#9ca3af">(delete a wrongly-recorded one here)</span></div>
+        <div id="ictPracticalReportTransactions" style="max-height:240px;overflow-y:auto"></div>
       </div>
 
       <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px;margin-bottom:20px">
@@ -227,7 +234,164 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     wireIctFeePaymentForm();
     wireIctFeeReport();
+    wireIctPracticalReport();
   }
+
+  /* ============================================
+     PRACTICAL PROGRAMME FEE REPORT — who's paid, who hasn't, plus the
+     raw transaction list for deleting a wrongly-recorded payment.
+     ============================================ */
+  let ictPracticalReportSearch = '';
+
+  async function loadAndRenderIctPracticalReport() {
+    const statsBox = document.getElementById('ictPracticalReportStats');
+    const listBox  = document.getElementById('ictPracticalReportList');
+    const txBox    = document.getElementById('ictPracticalReportTransactions');
+    if (!statsBox || !listBox) return;
+
+    listBox.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">Loading…</p>';
+
+    let data;
+    try {
+      data = await window.RCA_API.call('/ict-enrollments/payments-report');
+    } catch (e) {
+      listBox.innerHTML = `<p style="text-align:center;color:#dc2626;padding:20px;font-size:0.85rem">Could not load report: ${e.message}</p>`;
+      return;
+    }
+
+    statsBox.innerHTML = [
+      { num: data.paid_count, label: 'Paid', color: '#059669' },
+      { num: data.unpaid_count, label: 'Unpaid / Partial', color: '#dc2626' },
+      { num: fmt(data.total_collected), label: 'Collected', color: '#7c3aed' }
+    ].map(s => `
+      <div style="background:#f9fafb;border-radius:10px;padding:12px 14px;border-left:4px solid ${s.color}">
+        <div style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;color:#111827">${s.num}</div>
+        <div style="font-size:0.72rem;color:#6b7280">${s.label}</div>
+      </div>`).join('');
+
+    const q = ictPracticalReportSearch.toLowerCase();
+    const pupils = q
+      ? data.pupils.filter(p => p.pupil_full_name.toLowerCase().includes(q) || p.class_name.toLowerCase().includes(q))
+      : data.pupils;
+
+    listBox.innerHTML = pupils.length
+      ? pupils.map(p => {
+          const c = p.status === 'paid' ? { bg: '#d1fae5', color: '#065f46', label: 'Paid' }
+                  : p.status === 'partial' ? { bg: '#fef3c7', color: '#92400e', label: 'Partial' }
+                  : { bg: '#fee2e2', color: '#991b1b', label: 'Unpaid' };
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">
+              <div style="min-width:0">
+                <div style="font-size:0.82rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.pupil_full_name}</div>
+                <div style="font-size:0.72rem;color:#9ca3af">${p.class_name} · ${fmt(p.amount_paid)} of ${fmt(data.fee_amount)}</div>
+              </div>
+              <span style="background:${c.bg};color:${c.color};padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap">${c.label}</span>
+            </div>`;
+        }).join('')
+      : '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">No applications found.</p>';
+
+    if (txBox) {
+      txBox.innerHTML = data.transactions.length
+        ? data.transactions.map(t => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">
+              <div style="min-width:0">
+                <div style="font-size:0.82rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.pupil_full_name} — ${fmt(t.amount)}</div>
+                <div style="font-size:0.72rem;color:#9ca3af">${t.class_name} · ${new Date(t.payment_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}${t.payment_method ? ' · ' + t.payment_method : ''}</div>
+              </div>
+              <button class="btn btn-sm btn-outline" style="font-size:0.7rem;color:#dc2626;flex-shrink:0" onclick="window._ictPracticalPaymentDelete(${t.id},'${t.pupil_full_name.replace(/'/g, "\\'")}')">Delete</button>
+            </div>`).join('')
+        : '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">No payments recorded yet.</p>';
+    }
+  }
+
+  window._ictPracticalPaymentDelete = async function(paymentId, pupilName) {
+    if (!confirm(`Delete this Practical Programme payment for ${pupilName}? This cannot be undone.`)) return;
+    try {
+      await window.RCA_API.call(`/ict-enrollments/payments/${paymentId}`, { method: 'DELETE' });
+    } catch (e) {
+      alert('Could not delete payment: ' + e.message);
+      return;
+    }
+    await loadAll();
+    render();
+  };
+
+  function wireIctPracticalReport() {
+    const searchInput = document.getElementById('ictPracticalReportSearch');
+    if (!searchInput) return;
+    searchInput.value = ictPracticalReportSearch;
+
+    let searchTimer;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        ictPracticalReportSearch = searchInput.value.trim();
+        loadAndRenderIctPracticalReport();
+      }, 300);
+    });
+
+    loadAndRenderIctPracticalReport();
+  }
+
+  /* ============================================
+     RECORD PRACTICAL PROGRAMME PAYMENT — opened from an application
+     card's "Record Payment" button.
+     ============================================ */
+  window._ictPracticalOpenPayModal = function(enrollmentId, pupilName) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin-bottom:4px;color:var(--color-primary);font-size:1rem">Record Payment</h3>
+        <p style="font-size:0.8rem;color:#6b7280;margin-bottom:16px">${pupilName} — Practical Programme fee (${fmt(fee)})</p>
+        <div class="form-group">
+          <label>Amount (₦)</label>
+          <input type="number" id="ictPracticalPayAmount" class="form-control" value="${fee}" min="0">
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="ictPracticalPayMethod" class="form-control">
+            <option value="Cash">Cash</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="POS">POS</option>
+            <option value="Online">Online</option>
+          </select>
+        </div>
+        <div id="ictPracticalPayError" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:8px 12px;font-size:0.8rem;margin-bottom:12px"></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline" style="flex:1" id="ictPracticalPayCancelBtn">Cancel</button>
+          <button class="btn btn-primary" style="flex:1" id="ictPracticalPaySaveBtn">Record</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    document.getElementById('ictPracticalPayCancelBtn').addEventListener('click', () => modal.remove());
+    document.getElementById('ictPracticalPaySaveBtn').addEventListener('click', async () => {
+      const errorBox = document.getElementById('ictPracticalPayError');
+      const amount = Number(document.getElementById('ictPracticalPayAmount').value);
+      if (!amount || amount <= 0) {
+        errorBox.textContent = 'Please enter a valid amount.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      try {
+        await window.RCA_API.call(`/ict-enrollments/${enrollmentId}/payments`, {
+          method: 'POST',
+          body: { amount, payment_method: document.getElementById('ictPracticalPayMethod').value }
+        });
+      } catch (e) {
+        errorBox.textContent = 'Could not record payment: ' + e.message;
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      modal.remove();
+      await loadAll();
+      render();
+    });
+  };
 
   /* ============================================
      ICT / PORTAL FEE REPORT — who's paid, who hasn't
