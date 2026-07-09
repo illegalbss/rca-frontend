@@ -375,12 +375,31 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* --------------------------------------------
      PRINT
-     -------------------------------------------- 
-     window.print() opens the browser's native print dialog.
-     Our @media print CSS rules (in report-card.css) handle
-     hiding the sidebar/toolbar and cleaning up the layout -
-     we don't need any special JS logic beyond this one call.
+     --------------------------------------------
+     window.print() opens the browser's native print dialog. Our
+     @media print CSS rules (in report-card.css) handle hiding the
+     sidebar/toolbar and compressing the layout to fit one A4 sheet
+     for the typical case — but content length varies (up to 19
+     subjects, 13 behaviour traits, and now a free-text, admin-editable
+     Head Teacher's comment that could run long), so as a safety net
+     we measure the actual print-rendered height on 'beforeprint' and
+     scale the whole card down further if it would still overflow onto
+     a second page.
   */
+  function fitReportCardToOnePage() {
+    const el = document.getElementById('reportCard');
+    if (!el) return;
+    document.documentElement.style.setProperty('--rc-print-scale', '1');
+    void el.offsetHeight; // force reflow so the reset scale is measured
+    const A4_PRINTABLE_HEIGHT_PX = 1060; // ~297mm minus 0.8cm top/bottom margins, at 96dpi
+    const contentHeight = el.scrollHeight;
+    if (contentHeight > A4_PRINTABLE_HEIGHT_PX) {
+      const scale = Math.max(0.65, A4_PRINTABLE_HEIGHT_PX / contentHeight);
+      document.documentElement.style.setProperty('--rc-print-scale', scale.toFixed(3));
+    }
+  }
+  window.addEventListener('beforeprint', fitReportCardToOnePage);
+
   printBtn.addEventListener('click', () => {
     window.print();
   });

@@ -351,6 +351,11 @@
     max-width: 100%;
     padding: 0.5cm;
     font-size: 10px;
+    /* Safety-net shrink-to-fit for unusually long content (e.g. a long
+       Head Teacher's comment) — see fitReportCardToOnePage() in
+       report-card.js, which sets this custom property before printing. */
+    transform: scale(var(--rc-print-scale, 1));
+    transform-origin: top center;
   }
 
   /* Header */
