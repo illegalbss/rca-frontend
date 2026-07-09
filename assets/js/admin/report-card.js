@@ -378,24 +378,40 @@ document.addEventListener('DOMContentLoaded', async () => {
      --------------------------------------------
      window.print() opens the browser's native print dialog. Our
      @media print CSS rules (in report-card.css) handle hiding the
-     sidebar/toolbar and compressing the layout to fit one A4 sheet
-     for the typical case — but content length varies (up to 19
-     subjects, 13 behaviour traits, and now a free-text, admin-editable
-     Head Teacher's comment that could run long), so as a safety net
-     we measure the actual print-rendered height on 'beforeprint' and
-     scale the whole card down further if it would still overflow onto
-     a second page.
+     sidebar/toolbar and compressing the layout — but content length
+     varies (up to 19 subjects, 13 behaviour traits, and a free-text,
+     admin-editable Head Teacher's comment), so on 'beforeprint' we
+     measure the actual rendered height against the A4 printable area
+     and go one of two ways:
+       - too tall  -> shrink the whole card down (transform: scale)
+                      so it still fits on one sheet
+       - shorter   -> stretch it to fill the sheet (flex column,
+                      justify-content: space-between) instead of
+                      leaving blank space hanging below the signatures
+     Order matters: we measure the NATURAL height first (both
+     adjustments reset), before applying either one — otherwise the
+     fill-to-height class would inflate scrollHeight and the overflow
+     check could never trigger.
   */
   function fitReportCardToOnePage() {
     const el = document.getElementById('reportCard');
     if (!el) return;
+
+    // Reset both adjustments so we measure natural, unadjusted height.
     document.documentElement.style.setProperty('--rc-print-scale', '1');
-    void el.offsetHeight; // force reflow so the reset scale is measured
+    document.documentElement.style.setProperty('--rc-fill-height', 'auto');
+    el.classList.remove('rc-fill-page');
+    void el.offsetHeight; // force reflow
+
     const A4_PRINTABLE_HEIGHT_PX = 1060; // ~297mm minus 0.8cm top/bottom margins, at 96dpi
     const contentHeight = el.scrollHeight;
+
     if (contentHeight > A4_PRINTABLE_HEIGHT_PX) {
       const scale = Math.max(0.65, A4_PRINTABLE_HEIGHT_PX / contentHeight);
       document.documentElement.style.setProperty('--rc-print-scale', scale.toFixed(3));
+    } else {
+      document.documentElement.style.setProperty('--rc-fill-height', A4_PRINTABLE_HEIGHT_PX + 'px');
+      el.classList.add('rc-fill-page');
     }
   }
   window.addEventListener('beforeprint', fitReportCardToOnePage);

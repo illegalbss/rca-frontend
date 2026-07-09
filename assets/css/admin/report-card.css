@@ -358,6 +358,18 @@
     transform-origin: top center;
   }
 
+  /* Shorter-than-one-page content: stretch to fill the sheet instead of
+     leaving blank space below the signatures — spread as gaps between
+     sections rather than one dead zone at the bottom. Also set by
+     fitReportCardToOnePage(); mutually exclusive with the shrink case
+     above (only one of the two ever applies at a time). */
+  .report-card.rc-fill-page {
+    min-height: var(--rc-fill-height, auto);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
   /* Header */
   .rc-header {
     padding-bottom: 4px;
