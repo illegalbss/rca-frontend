@@ -112,7 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // uses the broader linked_classes/linked_subjects assignment).
     const currentUser = window.CURRENT_USER;
     const currentRoles = currentUser ? (currentUser.roles || [currentUser.role]) : [];
-    const isAdmin = currentRoles.includes('ict_admin') || currentRoles.includes('head_teacher') || currentRoles.includes('proprietor');
+    // Accountant needs to see every class's roster to look up a pupil
+    // when recording a payment — view-only, not granted by this flag:
+    // canAddStudents/canEditStudents (module scope, below) still exclude
+    // accountant, so the Add/Edit/Remove buttons stay hidden for them.
+    const isAdmin = currentRoles.includes('ict_admin') || currentRoles.includes('head_teacher') || currentRoles.includes('proprietor') || currentRoles.includes('accountant');
     const isFormTeacher = currentUser?.primary_role === 'class_teacher';
     const myFormClass = isFormTeacher ? (currentUser.form_class || (currentUser.linked_classes || [])[0]) : null;
 

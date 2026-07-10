@@ -394,8 +394,17 @@
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var allStudents  = window.SAMPLE_STUDENTS || [];
+document.addEventListener('DOMContentLoaded', async function () {
+  // Real roster (not window.SAMPLE_STUDENTS — that fixture is empty by
+  // design; it was the entire reason the class filter and name search
+  // below showed nothing for accountants and anyone else with no
+  // matching localStorage cache).
+  var allStudents = [];
+  try {
+    allStudents = (await window.RCA_API.getStudents()) || [];
+  } catch (e) {
+    console.warn('Could not load students:', e.message);
+  }
   var fmt          = window.formatNaira || function(n) { return '₦' + Number(n).toLocaleString(); };
   var TERM_LABELS  = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
   var currentAdmNo = '';
