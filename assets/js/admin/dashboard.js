@@ -34,6 +34,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {
       console.warn('Could not load real students for dashboard:', e.message);
     }
+
+    // Same fix for users — without this, every staff/parent count and the
+    // role-breakdown chart below was reading from the empty SAMPLE_USERS
+    // fixture, so a parent (or any account) added via User Management
+    // never showed up here. Real rows have primary_role, not roles — add
+    // that array so the .includes('parent') checks below keep working.
+    try {
+      const realUsers = await window.RCA_API.getUsers();
+      if (realUsers) {
+        window.SAMPLE_USERS = realUsers.map(u => ({
+          ...u,
+          roles: u.roles || [u.primary_role || u.role]
+        }));
+      }
+    } catch (e) {
+      console.warn('Could not load real users for dashboard:', e.message);
+    }
   }
 
   /* ---- All data sources ---- */
