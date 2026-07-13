@@ -774,6 +774,25 @@
 .pp-summary-row span:first-child { color: #64748b; }
 .pp-summary-row span:last-child { font-weight: 700; color: #1e293b; }
 
+/* ---- Profile page ---- */
+.pp-profile-grid { display: flex; flex-direction: column; }
+.pp-profile-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+}
+.pp-profile-row:last-child { border-bottom: none; }
+.pp-profile-label { color: #64748b; flex-shrink: 0; }
+.pp-profile-value { color: #1e293b; font-weight: 600; text-align: right; }
+
+@media (max-width: 500px) {
+  .pp-profile-row { flex-direction: column; gap: 2px; }
+  .pp-profile-value { text-align: left; }
+}
+
 .pp-fee-cat-row {
   display: flex;
   justify-content: space-between;

@@ -238,6 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('fEmail').value     = '';
     document.getElementById('fEmail').dataset.dirty = '';
     document.getElementById('fJobTitle').value  = '';
+    document.getElementById('fPhone').value     = '';
     document.getElementById('fAlsoFormTeacher').checked = false;
     document.getElementById('fPassword').value  = randomPassword();
     document.getElementById('fPasswordGroup').style.display = 'block';
@@ -264,6 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('fEmail').value       = u.email || '';
     document.getElementById('fEmail').dataset.dirty = '1';
     document.getElementById('fJobTitle').value    = u.job_title || '';
+    document.getElementById('fPhone').value       = u.phone || '';
     document.getElementById('fPasswordGroup').style.display = 'none'; // reset via its own flow
 
     const linkedClasses  = u.linked_classes  || [];
@@ -309,6 +311,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const role     = document.getElementById('fPrimaryRole').value;
     const email    = document.getElementById('fEmail').value.trim();
     const jobTitle = document.getElementById('fJobTitle').value.trim();
+    const phone    = document.getElementById('fPhone').value.trim();
     const password = document.getElementById('fPassword').value.trim();
     const alertEl  = document.getElementById('modalAlert');
 
@@ -339,12 +342,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       if (editingUserId) {
         await window.RCA_API.updateUser(editingUserId, {
-          full_name: fullName, email, job_title: jobTitle, primary_role: role,
+          full_name: fullName, email, job_title: jobTitle, phone, primary_role: role,
           linked_classes: linkedClasses, linked_subjects: linkedSubjects
         });
       } else {
         await window.RCA_API.createUser({
-          full_name: fullName, email, job_title: jobTitle, primary_role: role, password,
+          full_name: fullName, email, job_title: jobTitle, phone, primary_role: role, password,
           linked_classes: linkedClasses, linked_subjects: linkedSubjects
         });
       }

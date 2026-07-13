@@ -940,9 +940,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     ];
 
     content.innerHTML = `
-      <div class="ar-view-grid">
+      <div class="pp-profile-grid">
         ${rows.map(([label, value]) => `
-          <div class="ar-info-row"><span class="ar-info-label">${label}</span><span class="ar-info-value">${value || '—'}</span></div>
+          <div class="pp-profile-row"><span class="pp-profile-label">${label}</span><span class="pp-profile-value">${value || '—'}</span></div>
         `).join('')}
       </div>
       <p style="margin-top:16px;font-size:0.78rem;color:#9ca3af">To update your contact details, please contact the school's ICT Administrator.</p>
