@@ -468,8 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === modal) modal.remove();
     });
 
-    // Save button
-    document.getElementById('studentSaveBtn').addEventListener('click', () => {
+    // Save button — awaits onSave() so a failed backend write shows a
+    // real error and leaves the modal open, instead of closing
+    // immediately and letting a silently-failed save "vanish" back to
+    // the old value the next time the page loads real data.
+    document.getElementById('studentSaveBtn').addEventListener('click', async () => {
       const firstName = document.getElementById('sFirstName').value.trim();
       const lastName  = document.getElementById('sLastName').value.trim();
       const gender    = document.getElementById('sGender').value;
@@ -477,6 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const dob       = document.getElementById('sDob').value;
       const phone     = document.getElementById('sPhone').value.trim();
       const alertEl   = document.getElementById('studentModalAlert');
+      const saveBtn   = document.getElementById('studentSaveBtn');
 
       if (!firstName || !lastName) {
         alertEl.textContent = 'Please enter both first name and last name.';
@@ -484,7 +488,17 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      onSave({ firstName, lastName, gender, className, dob, phone });
+      alertEl.style.display = 'none';
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      try {
+        await onSave({ firstName, lastName, gender, className, dob, phone });
+      } catch (e) {
+        alertEl.textContent = 'Could not save: ' + e.message;
+        alertEl.style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+      }
     });
   }
 
@@ -502,51 +516,38 @@ Status:       ${student.status}
     `.trim());
   };
 
-  // ADD student
+  // ADD student — awaits the real POST before touching local state, so
+  // a rejected save shows a real error instead of leaving a pupil in the
+  // on-screen list who was never actually created server-side.
   window._addStudent = function(className) {
-    showStudentModal('+ Add New Pupil', null, ({ firstName, lastName, gender, className: cls, dob, phone }) => {
-      // Generate admission number
-      const year  = new Date().getFullYear();
-      const count = allStudents.length + 1;
-      const admNo = `RCA/${year}/${String(count).padStart(4,'0')}`;
+    showStudentModal('+ Add New Pupil', null, async ({ firstName, lastName, gender, className: cls, dob, phone }) => {
+      if (!window.RCA_API) throw new Error('Cannot reach the server. Please check your connection.');
 
-      const newStudent = {
-        id:            admNo,
-        admission_no:  admNo,
+      const saved = await window.RCA_API.call('/students', {
+        method: 'POST',
+        body: {
+          first_name:    firstName,
+          last_name:     lastName,
+          gender,
+          class_name:    cls,
+          date_of_birth: dob || null,
+          parent_phone:  phone || null
+        }
+      });
+
+      allStudents.push({
+        id:            saved.admission_no,
+        admission_no:  saved.admission_no,
         first_name:    firstName,
         last_name:     lastName,
-        full_name:     `${firstName} ${lastName}`,
+        full_name:     saved.full_name || `${firstName} ${lastName}`,
         gender,
         class_name:    cls,
         date_of_birth: dob || null,
         parent_phone:  phone || null,
         status:        'active'
-      };
-
-      allStudents.push(newStudent);
+      });
       if (window.RCA) window.RCA.save('students');
-
-      // Phase 4: save to real database
-      // (backend accepts first_name + last_name and combines them into full_name)
-      if (window.RCA_API) {
-        window.RCA_API.call('/students', {
-          method: 'POST',
-          body: {
-            first_name:    firstName,
-            last_name:     lastName,
-            gender,
-            class_name:    cls,
-            date_of_birth: dob || null,
-            parent_phone:  phone || null
-          }
-        }).then(saved => {
-          // Update with real admission number from server
-          if (saved?.admission_no) {
-            newStudent.admission_no = saved.admission_no;
-            newStudent.id           = saved.admission_no;
-          }
-        }).catch(e => console.warn('Student API save failed:', e.message));
-      }
 
       document.getElementById('studentModal').remove();
 
@@ -556,33 +557,36 @@ Status:       ${student.status}
     });
   };
 
-  // EDIT student
+  // EDIT student — same awaited pattern: the on-screen name only changes
+  // once the server confirms the write, instead of updating immediately
+  // and silently reverting on the next real refresh if the save failed
+  // (e.g. the PUT route only ever reading full_name while this form
+  // sent first_name/last_name — since fixed on the backend too, but
+  // this awaited flow is what makes any FUTURE save failure visible
+  // instead of invisible).
   window._editStudent = function(admNo) {
     const student = allStudents.find(s => s.admission_no === admNo);
     if (!student) return;
 
-    showStudentModal(`Edit — ${student.full_name}`, student, ({ firstName, lastName, gender, className: cls, dob, phone }) => {
-      // Update in memory
+    showStudentModal(`Edit — ${student.full_name}`, student, async ({ firstName, lastName, gender, className: cls, dob, phone }) => {
+      if (!window.RCA_API) throw new Error('Cannot reach the server. Please check your connection.');
+
+      // Admission numbers contain slashes (e.g. RCA/2026/016), so they
+      // must be URL-encoded or the server sees them as multiple path
+      // segments instead of one ID and returns a 404.
+      const saved = await window.RCA_API.call(`/students/${encodeURIComponent(admNo)}`, {
+        method: 'PUT',
+        body: { first_name: firstName, last_name: lastName, gender, class_name: cls, date_of_birth: dob, parent_phone: phone }
+      });
+
       student.first_name    = firstName;
       student.last_name     = lastName;
-      student.full_name     = `${firstName} ${lastName}`;
+      student.full_name     = saved.full_name || `${firstName} ${lastName}`;
       student.gender        = gender;
       student.class_name    = cls;
       student.date_of_birth = dob || student.date_of_birth;
       student.parent_phone  = phone || student.parent_phone;
-
       if (window.RCA) window.RCA.save('students');
-
-      // Phase 4: update in real database
-      // Admission numbers contain slashes (e.g. RCA/2026/016), so they
-      // must be URL-encoded or the server sees them as multiple path
-      // segments instead of one ID and returns a 404.
-      if (window.RCA_API) {
-        window.RCA_API.call(`/students/${encodeURIComponent(admNo)}`, {
-          method: 'PUT',
-          body: { first_name: firstName, last_name: lastName, gender, class_name: cls, date_of_birth: dob, parent_phone: phone }
-        }).catch(e => console.warn('Student update API failed:', e.message));
-      }
 
       document.getElementById('studentModal').remove();
       renderStudentTable();
