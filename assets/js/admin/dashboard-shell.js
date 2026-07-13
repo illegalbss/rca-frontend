@@ -146,6 +146,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* --------------------------------------------
+     3b. "MY CHILD" LINK FOR STAFF WHO ARE ALSO PARENTS
+     --------------------------------------------
+     A teacher (or any staff member) with a child at the school gets
+     their child linked directly to this SAME account (via User
+     Management's "+ Link Child", any role) rather than a second
+     account sharing their email — which the login page couldn't tell
+     apart from their staff account anyway. This link is how they
+     actually reach that child's info from their normal staff login.
+     Inserted dynamically (not static per-page HTML) since it only
+     applies to the subset of accounts with linked_children set.
+  */
+  if ((currentUser.linked_children || []).length > 0 && !window.location.pathname.endsWith('parent-portal.html')) {
+    const nav = document.querySelector('.sidebar-nav');
+    const dashboardLink = nav?.querySelector('.sidebar-link');
+    if (dashboardLink) {
+      dashboardLink.insertAdjacentHTML('afterend',
+        '<a href="parent-portal.html" class="sidebar-link"><i class="icon">👨‍👩‍👧</i> My Child\'s Portal</a>'
+      );
+    }
+  }
+
+  /* --------------------------------------------
      4. HIDE SECTION LABELS WITH NO VISIBLE LINKS
      -------------------------------------------- */
   const sectionLabels = document.querySelectorAll('.sidebar-section-label');

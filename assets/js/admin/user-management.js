@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <button class="um-action-btn um-btn-view" onclick="UM.view(${u.id})">View</button>
           ${isIctAdmin ? `<button class="um-action-btn um-btn-edit" onclick="UM.edit(${u.id})">Edit</button>` : ''}
           ${isIctAdmin && u.primary_role !== 'parent' ? `<button class="um-action-btn um-btn-reset" onclick="UM.resetPassword(${u.id})">Reset PW</button>` : ''}
+          ${isIctAdmin ? `<button class="um-action-btn" onclick="linkChildModal(${u.id})" title="Link one of their children — e.g. a teacher who is also a parent, viewable from their own login">+ Link Child</button>` : ''}
           ${canManageAccounts ? `<button class="um-action-btn ${u.status === 'active' ? 'um-btn-deact' : 'um-btn-react'}" onclick="UM.toggleStatus(${u.id})">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>` : ''}
         </div></td>
       </tr>
@@ -120,6 +121,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     `).join('');
   }
 
+  function renderParentCredentials() {
+    const body = document.getElementById('parentCredentialsBody');
+    if (!body) return;
+    body.innerHTML = allRealParents.map(p => {
+      const children = p.children || [];
+      const childrenText = children.length
+        ? children.map(c => `${c.full_name} (${c.class_name})`).join(', ')
+        : '—';
+      return `
+        <tr>
+          <td>${p.full_name}</td>
+          <td>${p.email}</td>
+          <td>${p.phone || '—'}</td>
+          <td>${childrenText}</td>
+          <td>${p.status}</td>
+        </tr>`;
+    }).join('');
+  }
+
   async function refreshAll() {
     await loadUsers();
     renderStats();
@@ -136,6 +156,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (credToggle) {
     credToggle.addEventListener('click', () => {
       const section = document.getElementById('credentialsSection');
+      if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
+    });
+  }
+
+  const parentCredToggle = document.getElementById('umParentCredentialsToggleBtn');
+  if (parentCredToggle) {
+    parentCredToggle.addEventListener('click', () => {
+      const section = document.getElementById('parentCredentialsSection');
       if (section) section.style.display = section.style.display === 'none' ? 'block' : 'none';
     });
   }
@@ -470,6 +498,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    renderParentCredentials();
+
     if (allRealParents.length === 0) {
       list.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:20px">No parent accounts yet. Click + Add Parent Account to create one.</p>';
       return;
@@ -486,6 +516,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </span>
         </div>
         <div style="display:flex;gap:8px">
+          <button onclick="UM.edit(${p.id})" style="padding:6px 12px;background:#f3f4f6;color:#374151;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">Edit</button>
           <button onclick="linkChildModal(${p.id})" style="padding:6px 12px;background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">+ Link Child</button>
           <button onclick="deleteParent(${p.id})" style="padding:6px 12px;background:#fef2f2;color:#dc2626;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">Delete</button>
         </div>
@@ -581,8 +612,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.linkChildModal = async function(parentId) {
     if (allRealStudents.length === 0) allRealStudents = await loadRealStudents();
-    const p = allRealParents.find(p => p.id === parentId);
-    const linkedAdmNos = (p?.children || []).map(c => c.admission_no);
+    // Works for any account, not just parent-role ones — a teacher who
+    // is also a parent gets their child linked to their EXISTING staff
+    // login (one account, both roles) rather than a second account
+    // sharing the same email, which login can't reliably tell apart.
+    const p = allRealParents.find(p => p.id === parentId) || allUsers.find(u => u.id === parentId);
+    const linkedAdmNos = (p?.children || p?.linked_children || []).map(c => c.admission_no || c);
 
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -622,6 +657,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     modal.remove();
     renderParents();
+    await refreshAll();
   };
 
   window.deleteParent = async function(parentId) {

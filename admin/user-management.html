@@ -169,9 +169,29 @@
             <span class="um-card-title">👨‍👩‍👧 Parent Accounts</span>
             <p style="font-size:0.78rem;color:#6b7280;margin-top:2px">Add parents and link them to their children</p>
           </div>
-          <button onclick="showAddParentModal()" class="btn btn-primary" style="font-size:0.82rem;padding:8px 16px;white-space:nowrap">+ Add Parent Account</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline" id="umParentCredentialsToggleBtn" style="white-space:nowrap;font-size:0.82rem;padding:8px 16px">🪪 Login Credentials</button>
+            <button onclick="showAddParentModal()" class="btn btn-primary" style="font-size:0.82rem;padding:8px 16px;white-space:nowrap">+ Add Parent Account</button>
+          </div>
         </div>
         <div id="parentsList" style="padding:4px 0"></div>
+      </div>
+
+      <!-- Parent credentials (ICT Admin only, printable) -->
+      <div class="um-cred-section no-print" id="parentCredentialsSection" style="display:none;margin-top:24px">
+        <div class="um-cred-header">
+          <div>
+            <div class="um-cred-title">📋 Parent Login Credentials</div>
+            <div class="um-cred-sub">Login emails for all parent accounts — distribute to parents alongside their children's admission details</div>
+          </div>
+          <button onclick="window.print()" class="btn btn-outline btn-sm" style="font-size:0.78rem">🖨 Print</button>
+        </div>
+        <table class="credentials-table">
+          <thead>
+            <tr><th>Full Name</th><th>Login Email</th><th>Phone</th><th>Children</th><th>Status</th></tr>
+          </thead>
+          <tbody id="parentCredentialsBody"></tbody>
+        </table>
       </div>
 
     </main>

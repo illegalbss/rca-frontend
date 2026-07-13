@@ -178,31 +178,22 @@
     }
   }
 
+  // createUser/updateUser/resetPassword deliberately do NOT catch-and-
+  // return-null like the read-only helpers above — a failed write (e.g.
+  // a duplicate-email rejection) must reach the caller's try/catch so
+  // the UI can show the real error, instead of silently closing the
+  // modal and re-rendering the unchanged data as if nothing happened
+  // (which read like the edit "vanishing" back to the old value).
   async function createUser(userData) {
-    try {
-      return await apiCall('/users', { method: 'POST', body: userData });
-    } catch (e) {
-      console.warn('Create user API failed:', e.message);
-      return null;
-    }
+    return await apiCall('/users', { method: 'POST', body: userData });
   }
 
   async function updateUser(userId, userData) {
-    try {
-      return await apiCall(`/users/${userId}`, { method: 'PUT', body: userData });
-    } catch (e) {
-      console.warn('Update user API failed:', e.message);
-      return null;
-    }
+    return await apiCall(`/users/${userId}`, { method: 'PUT', body: userData });
   }
 
   async function resetPassword(userId) {
-    try {
-      return await apiCall(`/users/${userId}/reset-password`, { method: 'POST' });
-    } catch (e) {
-      console.warn('Reset password API failed:', e.message);
-      return null;
-    }
+    return await apiCall(`/users/${userId}/reset-password`, { method: 'POST' });
   }
 
   /* ============================================
