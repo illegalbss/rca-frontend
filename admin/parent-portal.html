@@ -169,40 +169,66 @@
       <!-- ===== PAYMENTS PAGE ===== -->
       <section class="pp-page" id="page-payments">
         <div class="pp-welcome">
-          <h2>Payments</h2>
-          <p>View your fee balances and payment history.</p>
+          <h2>Fees &amp; Payments Overview</h2>
+          <p>View your children's school fees, payments and outstanding balances.</p>
         </div>
 
-        <!-- Child selector if multiple children -->
-        <div id="payChildSelector" style="margin-bottom:16px;display:none">
-          <div style="font-size:0.8rem;font-weight:600;color:#64748b;margin-bottom:6px">Viewing payments for:</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap" id="payChildTabs"></div>
-        </div>
+        <!-- Total-across-all-children stat cards -->
+        <div class="pp-stats" id="payOverviewStats" style="grid-template-columns:repeat(4,1fr)"></div>
 
-        <div class="pp-payment-summary" id="paySummaryCards"></div>
+        <div class="pp-payments-layout">
+          <div class="pp-payments-main">
 
-        <div class="pp-payment-actions">
-          <button class="btn btn-primary" id="makePaymentBtn">&#128179; Make a Payment</button>
-          <button class="btn btn-outline" onclick="window.print()">&#128424; Download Statement</button>
-        </div>
+            <!-- Child selector if multiple children -->
+            <div id="payChildSelector" style="margin-bottom:16px;display:none">
+              <div id="payChildTabs" class="pp-child-tabs-row"></div>
+            </div>
 
-        <!-- Payment history -->
-        <div class="pp-table-card">
-          <div class="pp-table-card-header">Payment History</div>
-          <div style="overflow-x:auto">
-            <table class="pp-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Amount</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                  <th>Receipt</th>
-                </tr>
-              </thead>
-              <tbody id="payHistoryBody"></tbody>
-            </table>
+            <!-- Fees breakdown — every term this session, for the selected child -->
+            <div class="pp-table-card">
+              <div class="pp-table-card-header" id="payBreakdownTitle">Fees Breakdown</div>
+              <div style="overflow-x:auto">
+                <table class="pp-table">
+                  <thead>
+                    <tr>
+                      <th>Term</th>
+                      <th>Total Fees</th>
+                      <th>Amount Paid</th>
+                      <th>Outstanding</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="payBreakdownBody"></tbody>
+                  <tfoot id="payBreakdownFoot"></tfoot>
+                </table>
+              </div>
+              <div class="pp-breakdown-note">Please ensure all outstanding payments are settled promptly — this keeps your child's results accessible and avoids disruption to their academic activities.</div>
+            </div>
+
+            <!-- Recent payments -->
+            <div class="pp-table-card">
+              <div class="pp-table-card-header">Recent Payments</div>
+              <div id="payRecentList"></div>
+            </div>
+          </div>
+
+          <div class="pp-payments-sidebar">
+            <div class="pp-card" style="padding:18px">
+              <div class="pp-card-title" style="margin-bottom:14px">Account Summary</div>
+              <div id="payAccountSummary"></div>
+              <button class="btn btn-primary" id="makePaymentBtn" style="width:100%;margin-top:14px">&#128179; Make a Payment</button>
+              <button class="btn btn-outline" id="downloadStatementBtn" style="width:100%;margin-top:8px">&#128424; Download Statement</button>
+            </div>
+
+            <div class="pp-notice-card">
+              <strong>&#128276; Important Notice</strong>
+              <p>All fees are payable at the beginning of each term. Outstanding balances may affect access to results and end-of-term activities. Contact the school accountant for any payment enquiries.</p>
+            </div>
+
+            <div class="pp-card" id="payFeeCategoriesCard" style="padding:18px">
+              <div class="pp-card-title" style="margin-bottom:10px" id="payFeeCategoriesTitle">Fee Categories</div>
+              <div id="payFeeCategories"></div>
+            </div>
           </div>
         </div>
       </section>

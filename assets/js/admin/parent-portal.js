@@ -358,67 +358,201 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ============================================
-     PAYMENTS PAGE — fee summary + history
+     PAYMENTS PAGE — fee breakdown, recent payments, account summary
+     ============================================
+     Every term's fee schedule for a child comes from the same
+     /payments/lookup endpoint the admin's own Record Payment page uses
+     (term-by-term, no single "whole session" endpoint exists) — so a
+     full picture for one child means fetching term1/term2/term3 in
+     parallel and summing them client-side. Cached per admission_no so
+     switching between the breakdown/overview doesn't refetch.
      ============================================ */
-  async function renderFeeSummary(child) {
-    selectedChild = child;
-    const cards = document.getElementById('paySummaryCards');
-    const historyBody = document.getElementById('payHistoryBody');
-    if (!cards || !child) return;
+  const TERMS_ORDER = ['term1', 'term2', 'term3'];
+  const childFeeDataCache = {};
 
-    cards.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Loading…</p>';
+  async function loadChildFullFeeData(child) {
+    if (childFeeDataCache[child.admission_no]) return childFeeDataCache[child.admission_no];
+
+    const results = await Promise.all(TERMS_ORDER.map(term =>
+      window.RCA_API.call(`/payments/lookup?admission_no=${encodeURIComponent(child.admission_no)}&term=${term}&session=${SESSION}`)
+        .catch(() => null)
+    ));
+
+    const terms = {};
+    let totalFees = 0, totalPaid = 0;
+    TERMS_ORDER.forEach((term, i) => {
+      terms[term] = results[i];
+      if (results[i]) {
+        totalFees += Number(results[i].grand_total || 0);
+        totalPaid += Number(results[i].amount_paid || 0);
+      }
+    });
+
+    const data = { terms, totalFees, totalPaid, totalOutstanding: totalFees - totalPaid };
+    childFeeDataCache[child.admission_no] = data;
+    return data;
+  }
+
+  function statusBadgeHtml(status) {
+    if (status === 'paid') return '<span class="pp-badge-paid">Paid</span>';
+    if (status === 'partial') return '<span class="pp-badge-partial">Partially Paid</span>';
+    return '<span class="pp-badge-unpaid">Unpaid</span>';
+  }
+
+  /* ---- 4 stat cards across ALL children, computed once ---- */
+  async function renderPaymentsOverviewStats() {
+    const el = document.getElementById('payOverviewStats');
+    if (!el) return;
+
+    if (myChildren.length === 0) {
+      el.innerHTML = '';
+      return;
+    }
+
+    el.innerHTML = ['My Children', 'Total Paid', 'Total Outstanding', 'Total Fees']
+      .map(label => `
+        <div class="pp-stat">
+          <div class="pp-stat-label">${label}</div>
+          <span class="pp-stat-value">…</span>
+        </div>`).join('');
+
+    const allData = await Promise.all(myChildren.map(loadChildFullFeeData));
+    const totalPaid = allData.reduce((s, d) => s + d.totalPaid, 0);
+    const totalOutstanding = allData.reduce((s, d) => s + d.totalOutstanding, 0);
+    const totalFees = allData.reduce((s, d) => s + d.totalFees, 0);
+
+    el.innerHTML = `
+      <div class="pp-stat">
+        <div class="pp-stat-label">My Children</div>
+        <span class="pp-stat-value">${myChildren.length}</span>
+      </div>
+      <div class="pp-stat">
+        <div class="pp-stat-label">Total Paid</div>
+        <span class="pp-stat-value green">${fmt(totalPaid)}</span>
+      </div>
+      <div class="pp-stat">
+        <div class="pp-stat-label">Total Outstanding</div>
+        <span class="pp-stat-value red">${fmt(totalOutstanding)}</span>
+      </div>
+      <div class="pp-stat">
+        <div class="pp-stat-label">Total Fees (Session)</div>
+        <span class="pp-stat-value">${fmt(totalFees)}</span>
+      </div>`;
+  }
+
+  /* ---- Fees breakdown table: every term, for the selected child ---- */
+  function renderFeeBreakdown(child, feeData) {
+    const titleEl = document.getElementById('payBreakdownTitle');
+    const body = document.getElementById('payBreakdownBody');
+    const foot = document.getElementById('payBreakdownFoot');
+    if (!body) return;
+
+    if (titleEl) titleEl.textContent = `Fees Breakdown — ${child.full_name} (${child.class_name})`;
+
+    body.innerHTML = TERMS_ORDER.map(term => {
+      const t = feeData.terms[term];
+      if (!t) return `<tr><td>${TERM_LABELS[term]}</td><td colspan="4" style="color:#9ca3af">Not available</td></tr>`;
+      return `
+        <tr>
+          <td>${TERM_LABELS[term]}</td>
+          <td>${fmt(t.grand_total)}</td>
+          <td>${fmt(t.amount_paid)}</td>
+          <td>${fmt(t.balance)}</td>
+          <td>${statusBadgeHtml(t.status)}</td>
+        </tr>`;
+    }).join('');
+
+    foot.innerHTML = `
+      <tr style="font-weight:700">
+        <td>Total</td>
+        <td>${fmt(feeData.totalFees)}</td>
+        <td>${fmt(feeData.totalPaid)}</td>
+        <td>${fmt(feeData.totalOutstanding)}</td>
+        <td></td>
+      </tr>`;
+  }
+
+  /* ---- Recent payments list for the selected child ---- */
+  async function renderRecentPayments(child) {
+    const list = document.getElementById('payRecentList');
+    if (!list) return;
+    list.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:16px 18px">Loading…</p>';
 
     try {
-      const data = await window.RCA_API.call(
-        `/payments/lookup?admission_no=${encodeURIComponent(child.admission_no)}&term=term2&session=${SESSION}`
-      );
-      const statusColor = data.status === 'paid' ? '#059669' : data.status === 'partial' ? '#d97706' : '#dc2626';
-      const statusLabel  = data.status === 'paid' ? 'Fully Paid' : data.status === 'partial' ? 'Partially Paid' : 'Not Paid';
-
-      cards.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px">
-          <div style="background:rgba(107,15,26,0.08);border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:1.1rem;font-weight:700;color:var(--color-primary)">${fmt(data.grand_total)}</div>
-            <div style="font-size:0.72rem;color:#6b7280">Total Fee (${TERM_LABELS.term2})</div>
-          </div>
-          <div style="background:#f0fdf4;border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:1.1rem;font-weight:700;color:#059669">${fmt(data.amount_paid)}</div>
-            <div style="font-size:0.72rem;color:#6b7280">Paid So Far</div>
-          </div>
-          <div style="background:#fef2f2;border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:1.1rem;font-weight:700;color:#dc2626">${fmt(data.balance)}</div>
-            <div style="font-size:0.72rem;color:#6b7280">Balance Owed</div>
-          </div>
-        </div>
-        <div style="text-align:center">
-          <span style="background:${statusColor};color:#fff;padding:4px 14px;border-radius:20px;font-size:0.78rem;font-weight:700">${statusLabel}</span>
-        </div>`;
+      const histData = await window.RCA_API.call(`/payments?admission_no=${encodeURIComponent(child.admission_no)}`);
+      const rows = histData.payments || [];
+      list.innerHTML = rows.length
+        ? rows.slice(0, 8).map(p => {
+            const d = p.payment_date ? new Date(p.payment_date) : null;
+            return `
+              <div class="pp-recent-item">
+                <div class="pp-recent-date">
+                  <span class="day">${d ? d.getDate() : '—'}</span>
+                  <span class="month">${d ? d.toLocaleString('en', { month: 'short' }) : ''}</span>
+                </div>
+                <div class="pp-recent-info">
+                  <div class="pp-recent-title">${TERM_LABELS[p.term] || p.term} — ${p.fee_type === 'ict_fee' ? 'ICT / Portal Fee' : 'School Fees'}</div>
+                  <div class="pp-recent-sub">${child.full_name} (${child.class_name}) · ${p.payment_method || '—'}${p.reference ? ' · ' + p.reference : ''}</div>
+                </div>
+                <div class="pp-recent-amount">
+                  <span class="amt">${fmt(p.amount)}</span>
+                  ${statusBadgeHtml(p.status === 'paid' ? 'paid' : p.status)}
+                </div>
+              </div>`;
+          }).join('')
+        : '<p style="color:#9ca3af;font-size:0.85rem;padding:16px 18px">No payment history yet.</p>';
     } catch (e) {
-      cards.innerHTML = `<p style="color:#dc2626;font-size:0.85rem">Could not load fee summary: ${e.message}</p>`;
-    }
-
-    // Payment history for this child
-    if (historyBody) {
-      historyBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:16px">Loading…</td></tr>';
-      try {
-        const histData = await window.RCA_API.call(`/payments?admission_no=${encodeURIComponent(child.admission_no)}`);
-        const rows = histData.payments || [];
-        historyBody.innerHTML = rows.length
-          ? rows.map(p => `
-              <tr>
-                <td>${p.payment_date ? String(p.payment_date).substring(0,10) : '—'}</td>
-                <td>${TERM_LABELS[p.term] || p.term} — ${p.fee_type || 'School Fees'}</td>
-                <td>${fmt(p.amount)}</td>
-                <td>${p.payment_method || '—'}</td>
-                <td>${p.status}</td>
-                <td>${p.reference || '—'}</td>
-              </tr>`).join('')
-          : '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:16px">No payment history yet.</td></tr>';
-      } catch (e) {
-        historyBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#dc2626;padding:16px">${e.message}</td></tr>`;
-      }
+      list.innerHTML = `<p style="color:#dc2626;font-size:0.85rem;padding:16px 18px">${e.message}</p>`;
     }
   }
+
+  /* ---- Sidebar: Account Summary + Fee Categories for the selected child ---- */
+  function renderAccountSummary(feeData) {
+    const el = document.getElementById('payAccountSummary');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="pp-summary-row"><span>Total Fees</span><span>${fmt(feeData.totalFees)}</span></div>
+      <div class="pp-summary-row"><span>Total Paid</span><span>${fmt(feeData.totalPaid)}</span></div>
+      <div class="pp-summary-row"><span>Outstanding Balance</span><span style="color:${feeData.totalOutstanding > 0 ? '#dc2626' : '#059669'}">${fmt(feeData.totalOutstanding)}</span></div>
+    `;
+  }
+
+  function renderFeeCategories(feeData) {
+    const titleEl = document.getElementById('payFeeCategoriesTitle');
+    const el = document.getElementById('payFeeCategories');
+    if (!el) return;
+    const current = feeData.terms.term2 || feeData.terms.term1 || feeData.terms.term3;
+    if (titleEl) titleEl.textContent = `Fee Categories (${current ? TERM_LABELS[TERMS_ORDER.find(t => feeData.terms[t] === current)] : 'Current Term'})`;
+    el.innerHTML = current && current.lines.length
+      ? current.lines.map(l => `<div class="pp-fee-cat-row"><span>${l.label}</span><span>${fmt(l.amount)}</span></div>`).join('')
+      : '<p style="color:#9ca3af;font-size:0.8rem">No fee schedule available.</p>';
+  }
+
+  /* ---- Orchestrator — called on child-tab select / navigation ---- */
+  async function renderFeeSummary(child) {
+    selectedChild = child;
+    if (!child) return;
+
+    document.getElementById('payBreakdownBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:16px">Loading…</td></tr>';
+    document.getElementById('payAccountSummary').innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Loading…</p>';
+
+    try {
+      const feeData = await loadChildFullFeeData(child);
+      renderFeeBreakdown(child, feeData);
+      renderAccountSummary(feeData);
+      renderFeeCategories(feeData);
+    } catch (e) {
+      document.getElementById('payBreakdownBody').innerHTML = `<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:16px">${e.message}</td></tr>`;
+    }
+
+    renderRecentPayments(child);
+  }
+
+  /* ---- Action buttons ---- */
+  document.getElementById('downloadStatementBtn')?.addEventListener('click', () => window.print());
+  document.getElementById('makePaymentBtn')?.addEventListener('click', () => {
+    alert('Fees are currently paid at the school office or by bank transfer — the accountant will record your payment and it will appear here.\n\nFor payment details, please contact the school office.');
+  });
 
   /* ============================================
      RESULTS PAGE
@@ -823,6 +957,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderChildrenList();
   renderDashStats();
   renderDashChildCards();
+  renderPaymentsOverviewStats();
   buildChildTabs('payChildTabs', 'payChildSelector', renderFeeSummary);
   buildChildTabs('resultChildTabs', 'resultChildSelector', renderResults);
   renderAttendance();

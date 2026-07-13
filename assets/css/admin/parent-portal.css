@@ -710,6 +710,83 @@
 .pp-badge-partial { background: #fed7aa; color: #92400e; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
 .pp-badge-unpaid  { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
 
+/* ---- Payments page: two-column layout ---- */
+.pp-payments-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.pp-child-tabs-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.pp-breakdown-note {
+  padding: 12px 18px;
+  font-size: 0.78rem;
+  color: #64748b;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+}
+
+.pp-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.pp-recent-item:last-child { border-bottom: none; }
+
+.pp-recent-date {
+  flex-shrink: 0;
+  width: 46px;
+  text-align: center;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 5px 0;
+}
+.pp-recent-date .day   { display: block; font-family: var(--font-heading); font-weight: 700; font-size: 0.95rem; color: var(--color-primary-dark); }
+.pp-recent-date .month { display: block; font-size: 0.62rem; text-transform: uppercase; color: #94a3b8; }
+
+.pp-recent-info { flex: 1; min-width: 0; }
+.pp-recent-title { font-size: 0.82rem; font-weight: 600; color: #1e293b; }
+.pp-recent-sub   { font-size: 0.72rem; color: #94a3b8; margin-top: 1px; }
+.pp-recent-amount { text-align: right; flex-shrink: 0; }
+.pp-recent-amount .amt { display: block; font-weight: 700; font-size: 0.85rem; color: #1e293b; }
+
+.pp-notice-card {
+  background: #fef9e7;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.pp-notice-card strong { display: block; font-size: 0.85rem; color: #92400e; margin-bottom: 6px; }
+.pp-notice-card p { font-size: 0.78rem; color: #92400e; line-height: 1.6; margin: 0; }
+
+.pp-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.82rem;
+}
+.pp-summary-row:last-child { border-bottom: none; }
+.pp-summary-row span:first-child { color: #64748b; }
+.pp-summary-row span:last-child { font-weight: 700; color: #1e293b; }
+
+.pp-fee-cat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+@media (max-width: 900px) {
+  .pp-payments-layout { grid-template-columns: 1fr; }
+  #payOverviewStats { grid-template-columns: 1fr 1fr !important; }
+}
+
 /* ---- Results page ---- */
 .pp-term-selector {
   background: #fff;
@@ -840,7 +917,10 @@
 
 /* ---- Print ---- */
 @media print {
-  .pp-sidebar, .pp-topbar, .pp-payment-actions, .pp-term-selector { display: none !important; }
+  .pp-sidebar, .pp-topbar, .pp-payment-actions, .pp-term-selector,
+  #makePaymentBtn, #downloadStatementBtn, .pp-notice-card, #payOverviewStats,
+  #payFeeCategoriesCard { display: none !important; }
+  .pp-payments-layout { display: block; }
   .pp-content { margin-left: 0; }
   .pp-shell { background: #fff; }
   @page { margin: 1cm; }
