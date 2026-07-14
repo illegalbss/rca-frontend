@@ -307,6 +307,21 @@
           <div class="pp-table-card-header">Account Details</div>
           <div class="pp-card-body" id="profileContent" style="padding:18px"></div>
         </div>
+
+        <div class="pp-table-card">
+          <div class="pp-table-card-header">Change Password</div>
+          <div class="pp-card-body" style="padding:18px;max-width:340px">
+            <div id="pcpAlert" style="display:none;background:#fef2f2;color:#dc2626;padding:8px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:12px"></div>
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Current Password</label>
+            <input type="password" id="pcpCurrent" class="form-control" style="margin-bottom:12px;width:100%;box-sizing:border-box">
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">New Password</label>
+            <input type="password" id="pcpNew" class="form-control" style="margin-bottom:4px;width:100%;box-sizing:border-box">
+            <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 12px">At least 8 characters.</p>
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Confirm New Password</label>
+            <input type="password" id="pcpConfirm" class="form-control" style="margin-bottom:16px;width:100%;box-sizing:border-box">
+            <button id="pcpSaveBtn" class="btn btn-primary">Save New Password</button>
+          </div>
+        </div>
       </section>
 
     </main>

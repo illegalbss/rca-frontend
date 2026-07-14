@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allRealStudents  = [];
   let allRealParents   = [];
   let editingUserId    = null; // null while creating
+  let addParentSelected = new Set(); // child admission_nos checked in the Add Parent modal, kept alive across search filtering
+  let linkChildSelected = new Set(); // same, for the Link Child modal
 
   /* ============================================================
      MAIN USER TABLE (staff + parents)
@@ -538,13 +540,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // checkedAdmNos is a Set, kept alive across re-renders (e.g. as the
+  // search box filters the list) so a selection made while searching
+  // "Chidi" isn't lost the moment the box is cleared and "Amaka" is
+  // typed instead — a parent can pay for/be linked to children who
+  // don't share their surname or search visibility.
   function renderStudentCheckboxes(containerId, students, checkedAdmNos) {
     const active = students.filter(s => s.status !== 'archived' && s.status !== 'inactive');
     const box = document.getElementById(containerId);
     box.innerHTML = active.length
       ? active.map(s => `
           <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:0.82rem">
-            <input type="checkbox" value="${s.admission_no}" ${checkedAdmNos.includes(s.admission_no) ? 'checked' : ''} style="width:16px;height:16px">
+            <input type="checkbox" value="${s.admission_no}" ${checkedAdmNos.has(s.admission_no) ? 'checked' : ''} style="width:16px;height:16px">
             ${s.full_name} — ${s.class_name}
           </label>`).join('')
       : '<p style="color:#9ca3af;font-size:0.82rem;padding:4px">No matching students</p>';
@@ -558,7 +565,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('parentModalAlert').style.display = 'none';
 
     allRealStudents = await loadRealStudents();
-    renderStudentCheckboxes('studentCheckboxes', allRealStudents, []);
+    addParentSelected = new Set();
+    renderStudentCheckboxes('studentCheckboxes', allRealStudents, addParentSelected);
+
+    const checkboxBox = document.getElementById('studentCheckboxes');
+    checkboxBox.onchange = (e) => {
+      if (!e.target.matches('input[type="checkbox"]')) return;
+      if (e.target.checked) addParentSelected.add(e.target.value);
+      else addParentSelected.delete(e.target.value);
+    };
 
     const searchBox = document.getElementById('parentStudentSearch');
     if (searchBox) {
@@ -566,8 +581,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       searchBox.oninput = () => {
         const q = searchBox.value.trim().toLowerCase();
         const filtered = allRealStudents.filter(s => s.full_name.toLowerCase().includes(q));
-        const checkedNow = [...document.querySelectorAll('#studentCheckboxes input:checked')].map(i => i.value);
-        renderStudentCheckboxes('studentCheckboxes', filtered, checkedNow);
+        renderStudentCheckboxes('studentCheckboxes', filtered, addParentSelected);
       };
     }
   };
@@ -589,7 +603,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const checked = [...document.querySelectorAll('#studentCheckboxes input:checked')].map(i => i.value);
+    const checked = [...addParentSelected];
 
     try {
       await window.RCA_API.call('/users', {
@@ -636,20 +650,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>`;
     document.body.appendChild(modal);
 
-    renderStudentCheckboxes('linkChildCheckboxes', allRealStudents, linkedAdmNos);
+    linkChildSelected = new Set(linkedAdmNos);
+    renderStudentCheckboxes('linkChildCheckboxes', allRealStudents, linkChildSelected);
+
+    const checkboxBox = modal.querySelector('#linkChildCheckboxes');
+    checkboxBox.onchange = (e) => {
+      if (!e.target.matches('input[type="checkbox"]')) return;
+      if (e.target.checked) linkChildSelected.add(e.target.value);
+      else linkChildSelected.delete(e.target.value);
+    };
 
     const searchBox = modal.querySelector('#linkChildSearch');
     searchBox.oninput = () => {
       const q = searchBox.value.trim().toLowerCase();
       const filtered = allRealStudents.filter(s => s.full_name.toLowerCase().includes(q));
-      const checkedNow = [...modal.querySelectorAll('#linkChildCheckboxes input:checked')].map(i => i.value);
-      renderStudentCheckboxes('linkChildCheckboxes', filtered, checkedNow);
+      renderStudentCheckboxes('linkChildCheckboxes', filtered, linkChildSelected);
     };
   };
 
   window.saveLinkedChildren = async function(parentId, btn) {
     const modal = btn.closest('[style*="fixed"]');
-    const checked = [...modal.querySelectorAll('input:checked')].map(i => i.value);
+    const checked = [...linkChildSelected];
 
     try {
       await window.RCA_API.call(`/users/${parentId}`, { method: 'PUT', body: { linked_children: checked } });

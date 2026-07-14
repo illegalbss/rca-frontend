@@ -292,4 +292,96 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  /* --------------------------------------------
+     7. CHANGE PASSWORD
+     --------------------------------------------
+     Every account is created (or reset) with the same shared
+     password, RCA@2026! — this gives every logged-in user a way
+     to set their own, from any admin page, without needing the
+     ICT admin to do it for them. Injected as a sidebar link (right
+     before Log out) plus a self-contained modal, since there's no
+     shared page/partial to add a real settings page to without
+     editing all 27 admin HTML files individually.
+  */
+  if (logoutBtn && !document.getElementById('changePasswordBtn')) {
+    logoutBtn.insertAdjacentHTML('beforebegin',
+      '<a href="#" class="sidebar-link" id="changePasswordBtn"><i class="icon">🔑</i> Change Password</a>'
+    );
+
+    const modalHtml = `
+      <div id="changePasswordModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;display:none;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:16px;width:100%;max-width:380px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+          <h3 style="margin:0 0 14px;color:var(--color-primary,#1e3a5f);font-size:1rem">Change Password</h3>
+          <div id="cpwAlert" style="display:none;background:#fef2f2;color:#dc2626;padding:8px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:12px"></div>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Current Password</label>
+          <input type="password" id="cpwCurrent" class="form-control" style="margin-bottom:12px;width:100%;box-sizing:border-box">
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">New Password</label>
+          <input type="password" id="cpwNew" class="form-control" style="margin-bottom:4px;width:100%;box-sizing:border-box">
+          <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 12px">At least 8 characters.</p>
+          <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Confirm New Password</label>
+          <input type="password" id="cpwConfirm" class="form-control" style="margin-bottom:16px;width:100%;box-sizing:border-box">
+          <div style="display:flex;gap:10px">
+            <button id="cpwCancelBtn" class="btn btn-outline" style="flex:1">Cancel</button>
+            <button id="cpwSaveBtn" class="btn btn-primary" style="flex:1">Save</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const cpwModal   = document.getElementById('changePasswordModal');
+    const cpwAlert   = document.getElementById('cpwAlert');
+    const cpwSaveBtn = document.getElementById('cpwSaveBtn');
+
+    function closeCpwModal() {
+      cpwModal.style.display = 'none';
+      cpwAlert.style.display = 'none';
+      document.getElementById('cpwCurrent').value = '';
+      document.getElementById('cpwNew').value = '';
+      document.getElementById('cpwConfirm').value = '';
+    }
+
+    document.getElementById('changePasswordBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      cpwModal.style.display = 'flex';
+    });
+    document.getElementById('cpwCancelBtn').addEventListener('click', closeCpwModal);
+    cpwModal.addEventListener('click', (e) => { if (e.target === cpwModal) closeCpwModal(); });
+
+    cpwSaveBtn.addEventListener('click', async () => {
+      const current = document.getElementById('cpwCurrent').value;
+      const next    = document.getElementById('cpwNew').value;
+      const confirm = document.getElementById('cpwConfirm').value;
+
+      if (!current || !next || !confirm) {
+        cpwAlert.textContent = 'Please fill in all fields.';
+        cpwAlert.style.display = 'block';
+        return;
+      }
+      if (next.length < 8) {
+        cpwAlert.textContent = 'New password must be at least 8 characters.';
+        cpwAlert.style.display = 'block';
+        return;
+      }
+      if (next !== confirm) {
+        cpwAlert.textContent = 'New password and confirmation do not match.';
+        cpwAlert.style.display = 'block';
+        return;
+      }
+
+      cpwSaveBtn.disabled = true;
+      cpwSaveBtn.textContent = 'Saving…';
+      try {
+        await window.RCA_API.changePassword(current, next);
+        closeCpwModal();
+        alert('Password changed successfully. Use it next time you log in.');
+      } catch (e) {
+        cpwAlert.textContent = e.message || 'Could not change password.';
+        cpwAlert.style.display = 'block';
+      } finally {
+        cpwSaveBtn.disabled = false;
+        cpwSaveBtn.textContent = 'Save';
+      }
+    });
+  }
+
 });

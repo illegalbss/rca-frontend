@@ -959,6 +959,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
+  const pcpSaveBtn = document.getElementById('pcpSaveBtn');
+  if (pcpSaveBtn) {
+    pcpSaveBtn.addEventListener('click', async () => {
+      const alertEl = document.getElementById('pcpAlert');
+      const current  = document.getElementById('pcpCurrent').value;
+      const next     = document.getElementById('pcpNew').value;
+      const confirm  = document.getElementById('pcpConfirm').value;
+
+      alertEl.style.display = 'none';
+      if (!current || !next || !confirm) {
+        alertEl.textContent = 'Please fill in all fields.';
+        alertEl.style.display = 'block';
+        return;
+      }
+      if (next.length < 8) {
+        alertEl.textContent = 'New password must be at least 8 characters.';
+        alertEl.style.display = 'block';
+        return;
+      }
+      if (next !== confirm) {
+        alertEl.textContent = 'New password and confirmation do not match.';
+        alertEl.style.display = 'block';
+        return;
+      }
+
+      pcpSaveBtn.disabled = true;
+      pcpSaveBtn.textContent = 'Saving…';
+      try {
+        await window.RCA_API.changePassword(current, next);
+        document.getElementById('pcpCurrent').value = '';
+        document.getElementById('pcpNew').value = '';
+        document.getElementById('pcpConfirm').value = '';
+        alert('Password changed successfully. Use it next time you log in.');
+      } catch (e) {
+        alertEl.textContent = e.message || 'Could not change password.';
+        alertEl.style.display = 'block';
+      } finally {
+        pcpSaveBtn.disabled = false;
+        pcpSaveBtn.textContent = 'Save New Password';
+      }
+    });
+  }
+
   /* ============================================
      INIT
      ============================================ */
