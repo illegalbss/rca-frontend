@@ -118,11 +118,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function populateDropdowns() {
     const permittedClasses  = getPermittedClasses();
-    const permittedSubjects = getPermittedSubjects();
 
     classSelect.innerHTML = permittedClasses.length > 0
       ? permittedClasses.map(c => `<option value="${c}">${c}</option>`).join('')
       : '<option value="">No classes assigned</option>';
+
+    // Scope the subject list to whichever class ends up selected by
+    // default (the browser picks the first <option> without firing a
+    // 'change' event) — otherwise a teacher with precise per-class
+    // assignments (e.g. Igbo in Basic 5-6 only) would see the union of
+    // every subject they teach anywhere until they manually touched the
+    // class dropdown once, even though the same class's change handler
+    // correctly re-scopes it from then on.
+    const permittedSubjects = getPermittedSubjects(classSelect.value);
 
     subjectSelect.innerHTML = permittedSubjects.length > 0
       ? permittedSubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('')

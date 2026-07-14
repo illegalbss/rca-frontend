@@ -60,6 +60,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = window.CURRENT_USER;
   if (!user) return;
 
+  // A staff member (teacher, etc.) who also has a child at the school
+  // reaches this page via "My Child's Portal" in their staff sidebar
+  // (see dashboard-shell.js) rather than a separate parent login — give
+  // them a way back to their own dashboard, since this page's own nav
+  // has no such link otherwise.
+  if ((user.roles || [user.primary_role]).some(r => r !== 'parent')) {
+    const backLink = document.getElementById('ppBackToStaffLink');
+    if (backLink) backLink.style.display = '';
+  }
+
   let myChildren = [];
   let selectedChild = null;
   let selectedResultChild = null;

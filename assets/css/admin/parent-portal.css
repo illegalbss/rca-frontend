@@ -230,7 +230,9 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 24px;
+  min-width: 0;
 }
+.pp-stats > * { min-width: 0; }
 
 .pp-stat {
   background: #fff;
@@ -710,15 +712,24 @@
 .pp-badge-partial { background: #fed7aa; color: #92400e; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
 .pp-badge-unpaid  { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
 
-/* ---- Payments page: two-column layout ---- */
+/* ---- Payments page: two-column layout ----
+   min-width: 0 on both tracks is load-bearing, not decorative — grid/flex
+   items default to min-width:auto, which means they refuse to shrink
+   below their CONTENT's intrinsic width (e.g. the fees breakdown table).
+   Without this, the table's own overflow-x:auto never gets a chance to
+   kick in locally — the grid track itself grows to fit the table, and
+   the whole page becomes horizontally scrollable on mobile instead. */
 .pp-payments-layout {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 20px;
   align-items: start;
+  min-width: 0;
 }
+.pp-payments-main,
+.pp-payments-sidebar { min-width: 0; }
 
-.pp-child-tabs-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.pp-child-tabs-row { display: flex; gap: 8px; flex-wrap: wrap; min-width: 0; }
 
 .pp-breakdown-note {
   padding: 12px 18px;
@@ -957,6 +968,9 @@
   }
   .pp-content { margin-left: 0; }
   .pp-menu-toggle { display: block; }
+  .pp-topbar { padding: 0 14px; }
+  .pp-main { padding: 16px; }
+  .pp-user-name { display: none; } /* avatar + bell fit better without the name on a narrow topbar */
   .pp-stats { grid-template-columns: 1fr 1fr; }
   .pp-dash-grid { grid-template-columns: 1fr; }
   .pp-result-summary { grid-template-columns: 1fr 1fr; }
