@@ -75,6 +75,106 @@ document.addEventListener('DOMContentLoaded', async () => {
   let selectedResultChild = null;
 
   /* ============================================
+     NOTIFICATIONS BELL
+     ============================================ */
+  function setupNotificationBell() {
+    const bellBtn = document.querySelector('.pp-notif-btn');
+    if (!bellBtn || !window.RCA_API) return;
+
+    const dot = bellBtn.querySelector('.pp-notif-dot');
+    if (dot) dot.style.display = 'none';
+    let panel = null;
+    let items = [];
+
+    function timeAgo(dateStr) {
+      const mins = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      return `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    function renderPanel() {
+      const list = panel.querySelector('#ppNotifList');
+      list.innerHTML = items.length
+        ? items.map(n => `
+            <div class="pp-notif-item" data-id="${n.id}" data-link="${n.link || ''}" style="padding:10px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer;${n.is_read ? '' : 'background:#eff6ff;'}">
+              <div style="font-size:0.82rem;font-weight:700;color:#111">${n.title}</div>
+              ${n.message ? `<div style="font-size:0.78rem;color:#4b5563;margin-top:2px">${n.message}</div>` : ''}
+              <div style="font-size:0.7rem;color:#9ca3af;margin-top:4px">${timeAgo(n.created_at)}</div>
+            </div>`).join('')
+        : '<p style="padding:20px;text-align:center;color:#9ca3af;font-size:0.82rem">No notifications yet.</p>';
+    }
+
+    function openPanel() {
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.style.cssText = 'position:fixed;width:300px;max-width:90vw;max-height:400px;overflow-y:auto;background:#fff;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:3500;border:1px solid #e5e7eb';
+        panel.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #f1f5f9">
+            <strong style="font-size:0.85rem;color:#111">Notifications</strong>
+            <button id="ppNotifMarkAll" style="background:none;border:none;color:#1d4ed8;font-size:0.75rem;font-weight:600;cursor:pointer">Mark all read</button>
+          </div>
+          <div id="ppNotifList"></div>`;
+        document.body.appendChild(panel);
+
+        panel.querySelector('#ppNotifMarkAll').addEventListener('click', async () => {
+          try {
+            await window.RCA_API.markAllNotificationsRead();
+            items = items.map(n => ({ ...n, is_read: true }));
+            renderPanel();
+            if (dot) dot.style.display = 'none';
+          } catch (e) {}
+        });
+
+        panel.addEventListener('click', async (e) => {
+          const item = e.target.closest('.pp-notif-item');
+          if (!item) return;
+          const id = item.getAttribute('data-id');
+          const link = item.getAttribute('data-link');
+          const notifItem = items.find(n => String(n.id) === id);
+          if (notifItem && !notifItem.is_read) {
+            try {
+              await window.RCA_API.markNotificationRead(id);
+              notifItem.is_read = true;
+              renderPanel();
+              if (dot) dot.style.display = items.some(n => !n.is_read) ? 'block' : 'none';
+            } catch (e) {}
+          }
+          if (link) window.location.href = link;
+        });
+
+        document.addEventListener('click', (e) => {
+          if (panel && panel.style.display !== 'none' && !panel.contains(e.target) && e.target !== bellBtn && !bellBtn.contains(e.target)) {
+            panel.style.display = 'none';
+          }
+        });
+      }
+
+      const rect = bellBtn.getBoundingClientRect();
+      panel.style.top = `${rect.bottom + 8}px`;
+      let left = rect.right - 300;
+      if (left < 8) left = 8;
+      panel.style.left = `${left}px`;
+      panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'block' : 'none';
+      if (panel.style.display === 'block') renderPanel();
+    }
+
+    bellBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPanel();
+    });
+
+    window.RCA_API.getNotifications()
+      .then(data => {
+        items = data.notifications || [];
+        if (dot) dot.style.display = (data.unread_count || 0) > 0 ? 'block' : 'none';
+      })
+      .catch(() => { if (dot) dot.style.display = 'none'; });
+  }
+
+  /* ============================================
      LOAD REAL CHILDREN
      ============================================ */
   async function loadMyChildren() {
@@ -1006,6 +1106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      INIT
      ============================================ */
   renderDashboardHeader();
+  setupNotificationBell();
   myChildren = await loadMyChildren();
   renderChildrenList();
   renderDashStats();

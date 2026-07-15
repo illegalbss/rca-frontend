@@ -310,7 +310,7 @@ html, body { height: 100%; }
   font-size: 0.6rem;
   font-weight: 700;
   border-radius: 999px;
-  display: flex;
+  display: none; /* shown by dashboard-shell.js only once a real unread count is known */
   align-items: center;
   justify-content: center;
   padding: 0 3px;

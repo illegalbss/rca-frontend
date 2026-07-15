@@ -270,6 +270,122 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* --------------------------------------------
+     6b. TOPBAR NOTIFICATIONS BELL
+     --------------------------------------------
+     Every admin page has a static bell icon (.topbar-bell) with a
+     hardcoded "4" badge and no click behaviour — wire it to the real
+     /notifications endpoint here since this file is the one thing
+     shared identically across all 27 admin pages. The dropdown panel
+     is built and positioned via JS (fixed, anchored to the bell's own
+     bounding rect) rather than relying on page-specific topbar markup.
+  */
+  (function setupNotificationBell() {
+    const bellBtn = document.querySelector('.topbar-bell');
+    if (!bellBtn || !window.RCA_API) return;
+
+    let badge = bellBtn.querySelector('.topbar-bell-badge');
+    let panel = null;
+    let items = [];
+
+    function timeAgo(dateStr) {
+      const diffMs = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      return `${days}d ago`;
+    }
+
+    function setBadge(count) {
+      if (!badge) return;
+      if (count > 0) { badge.textContent = count > 9 ? '9+' : count; badge.style.display = 'flex'; }
+      else badge.style.display = 'none';
+    }
+
+    function renderPanel() {
+      if (!panel) return;
+      const list = panel.querySelector('#notifBellList');
+      list.innerHTML = items.length
+        ? items.map(n => `
+            <div class="notif-bell-item${n.is_read ? '' : ' unread'}" data-id="${n.id}" data-link="${n.link || ''}" style="padding:10px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer;${n.is_read ? '' : 'background:#eff6ff;'}">
+              <div style="font-size:0.82rem;font-weight:700;color:#111">${n.title}</div>
+              ${n.message ? `<div style="font-size:0.78rem;color:#4b5563;margin-top:2px">${n.message}</div>` : ''}
+              <div style="font-size:0.7rem;color:#9ca3af;margin-top:4px">${timeAgo(n.created_at)}</div>
+            </div>`).join('')
+        : '<p style="padding:20px;text-align:center;color:#9ca3af;font-size:0.82rem">No notifications yet.</p>';
+    }
+
+    function openPanel() {
+      if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'notifBellPanel';
+        panel.style.cssText = 'position:fixed;width:320px;max-width:90vw;max-height:420px;overflow-y:auto;background:#fff;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,0.18);z-index:3500;border:1px solid #e5e7eb';
+        panel.innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #f1f5f9">
+            <strong style="font-size:0.85rem;color:#111">Notifications</strong>
+            <button id="notifBellMarkAll" style="background:none;border:none;color:#1d4ed8;font-size:0.75rem;font-weight:600;cursor:pointer">Mark all read</button>
+          </div>
+          <div id="notifBellList"></div>`;
+        document.body.appendChild(panel);
+
+        panel.querySelector('#notifBellMarkAll').addEventListener('click', async () => {
+          try {
+            await window.RCA_API.markAllNotificationsRead();
+            items = items.map(n => ({ ...n, is_read: true }));
+            renderPanel();
+            setBadge(0);
+          } catch (e) {}
+        });
+
+        panel.addEventListener('click', async (e) => {
+          const item = e.target.closest('.notif-bell-item');
+          if (!item) return;
+          const id = item.getAttribute('data-id');
+          const link = item.getAttribute('data-link');
+          const notifItem = items.find(n => String(n.id) === id);
+          if (notifItem && !notifItem.is_read) {
+            try {
+              await window.RCA_API.markNotificationRead(id);
+              notifItem.is_read = true;
+              renderPanel();
+              setBadge(items.filter(n => !n.is_read).length);
+            } catch (e) {}
+          }
+          if (link) window.location.href = link;
+        });
+
+        document.addEventListener('click', (e) => {
+          if (panel && panel.style.display !== 'none' && !panel.contains(e.target) && e.target !== bellBtn && !bellBtn.contains(e.target)) {
+            panel.style.display = 'none';
+          }
+        });
+      }
+
+      const rect = bellBtn.getBoundingClientRect();
+      panel.style.top = `${rect.bottom + 8}px`;
+      let left = rect.right - 320;
+      if (left < 8) left = 8;
+      panel.style.left = `${left}px`;
+      panel.style.display = panel.style.display === 'none' || !panel.style.display ? 'block' : 'none';
+      if (panel.style.display === 'block') renderPanel();
+    }
+
+    bellBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openPanel();
+    });
+
+    window.RCA_API.getNotifications()
+      .then(data => {
+        items = data.notifications || [];
+        setBadge(data.unread_count || 0);
+      })
+      .catch(() => setBadge(0));
+  })();
+
+  /* --------------------------------------------
      LOGOUT
      -------------------------------------------- */
   const logoutBtn = document.getElementById('logoutBtn');

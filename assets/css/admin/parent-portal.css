@@ -162,6 +162,7 @@
   background: #e63946;
   border-radius: 50%;
   border: 2px solid #fff;
+  display: none; /* shown by parent-portal.js only once a real unread count is known */
 }
 
 .pp-user-chip {

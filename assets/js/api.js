@@ -390,6 +390,19 @@
   }
 
   /* ============================================
+     NOTIFICATIONS
+     ============================================ */
+  async function getNotifications() {
+    return apiCall('/notifications');
+  }
+  async function markNotificationRead(id) {
+    return apiCall(`/notifications/${id}/read`, { method: 'PATCH' });
+  }
+  async function markAllNotificationsRead() {
+    return apiCall('/notifications/read-all', { method: 'PATCH' });
+  }
+
+  /* ============================================
      EXPOSE AS window.RCA_API
      ============================================ */
   window.RCA_API = {
@@ -451,6 +464,11 @@
 
     // Auth
     changePassword,
+
+    // Notifications
+    getNotifications,
+    markNotificationRead,
+    markAllNotificationsRead,
 
     // Direct API call (for advanced use)
     call: apiCall
