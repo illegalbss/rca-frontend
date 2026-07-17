@@ -244,7 +244,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('fJobTitle').value  = '';
     document.getElementById('fPhone').value     = '';
     document.getElementById('fAlsoFormTeacher').checked = false;
-    document.getElementById('fPassword').value  = randomPassword();
+    // Default to the same shared default every parent account gets
+    // (RCA@2026!) rather than a random string — a random password that
+    // isn't reliably written down/relayed leaves the account stuck with
+    // a password nobody actually knows. Admins can still hit "Generate"
+    // for a random one if they specifically want that instead.
+    document.getElementById('fPassword').value  = 'RCA@2026!';
     document.getElementById('fPasswordGroup').style.display = 'block';
 
     populateClassCheckboxes('fClassesCheckboxes', []);
@@ -363,8 +368,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     saveBtn.disabled = false;
+    const wasCreating = !editingUserId;
     closeCreateEditModal();
     await refreshAll();
+
+    // Surface the login credentials on creation (same as the Add Parent
+    // flow) so the password actually gets relayed instead of silently
+    // vanishing once the modal closes — this is exactly what left several
+    // teacher accounts unreachable (a random password shown once, never
+    // written down, with no confirmation to catch it).
+    if (wasCreating) {
+      const toast = document.createElement('div');
+      toast.textContent = `✅ Account created for ${fullName}. Login: ${email} / ${password}`;
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:14px 20px;border-radius:10px;z-index:9999;font-size:0.85rem;font-weight:600;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 8000);
+    }
   });
 
   document.getElementById('createUserBtn')?.addEventListener('click', openCreateModal);
