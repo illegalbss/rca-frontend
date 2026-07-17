@@ -23,14 +23,34 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
   let allStudents       = await window.RCA_API.getStudents();
+  let allStaff          = [];
+  try { allStaff = await window.RCA_API.getStaffDirectory(); } catch (e) { allStaff = []; }
   const allClasses      = window.SCHOOL_CLASSES   || [];
   const traits           = window.BEHAVIOR_TRAITS  || [];
   const scoreToGrade    = window.scoreToGrade;
   const gradeToLabel    = window.gradeToLabel;
   const ratingValueToLabel = window.ratingValueToLabel;
+  const isNurseryClass  = window.isNurseryClass || (c => !!c && c.includes('Nursery'));
 
   const cu = window.CURRENT_USER;
   const canEditHtComment = cu && (cu.roles || [cu.role]).some(r => ['ict_admin', 'head_teacher'].includes(r));
+
+  // A class_teacher may only edit records for their own form class
+  // (linked_classes[0]) — mirrors the server-side rule in
+  // PUT /students/:admissionNo/review so the Edit button only appears
+  // where a save would actually be allowed to go through.
+  function canEditNurseryRecord(className) {
+    if (!cu) return false;
+    const roles = cu.roles || [cu.role];
+    if (roles.includes('ict_admin') || roles.includes('head_teacher')) return true;
+    if (roles.includes('class_teacher')) return (cu.linked_classes || [])[0] === className;
+    return false;
+  }
+
+  function findClassTeacherName(className) {
+    const t = (allStaff || []).find(u => u.primary_role === 'class_teacher' && (u.linked_classes || [])[0] === className);
+    return t ? t.full_name : '';
+  }
 
   // Cache of admission_no -> { average, scores, behavior, comment } for
   // the currently selected term, so class-position ranking doesn't
@@ -49,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         behavior: data?.behavior || [],
         comment: data?.comment || null,
         ht_comment: data?.ht_comment || null,
+        nursery_record: data?.nursery_record || null,
         average,
         totalScore,
         overallGrade: scoreToGrade(average),
@@ -168,6 +189,123 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* --------------------------------------------
+     COGNITIVE & BEHAVIOURAL RECORDS — Nursery section only
+     --------------------------------------------
+     Replaces the generic Behavioural & Affective Assessment section
+     (which is a 1-5 dot rating scale meant for Basic 1-6) with the
+     school's actual Nursery report card fields: free-text daily-care
+     observations plus a few counts, editable inline the same way the
+     Head Teacher's comment is.
+  */
+  function renderNurseryRecordsSection(summary, className, classSize) {
+    const nr = summary.nursery_record || {};
+    const teacherName = findClassTeacherName(className);
+    const canEdit = canEditNurseryRecord(className);
+
+    const textFields = [
+      ['breakfast_lunch', 'Breakfast/Lunch'],
+      ['dressing', 'Dressing'],
+      ['siesta', 'Siesta'],
+      ['learning_ability', 'Learning Ability'],
+      ['positive_traits', 'Positive Personality Traits'],
+      ['negative_traits', 'Negative Traits']
+    ];
+
+    return `
+      <div class="rc-behavior-section" id="nurseryRecordsBlock">
+        <div class="rc-behavior-title">Cognitive &amp; Behavioural Records</div>
+        <div class="rc-nursery-grid">
+          ${textFields.map(([key, label]) => `
+            <div class="rc-nursery-row">
+              <span class="rc-nursery-label">${label}</span>
+              <span class="rc-nursery-value">${nr[key] || '—'}</span>
+            </div>
+          `).join('')}
+          <div class="rc-nursery-row">
+            <span class="rc-nursery-label">Number in Class</span>
+            <span class="rc-nursery-value">${classSize}</span>
+          </div>
+          <div class="rc-nursery-row">
+            <span class="rc-nursery-label">Number of Times School Opened</span>
+            <span class="rc-nursery-value">${nr.times_school_opened ?? '—'}</span>
+          </div>
+          <div class="rc-nursery-row">
+            <span class="rc-nursery-label">Number of Times Present</span>
+            <span class="rc-nursery-value">${nr.times_present ?? '—'}</span>
+          </div>
+          <div class="rc-nursery-row">
+            <span class="rc-nursery-label">Name of Teacher</span>
+            <span class="rc-nursery-value">${teacherName || '—'}</span>
+          </div>
+        </div>
+        ${canEdit ? `<button id="editNurseryBtn" class="no-print" style="margin-top:10px;padding:2px 10px;font-size:0.72rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">✏️ Edit Records</button>` : ''}
+      </div>
+    `;
+  }
+
+  function wireNurseryEditButton(admissionNo, term, summary, className, classSize) {
+    document.getElementById('editNurseryBtn')?.addEventListener('click', () => {
+      const nr = summary.nursery_record || {};
+      const block = document.getElementById('nurseryRecordsBlock');
+      const textFields = [
+        ['breakfast_lunch', 'Breakfast/Lunch'],
+        ['dressing', 'Dressing'],
+        ['siesta', 'Siesta'],
+        ['learning_ability', 'Learning Ability'],
+        ['positive_traits', 'Positive Personality Traits'],
+        ['negative_traits', 'Negative Traits']
+      ];
+      block.innerHTML = `
+        <div class="rc-behavior-title">Cognitive &amp; Behavioural Records</div>
+        <div class="rc-nursery-grid no-print">
+          ${textFields.map(([key, label]) => `
+            <div class="rc-nursery-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+              <span class="rc-nursery-label">${label}</span>
+              <input type="text" id="nf_${key}" value="${nr[key] || ''}" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.8rem;font-family:inherit;box-sizing:border-box">
+            </div>
+          `).join('')}
+          <div class="rc-nursery-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+            <span class="rc-nursery-label">Number of Times School Opened</span>
+            <input type="number" id="nf_times_school_opened" value="${nr.times_school_opened ?? ''}" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.8rem;font-family:inherit;box-sizing:border-box">
+          </div>
+          <div class="rc-nursery-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+            <span class="rc-nursery-label">Number of Times Present</span>
+            <input type="number" id="nf_times_present" value="${nr.times_present ?? ''}" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.8rem;font-family:inherit;box-sizing:border-box">
+          </div>
+        </div>
+        <div class="no-print" style="margin-top:10px;display:flex;gap:8px">
+          <button id="saveNurseryBtn" style="padding:5px 14px;font-size:0.75rem;background:var(--color-primary);color:#fff;border:none;border-radius:6px;cursor:pointer">Save</button>
+          <button id="cancelNurseryBtn" style="padding:5px 14px;font-size:0.75rem;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer">Cancel</button>
+        </div>
+      `;
+      document.getElementById('cancelNurseryBtn').addEventListener('click', () => renderReportCard());
+      document.getElementById('saveNurseryBtn').addEventListener('click', async () => {
+        const saveBtn = document.getElementById('saveNurseryBtn');
+        saveBtn.disabled = true;
+        const nursery_record = {};
+        textFields.forEach(([key]) => { nursery_record[key] = document.getElementById(`nf_${key}`).value.trim(); });
+        const schoolOpened = document.getElementById('nf_times_school_opened').value;
+        const timesPresent = document.getElementById('nf_times_present').value;
+        nursery_record.times_school_opened = schoolOpened === '' ? null : Number(schoolOpened);
+        nursery_record.times_present = timesPresent === '' ? null : Number(timesPresent);
+
+        try {
+          await window.RCA_API.call(`/students/${encodeURIComponent(admissionNo)}/review`, {
+            method: 'PUT',
+            body: { term, nursery_record }
+          });
+        } catch (e) {
+          alert('Could not save records: ' + e.message);
+          saveBtn.disabled = false;
+          return;
+        }
+        delete resultsCache[`${admissionNo}|${term}`];
+        renderReportCard();
+      });
+    });
+  }
+
+  /* --------------------------------------------
      BUILD THE FULL REPORT CARD HTML
      -------------------------------------------- */
   async function renderReportCard() {
@@ -186,6 +324,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const student = allStudents.find(s => s.admission_no === admissionNo);
     const summary = await getResults(admissionNo, term);
     const { position, classSize } = await computeClassPosition(admissionNo, className, term);
+    const isNursery = isNurseryClass(className);
 
     const behaviorMap = {};
     (summary.behavior || []).forEach(b => { behaviorMap[b.trait_code] = b.rating; });
@@ -292,6 +431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${canEditHtComment ? `<button id="editHtCommentBtn" class="no-print" style="margin-left:10px;padding:2px 10px;font-size:0.72rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">✏️ Edit</button>` : ''}
       </div>
 
+      ${isNursery ? renderNurseryRecordsSection(summary, className, classSize) : `
       <div class="rc-behavior-section">
         <div class="rc-behavior-title">Behavioural &amp; Affective Assessment</div>
         <div class="rc-behavior-grid">
@@ -308,6 +448,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           }).join('')}
         </div>
       </div>
+      `}
 
       <div class="rc-grade-legend">
         <span class="rc-remarks-label">Grading Key</span>
@@ -351,6 +492,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderReportCard();
       });
     });
+
+    if (isNursery) wireNurseryEditButton(admissionNo, term, summary, className, classSize);
   }
 
   /* --------------------------------------------

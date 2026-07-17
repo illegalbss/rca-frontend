@@ -312,6 +312,34 @@
   color: #777;
 }
 
+/* Nursery "Cognitive & Behavioural Records" section — reuses
+   .rc-behavior-section for the outer container/title, these are just
+   the label:value row styles for its own grid. */
+.rc-nursery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 24px;
+}
+
+.rc-nursery-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.8rem;
+}
+
+.rc-nursery-label {
+  flex: 0 0 auto;
+  font-weight: 500;
+  color: #333;
+}
+
+.rc-nursery-value {
+  color: #555;
+}
+
 /* ============================================
    PRINT STYLES — compact single A4 page
    ============================================
@@ -489,6 +517,24 @@
     min-width: 50px;
   }
 
+  .rc-nursery-grid {
+    gap: 1px 16px;
+  }
+
+  .rc-nursery-row {
+    padding: 1px 0;
+    font-size: 8px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .rc-nursery-label {
+    font-size: 8px;
+  }
+
+  .rc-nursery-value {
+    font-size: 8px;
+  }
+
   /* Grade legend */
   .rc-grade-legend {
     padding-top: 4px;
@@ -527,7 +573,8 @@
   .report-card {
     padding: 1.5rem;
   }
-  .rc-behavior-grid {
+  .rc-behavior-grid,
+  .rc-nursery-grid {
     grid-template-columns: 1fr;
   }
 }

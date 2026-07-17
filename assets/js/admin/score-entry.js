@@ -77,13 +77,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   // passing the currently-selected class scopes the subject list to exactly
   // what's valid for THAT class instead of the union across all of them.
   function getPermittedSubjects(className) {
+    // Nursery classes run a different curriculum from Basic 1-6 (see
+    // subjects-and-grading.js) — scope the pool to whichever curriculum
+    // the selected class actually belongs to before applying RBAC on
+    // top of it, so a Nursery class never offers Basic-only subjects
+    // (or vice versa) regardless of what the teacher is assigned to.
+    const subjectsPool = window.getSubjectsForClass ? window.getSubjectsForClass(className) : allSubjects;
+
     const user = window.CURRENT_USER;
-    if (!user) return allSubjects;
+    if (!user) return subjectsPool;
     const userRoles = user.roles || [user.role];
 
     // Full access roles see all subjects
     if (userRoles.includes('ict_admin') || userRoles.includes('head_teacher') || userRoles.includes('proprietor')) {
-      return allSubjects;
+      return subjectsPool;
     }
 
     const assignments = user.assignments || [];
@@ -91,17 +98,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const codes = className
         ? assignments.filter(a => a.class_name === className).map(a => a.subject_code)
         : [...new Set(assignments.map(a => a.subject_code))];
-      return allSubjects.filter(s => codes.includes(s.id));
+      return subjectsPool.filter(s => codes.includes(s.id));
     }
 
     const linked = user.linked_subjects || [];
 
     // Empty or ALL means all subjects (form teachers)
-    if (linked.length === 0) return allSubjects;
+    if (linked.length === 0) return subjectsPool;
 
     // linked_subjects now stores subject IDs (eng, mth, ict etc.)
-    // Filter allSubjects to only those whose ID is in linked_subjects
-    return allSubjects.filter(s => linked.includes(s.id));
+    // Filter subjectsPool to only those whose ID is in linked_subjects
+    return subjectsPool.filter(s => linked.includes(s.id));
   }
 
   /* Can this user EDIT scores? (read-only for Head Teacher unless assigned as teacher) */

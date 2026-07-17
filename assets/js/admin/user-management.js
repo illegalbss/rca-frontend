@@ -10,7 +10,9 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
   const allClasses  = window.SCHOOL_CLASSES  || [];
-  const allSubjects = window.SCHOOL_SUBJECTS || [];
+  // Combined + deduplicated so a teacher assigned to both a Basic and a
+  // Nursery class can be given subjects from either curriculum here.
+  const allSubjects = window.ALL_SUBJECTS_COMBINED || window.SCHOOL_SUBJECTS || [];
 
   const cu       = window.CURRENT_USER;
   const cuRoles  = cu ? (cu.roles || [cu.role || cu.primary_role || '']) : [];

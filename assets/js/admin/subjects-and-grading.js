@@ -46,6 +46,56 @@
     { id: 'hist', name: 'History' }
   ];
 
+  // Nursery section (Pre-Nursery 1/2, Nursery 1-3) runs a different
+  // curriculum from Basic 1-6 — matches the school's actual Nursery exam
+  // timetable. Where a subject is genuinely the same thing taught at both
+  // levels (Mathematics, Quantitative/Verbal Reasoning, Phonics, Writing,
+  // Spelling, Asusu Igbo) it reuses the SAME id as SCHOOL_SUBJECTS so
+  // scores/report cards resolve to one shared subjects-table row; subjects
+  // unique to Nursery (Nursery Science, Rhymes and Moral Instruction, Bible
+  // Knowledge, Social Habit, English Studies, Fine Art, Reading Skills) get
+  // their own ids so they don't collide with the Basic-only equivalents
+  // (e.g. 'nsci' vs Basic Science's 'sci').
+  window.NURSERY_SUBJECTS = [
+    { id: 'engst', name: 'English Studies' },
+    { id: 'phon', name: 'Phonics' },
+    { id: 'read', name: 'Reading Skills' },
+    { id: 'spell', name: 'Spelling' },
+    { id: 'writ', name: 'Writing' },
+    { id: 'mth', name: 'Mathematics' },
+    { id: 'qr', name: 'Quantitative Reasoning' },
+    { id: 'vr', name: 'Verbal Reasoning' },
+    { id: 'nsci', name: 'Nursery Science' },
+    { id: 'rhyme', name: 'Rhymes and Moral Instruction' },
+    { id: 'bible', name: 'Bible Knowledge' },
+    { id: 'schab', name: 'Social Habit' },
+    { id: 'finart', name: 'Fine Art' },
+    { id: 'igbo', name: 'Asusu Igbo' }
+  ];
+
+  // "Nursery" substring catches Pre-Nursery 1/2 too — same heuristic
+  // already used elsewhere in the codebase (e.g. classes.js).
+  window.isNurseryClass = function (className) {
+    return !!className && className.includes('Nursery');
+  };
+
+  // className is optional — pass none to get the combined, deduplicated
+  // list (used where no specific class is selected yet, e.g. assigning a
+  // teacher's linked_subjects before they've picked a class).
+  window.getSubjectsForClass = function (className) {
+    if (!className) return window.ALL_SUBJECTS_COMBINED;
+    return window.isNurseryClass(className) ? window.NURSERY_SUBJECTS : window.SCHOOL_SUBJECTS;
+  };
+
+  window.ALL_SUBJECTS_COMBINED = (function () {
+    const seen = new Set();
+    const combined = [];
+    [...window.SCHOOL_SUBJECTS, ...window.NURSERY_SUBJECTS].forEach(s => {
+      if (!seen.has(s.id)) { seen.add(s.id); combined.push(s); }
+    });
+    return combined;
+  })();
+
   // CA component max scores - these four ALWAYS sum to 40.
   // Exposed as one object so score-entry.html's form inputs can
   // set their own "max" attribute directly from these values,

@@ -14,7 +14,7 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-  const allSubjects = window.SCHOOL_SUBJECTS || [];
+  const allSubjects = window.ALL_SUBJECTS_COMBINED || window.SCHOOL_SUBJECTS || [];
   function subjectLabel(code) {
     var s = allSubjects.find(function (x) { return x.id === code; });
     return s ? s.name : code;
