@@ -154,6 +154,10 @@
               <option value="term3">Third Term</option>
             </select>
           </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:#374151;flex-shrink:0;cursor:pointer;padding-bottom:7px">
+            <input type="checkbox" id="debtorGroupByClass">
+            Group by class (for printing)
+          </label>
           <button class="btn btn-outline btn-sm" id="exportDebtorsCSV" style="flex-shrink:0">&#8595; Export CSV</button>
         </div>
 
@@ -169,10 +173,63 @@
                 <th>Paid</th>
                 <th>Balance Owed</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th class="no-print">Action</th>
               </tr>
             </thead>
             <tbody id="outstandingBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Sibling / Discounted Fees management -->
+      <div class="outstanding-card">
+        <div class="outstanding-card-header">
+          <h3>&#128106; Sibling / Discounted Fees</h3>
+          <span id="discountCount" style="font-size:var(--fs-sm);color:var(--color-text-muted)"></span>
+        </div>
+        <p class="no-print" style="padding:12px 20px 0;font-size:0.78rem;color:#6b7280">
+          The discount is normally auto-detected by matching parent phone numbers (3+ active children on file = sibling
+          discount). If that misses or wrongly catches a family — a typo'd number, a step-parent using a different
+          phone for one child, etc. — force it on or off per child below instead of guessing at the till.
+        </p>
+
+        <div class="no-print" style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div class="form-group" style="margin:0;flex:1;min-width:160px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Search by Name</label>
+            <input type="text" id="discountSearch" class="form-control" placeholder="Type student name…" style="padding:7px 10px;font-size:0.82rem">
+          </div>
+          <div class="form-group" style="margin:0;min-width:140px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Class</label>
+            <select id="discountClass" class="form-control" style="padding:7px 10px;font-size:0.82rem">
+              <option value="">All Classes</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;min-width:170px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Show</label>
+            <select id="discountFilter" class="form-control" style="padding:7px 10px;font-size:0.82rem">
+              <option value="">Everyone</option>
+              <option value="siblings">Sibling groups only (2+ on same phone)</option>
+              <option value="discounted">Currently receiving discount</option>
+              <option value="overridden">Manually overridden</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto">
+          <table class="finance-table" id="discountTable">
+            <thead>
+              <tr>
+                <th>Admission No.</th>
+                <th>Student Name</th>
+                <th>Class</th>
+                <th>Parent</th>
+                <th>Phone</th>
+                <th>Auto-detected</th>
+                <th>Discount Applied</th>
+                <th class="no-print">Override</th>
+              </tr>
+            </thead>
+            <tbody id="discountBody"></tbody>
           </table>
         </div>
       </div>
@@ -361,9 +418,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('outstandingCount').textContent =
       `${rows.length} student-term${rows.length !== 1 ? 's' : ''} with outstanding balance`;
 
-    document.getElementById('outstandingBody').innerHTML = rows.length === 0
-      ? '<tr><td colspan="9" style="text-align:center;color:var(--color-success);padding:2rem">&#10004; No outstanding balances for the selected filter.</td></tr>'
-      : rows.map(r => `
+    const groupByClass = document.getElementById('debtorGroupByClass').checked;
+    const orderedRows = groupByClass
+      ? [...rows].sort((a, b) => a.class_name.localeCompare(b.class_name) || a.full_name.localeCompare(b.full_name))
+      : rows;
+
+    const debtorRowHtml = r => `
         <tr>
           <td style="font-size:0.78rem">${r.admission_no}</td>
           <td style="font-weight:600">${r.full_name}</td>
@@ -373,14 +433,34 @@ document.addEventListener('DOMContentLoaded', () => {
           <td class="amount-col">${fmt(r.amount_paid)}</td>
           <td class="amount-col balance-col" style="color:#dc2626;font-weight:700">${fmt(r.balance)}</td>
           <td><span class="${BADGE[r.status]}">${r.status === 'unpaid' ? 'Not Paid' : 'Part Paid'}</span></td>
-          <td>
+          <td class="no-print">
             <a href="payments.html?adm=${encodeURIComponent(r.admission_no)}&term=${r.term}"
                class="btn btn-outline btn-sm" style="font-size:0.72rem;padding:3px 10px">
               Record Payment
             </a>
           </td>
         </tr>
-      `).join('');
+      `;
+
+    let bodyHtml;
+    if (rows.length === 0) {
+      bodyHtml = '<tr><td colspan="9" style="text-align:center;color:var(--color-success);padding:2rem">&#10004; No outstanding balances for the selected filter.</td></tr>';
+    } else if (groupByClass) {
+      let lastClass = null;
+      bodyHtml = orderedRows.map(r => {
+        let header = '';
+        if (r.class_name !== lastClass) {
+          lastClass = r.class_name;
+          const classTotal = orderedRows.filter(x => x.class_name === r.class_name).reduce((s, x) => s + x.balance, 0);
+          header = `<tr class="debtor-class-header"><td colspan="9">${r.class_name} — ${fmt(classTotal)} outstanding</td></tr>`;
+        }
+        return header + debtorRowHtml(r);
+      }).join('');
+    } else {
+      bodyHtml = orderedRows.map(debtorRowHtml).join('');
+    }
+
+    document.getElementById('outstandingBody').innerHTML = bodyHtml;
   }
 
   // Live search (debounced on input, immediate on select change)
@@ -389,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(searchDebounce);
     searchDebounce = setTimeout(renderDebtors, 400);
   });
-  ['debtorClass','debtorStatus','debtorTerm'].forEach(id => {
+  ['debtorClass','debtorStatus','debtorTerm','debtorGroupByClass'].forEach(id => {
     document.getElementById(id).addEventListener('change', renderDebtors);
   });
 
@@ -407,8 +487,98 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click(); URL.revokeObjectURL(url);
   });
 
+  /* ── Sibling / Discounted Fees management ── */
+  const discountClassSel = document.getElementById('discountClass');
+  allClasses.forEach(c => {
+    const o = document.createElement('option'); o.value = c; o.textContent = c;
+    discountClassSel.appendChild(o);
+  });
+
+  let discountCache = [];
+
+  async function fetchDiscountManagement() {
+    if (!window.RCA_API) return [];
+    try {
+      const data = await window.RCA_API.call('/payments/discount-management');
+      return data.students || [];
+    } catch (e) {
+      console.warn('Could not load discount management data:', e.message);
+      return [];
+    }
+  }
+
+  function renderDiscountTable() {
+    const classFilter  = document.getElementById('discountClass').value;
+    const showFilter   = document.getElementById('discountFilter').value;
+    const nameQ        = document.getElementById('discountSearch').value.trim().toLowerCase();
+
+    let rows = discountCache;
+    if (classFilter) rows = rows.filter(r => r.class_name === classFilter);
+    if (nameQ) rows = rows.filter(r => r.full_name.toLowerCase().includes(nameQ));
+    if (showFilter === 'siblings')   rows = rows.filter(r => r.auto_sibling_count >= 2);
+    if (showFilter === 'discounted') rows = rows.filter(r => r.effective_discount);
+    if (showFilter === 'overridden') rows = rows.filter(r => r.override !== null && r.override !== undefined);
+
+    document.getElementById('discountCount').textContent =
+      `${rows.length} student${rows.length !== 1 ? 's' : ''}`;
+
+    document.getElementById('discountBody').innerHTML = rows.length === 0
+      ? '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:2rem">No students match this filter.</td></tr>'
+      : rows.map(r => `
+        <tr>
+          <td style="font-size:0.78rem">${r.admission_no}</td>
+          <td style="font-weight:600">${r.full_name}</td>
+          <td>${r.class_name}</td>
+          <td>${r.parent_name || '—'}</td>
+          <td style="font-size:0.78rem">${r.parent_phone || '—'}</td>
+          <td>${r.auto_sibling_count} sibling${r.auto_sibling_count !== 1 ? 's' : ''}${r.auto_discount ? ' — qualifies' : ''}</td>
+          <td><span class="${r.effective_discount ? 'badge-paid' : 'badge-unpaid'}">${r.effective_discount ? 'Yes' : 'No'}</span>${r.override !== null && r.override !== undefined ? ' <span style="font-size:0.68rem;color:#9ca3af">(manual)</span>' : ''}</td>
+          <td class="no-print">
+            <select class="form-control discount-override-select" data-admission="${r.admission_no}" style="padding:5px 8px;font-size:0.78rem">
+              <option value="auto"${r.override === null || r.override === undefined ? ' selected' : ''}>Auto-detect</option>
+              <option value="on"${r.override === true ? ' selected' : ''}>Force discount ON</option>
+              <option value="off"${r.override === false ? ' selected' : ''}>Force discount OFF</option>
+            </select>
+          </td>
+        </tr>
+      `).join('');
+
+    document.querySelectorAll('.discount-override-select').forEach(sel => {
+      sel.addEventListener('change', async () => {
+        const admissionNo = sel.getAttribute('data-admission');
+        const val = sel.value === 'auto' ? null : (sel.value === 'on');
+        sel.disabled = true;
+        try {
+          await window.RCA_API.call(`/payments/discount-override/${encodeURIComponent(admissionNo)}`, {
+            method: 'PUT', body: { override: val }
+          });
+          discountCache = await fetchDiscountManagement();
+          renderDiscountTable();
+        } catch (e) {
+          alert('Could not update: ' + e.message);
+          sel.disabled = false;
+        }
+      });
+    });
+  }
+
+  async function initDiscountSection() {
+    discountCache = await fetchDiscountManagement();
+    renderDiscountTable();
+  }
+
+  let discountSearchDebounce;
+  document.getElementById('discountSearch').addEventListener('input', () => {
+    clearTimeout(discountSearchDebounce);
+    discountSearchDebounce = setTimeout(renderDiscountTable, 300);
+  });
+  ['discountClass','discountFilter'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderDiscountTable);
+  });
+
   document.getElementById('applyReportFilter').addEventListener('click', render);
   render();
+  initDiscountSection();
 });
 </script>
 </body>

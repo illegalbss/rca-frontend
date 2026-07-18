@@ -303,6 +303,7 @@
           <div class="form-group">
             <label>Amount Being Paid (&#8358;) *</label>
             <input type="number" id="payAmount" class="form-control" placeholder="Enter amount" min="1">
+            <div id="payTypeIndicator" style="margin-top:6px;font-size:0.75rem;font-weight:700"></div>
           </div>
           <div class="form-group">
             <label>Payment Method *</label>
@@ -410,6 +411,27 @@ document.addEventListener('DOMContentLoaded', async function () {
   var currentAdmNo = '';
   var currentTerm  = '';
   var currentLookup = null;
+
+  // Live "will this be a full or part payment" indicator — the actual
+  // paid/partial status is already computed the same way at save time
+  // (see savePayment below); this just surfaces it BEFORE the accountant
+  // commits, instead of only finding out after the receipt is generated.
+  function updatePayTypeIndicator() {
+    var el = document.getElementById('payTypeIndicator');
+    if (!el || !currentLookup) { if (el) el.textContent = ''; return; }
+    var amount = parseFloat(document.getElementById('payAmount').value) || 0;
+    if (amount <= 0) { el.textContent = ''; return; }
+    var willBeFull = (currentLookup.amount_paid + amount) >= currentLookup.grand_total;
+    if (willBeFull) {
+      el.textContent = '✓ Full Payment — balance will be cleared';
+      el.style.color = '#16a34a';
+    } else {
+      var remaining = currentLookup.grand_total - (currentLookup.amount_paid + amount);
+      el.textContent = '⚠ Part Payment — ' + fmt(remaining) + ' will still be owing';
+      el.style.color = '#a0522d';
+    }
+  }
+  document.getElementById('payAmount').addEventListener('input', updatePayTypeIndicator);
 
   if (!window.SESSION_PAYMENTS) window.SESSION_PAYMENTS = [];
 
@@ -582,6 +604,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           document.getElementById('payParentName').value  = '';
           document.getElementById('payNotes').value       = '';
           document.getElementById('paymentFormCard').style.display = 'block';
+          updatePayTypeIndicator();
         }
       })
       .catch(function(e) {
@@ -701,7 +724,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         '<td class="amount-col">' + fmt(p.amount) + '</td>' +
         '<td>' + p.method + '</td>' +
         '<td style="font-size:0.78rem">' + (p.parent_name || '—') + '</td>' +
-        '<td><span class="' + (BADGE[p.status] || '') + '">' + p.status + '</span></td>' +
+        '<td><span class="' + (BADGE[p.status] || '') + '">' + (p.status === 'paid' ? 'Full Payment' : p.status === 'partial' ? 'Part Payment' : p.status) + '</span></td>' +
       '</tr>';
     }).join('');
   }
