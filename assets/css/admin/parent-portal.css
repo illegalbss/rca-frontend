@@ -775,6 +775,29 @@
 .pp-notice-card strong { display: block; font-size: 0.85rem; color: #92400e; margin-bottom: 6px; }
 .pp-notice-card p { font-size: 0.78rem; color: #92400e; line-height: 1.6; margin: 0; }
 
+/* Announcement/newsletter modal body — styles whatever HTML the rich-text
+   composer produced (section headings, bold, bullet lists) so a newsletter
+   reads as organized sections instead of one flat paragraph. */
+.pp-ann-body { font-size: 0.88rem; color: #374151; line-height: 1.7; }
+.pp-ann-body h1, .pp-ann-body h2, .pp-ann-body h3 {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: #1a3a5c;
+  font-weight: 700;
+  margin: 18px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #e2e8f0;
+}
+.pp-ann-body h1:first-child, .pp-ann-body h2:first-child, .pp-ann-body h3:first-child { margin-top: 0; }
+.pp-ann-body p { margin: 0 0 12px; }
+.pp-ann-body ul, .pp-ann-body ol { margin: 0 0 12px; padding-left: 22px; }
+.pp-ann-body li { margin-bottom: 4px; }
+.pp-ann-body strong, .pp-ann-body b { color: #111827; }
+.pp-ann-body table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 0.85rem; }
+.pp-ann-body th, .pp-ann-body td { text-align: left; padding: 7px 10px; border-bottom: 1px solid #f1f5f9; }
+.pp-ann-body th { color: #64748b; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.pp-ann-body td:last-child, .pp-ann-body th:last-child { text-align: right; }
+
 .pp-summary-row {
   display: flex;
   justify-content: space-between;

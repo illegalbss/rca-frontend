@@ -776,18 +776,65 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ============================================
      ANNOUNCEMENTS — both the dashboard widget and full page
      ============================================ */
+  // Cached by id so the "Read More" modal can look up the full item
+  // without re-fetching or stuffing raw HTML into an onclick attribute.
+  let announcementCache = {};
+
   async function getParentAnnouncements() {
     if (!window.RCA_API) return [];
     try {
       const data = await window.RCA_API.call('/announcements');
-      return (data.announcements || [])
+      const items = (data.announcements || [])
         .filter(a => a.status === 'published' && (a.audience || []).includes('parents'))
         .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+      items.forEach(a => { announcementCache[a.id] = a; });
+      return items;
     } catch (e) {
       console.warn('Could not load announcements:', e.message);
       return [];
     }
   }
+
+  // Strips tags for a clean preview snippet regardless of whether body is
+  // older plain text or rich HTML from the newsletter composer's toolbar.
+  function plainTextPreview(html, maxLen) {
+    const text = (html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    return text.length > maxLen ? text.slice(0, maxLen).trim() + '…' : text;
+  }
+
+  window.showAnnouncementModal = function (id) {
+    const a = announcementCache[id];
+    if (!a) return;
+    const typeColors = {
+      announcement: { color:'#1d4ed8', icon:'📢' },
+      urgent:       { color:'#dc2626', icon:'⚠️' },
+      newsletter:   { color:'#047857', icon:'📰' },
+    };
+    const tc = typeColors[a.type] || typeColors.announcement;
+
+    document.getElementById('ppAnnModal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'ppAnnModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:3000;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="background:${tc.color};padding:16px 22px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0;position:sticky;top:0">
+          <span style="color:#fff;font-weight:700;font-size:1rem">${tc.icon} ${a.title}</span>
+          <button id="ppAnnModalClose" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <div style="padding:24px 26px">
+          <div style="font-size:0.75rem;color:#9ca3af;margin-bottom:16px">
+            ${new Date(a.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}
+            ${a.issue ? ' • ' + a.issue : ''}
+          </div>
+          <div class="pp-ann-body">${a.body}</div>
+          ${a.author ? `<div style="margin-top:18px;padding-top:14px;border-top:1px solid #f1f5f9;font-size:0.82rem;color:#6b7280">— ${a.author}</div>` : ''}
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    document.getElementById('ppAnnModalClose').onclick = () => modal.remove();
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  };
 
   async function getUpcomingEvents() {
     if (!window.RCA_API) return [];
@@ -810,13 +857,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       newsletter:   { bg:'#f0fdf4', color:'#047857', icon:'📰' },
     };
     const tc = typeColors[a.type] || typeColors.announcement;
+    const preview = plainTextPreview(a.body, 160);
     return `
-      <div style="border-left:4px solid ${tc.color};background:${tc.bg};border-radius:8px;padding:12px 16px;margin-bottom:10px">
+      <div onclick="showAnnouncementModal(${a.id})" style="border-left:4px solid ${tc.color};background:${tc.bg};border-radius:8px;padding:12px 16px;margin-bottom:10px;cursor:pointer">
         <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px">
           <strong style="font-size:0.85rem;color:#111827">${tc.icon} ${a.title}</strong>
           <span style="font-size:0.7rem;color:#9ca3af;white-space:nowrap">${new Date(a.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span>
         </div>
-        <p style="font-size:0.8rem;color:#374151;line-height:1.5">${a.body}</p>
+        <p style="font-size:0.8rem;color:#374151;line-height:1.5;margin-bottom:6px">${preview}</p>
+        <span style="font-size:0.75rem;font-weight:700;color:${tc.color}">Read more →</span>
       </div>`;
   }
 
@@ -875,6 +924,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       items = (data.announcements || [])
         .filter(a => a.type === 'newsletter' && a.status === 'published')
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      items.forEach(n => { announcementCache[n.id] = n; });
     } catch (e) {
       grid.innerHTML = `<p style="color:#dc2626;font-size:0.85rem">Could not load newsletters: ${e.message}</p>`;
       return;
@@ -882,13 +932,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     grid.innerHTML = items.length
       ? items.map(n => `
-          <div class="pp-card" style="padding:18px;margin-bottom:14px">
+          <div class="pp-card" onclick="showAnnouncementModal(${n.id})" style="padding:18px;margin-bottom:14px;cursor:pointer">
             <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:8px">
               <strong style="font-size:0.95rem;color:#111827">📰 ${n.title}</strong>
               <span style="font-size:0.72rem;color:#9ca3af;white-space:nowrap">${new Date(n.created_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span>
             </div>
-            <p style="font-size:0.85rem;color:#374151;line-height:1.6;white-space:pre-wrap">${n.body}</p>
-            <div style="margin-top:10px;font-size:0.75rem;color:#6b7280">— ${n.author || 'Administration'}</div>
+            <p style="font-size:0.85rem;color:#374151;line-height:1.6">${plainTextPreview(n.body, 180)}</p>
+            <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:0.75rem;color:#6b7280">— ${n.author || 'Administration'}</span>
+              <span style="font-size:0.78rem;font-weight:700;color:#047857">Read full newsletter →</span>
+            </div>
           </div>`).join('')
       : '<p style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:24px">No newsletters published yet.</p>';
   }

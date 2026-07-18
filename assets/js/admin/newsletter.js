@@ -170,8 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const pubDate = nl.published_at
       ? new Date(nl.published_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
       : null;
-    const preview = (nl.body || '').split('\n').filter(l => l.trim().length > 10)[0]
-      || (nl.body || '').substring(0, 120);
+    // Strip tags first — body may be plain text (older newsletters) or
+    // rich HTML from the contenteditable composer (headings/bold/lists).
+    const plainBody = (nl.body || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const preview = plainBody.substring(0, 120);
 
     const btns = [];
     if (nl.status === 'draft' && canCreate) {
@@ -289,9 +291,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <div class="form-group" style="margin-bottom:16px">
             <label class="form-label">Content *</label>
-            <textarea id="nl_body" class="form-control" rows="12"
-              placeholder="Write the full newsletter here. Include school news, achievements, upcoming events, term highlights, etc.">${existing?.body || ''}</textarea>
-            <div style="font-size:0.75rem;color:#9ca3af;margin-top:4px">This content is stored permanently and will remain accessible in future years.</div>
+            <div style="display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;border:1px solid #d1d5db;border-bottom:none;border-radius:8px 8px 0 0;padding:6px;background:#f9fafb">
+              <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="h3" title="Section heading" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:0.78rem;font-weight:700">H</button>
+              <button type="button" class="rte-btn" data-cmd="bold" title="Bold" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:0.78rem;font-weight:700">B</button>
+              <button type="button" class="rte-btn" data-cmd="underline" title="Underline" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:0.78rem;text-decoration:underline">U</button>
+              <button type="button" class="rte-btn" data-cmd="insertUnorderedList" title="Bullet list" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:0.78rem">• List</button>
+              <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="p" title="Normal paragraph" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:0.78rem">¶</button>
+            </div>
+            <div id="nl_body" class="form-control" contenteditable="true"
+              style="min-height:220px;max-height:420px;overflow-y:auto;border-radius:0 0 8px 8px;line-height:1.6"
+              >${existing?.body || ''}</div>
+            <div style="font-size:0.75rem;color:#9ca3af;margin-top:4px">Use <strong>H</strong> for section titles (e.g. "Approved School Fees") and <strong>• List</strong> for the fee/uniform breakdowns — this is what makes it render as organized sections for parents, not one long paragraph. This content is stored permanently and will remain accessible in future years.</div>
           </div>
 
           <div class="form-group" style="margin-bottom:16px">
@@ -333,6 +343,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('closeNlModal2').onclick = close;
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
 
+    modal.querySelectorAll('.rte-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('nl_body').focus();
+        document.execCommand(btn.dataset.cmd, false, btn.dataset.value || null);
+      });
+    });
+
     function alertMsg(msg) {
       const el = document.getElementById('nlModalAlert');
       el.textContent = msg;
@@ -341,13 +358,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function save(submit, btnEl) {
       const title   = document.getElementById('nl_title').value.trim();
-      const body    = document.getElementById('nl_body').value.trim();
+      const body    = document.getElementById('nl_body').innerHTML.trim();
+      const bodyText = document.getElementById('nl_body').textContent.trim();
       const issue   = document.getElementById('nl_issue').value.trim();
       const author  = document.getElementById('nl_author').value.trim() || 'The Administration';
       const session = document.getElementById('nl_session').value.trim() || currentSession();
 
-      if (!title)   { alertMsg('Please enter a newsletter title.'); return; }
-      if (!body)    { alertMsg('Please enter the newsletter content.'); return; }
+      if (!title)    { alertMsg('Please enter a newsletter title.'); return; }
+      if (!bodyText) { alertMsg('Please enter the newsletter content.'); return; }
       if (!session) { alertMsg('Please enter the academic session (e.g. 2025/2026).'); return; }
 
       const audience = [];
