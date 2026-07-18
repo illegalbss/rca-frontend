@@ -1346,6 +1346,14 @@ html, body { height: 100%; }
   padding: 10px 16px 10px 40px !important;
 }
 
+/* Activity Logs' search icon was getting covered by typed text — the
+   blanket .form-control padding !important above (line ~1256) beats
+   communications.css's own .comm-search-wrap .form-control padding-left
+   rule regardless of selector specificity, since neither used !important. */
+.comm-search-wrap .form-control {
+  padding: 10px 16px 10px 40px !important;
+}
+
 
 /* ---- Force badge display in topbar ---- */
 #userAvatar {
