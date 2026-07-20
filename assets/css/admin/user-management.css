@@ -518,4 +518,19 @@
      every other one (staff vs parent) right before calling window.print(),
      so there's nothing left for CSS to guess about at print time. */
   .admin-content { margin-left: 0 !important; }
+
+  /* Pin A4 explicitly — without this the browser falls back to whatever
+     the OS/printer driver defaults to (often Letter), which can mismatch
+     a tray loaded with A4 and get reported as a paper problem instead of
+     a size mismatch. Matches the convention already used for report
+     cards elsewhere in this app. */
+  @page { size: A4 portrait; margin: 1cm; }
+
+  /* A parent/staff list can run to 100+ rows — at the on-screen row
+     height that's several pages, easy to run out of loaded paper on.
+     Print rows tighter so more fit per sheet. */
+  .credentials-table { font-size: 0.72rem; }
+  .credentials-table th,
+  .credentials-table td { padding: 4px 10px; }
+  .um-cred-header { padding: 8px 10px; }
 }
