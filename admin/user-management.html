@@ -152,6 +152,9 @@
           </div>
           <button onclick="printCredSection('credentialsSection')" class="btn btn-outline btn-sm" style="font-size:0.78rem">🖨 Print</button>
         </div>
+        <div class="no-print" style="padding:12px 18px 0">
+          <input type="text" id="credSearch" class="form-control" placeholder="Search staff by name or email…" style="max-width:320px">
+        </div>
         <table class="credentials-table">
           <thead>
             <tr><th>Staff ID</th><th>Full Name</th><th>Job Title</th><th>Login Email</th><th>Status</th></tr>
@@ -185,6 +188,9 @@
             <div class="um-cred-sub">Login emails for all parent accounts — distribute to parents alongside their children's admission details</div>
           </div>
           <button onclick="printCredSection('parentCredentialsSection')" class="btn btn-outline btn-sm" style="font-size:0.78rem">🖨 Print</button>
+        </div>
+        <div class="no-print" style="padding:12px 18px 0">
+          <input type="text" id="parentCredSearch" class="form-control" placeholder="Search parents by name, email or child…" style="max-width:320px">
         </div>
         <table class="credentials-table">
           <thead>

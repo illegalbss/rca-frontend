@@ -110,11 +110,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     `).join('');
   }
 
+  // Both credential lists can run to 100+ rows, sorted alphabetically by
+  // whatever's literally stored in full_name — a name typed as "Mr Umeh
+  // Godwin" sorts under M, not U, so scanning by eye for a specific
+  // person is unreliable. A search box that matches name/email/child
+  // (not just how the list happens to be sorted) is the fix.
   function renderCredentials() {
     const body = document.getElementById('credentialsBody');
     if (!body) return;
-    const staff = allUsers.filter(u => u.primary_role !== 'parent');
-    body.innerHTML = staff.map(u => `
+    const q = (document.getElementById('credSearch')?.value || '').trim().toLowerCase();
+    const staff = allUsers
+      .filter(u => u.primary_role !== 'parent')
+      .filter(u => !q || u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
+    body.innerHTML = staff.length ? staff.map(u => `
       <tr>
         <td>${u.staff_id || '—'}</td>
         <td>${u.full_name}</td>
@@ -122,13 +130,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         <td>${u.email}</td>
         <td>${u.status}</td>
       </tr>
-    `).join('');
+    `).join('') : '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px">No staff match this search.</td></tr>';
   }
 
   function renderParentCredentials() {
     const body = document.getElementById('parentCredentialsBody');
     if (!body) return;
-    body.innerHTML = allRealParents.map(p => {
+    const q = (document.getElementById('parentCredSearch')?.value || '').trim().toLowerCase();
+    const rows = allRealParents.filter(p => {
+      if (!q) return true;
+      const children = p.children || [];
+      return p.full_name.toLowerCase().includes(q)
+        || p.email.toLowerCase().includes(q)
+        || children.some(c => c.full_name.toLowerCase().includes(q));
+    });
+    body.innerHTML = rows.length ? rows.map(p => {
       const children = p.children || [];
       const childrenText = children.length
         ? children.map(c => `${c.full_name} (${c.class_name})`).join(', ')
@@ -141,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <td>${childrenText}</td>
           <td>${p.status}</td>
         </tr>`;
-    }).join('');
+    }).join('') : '<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:20px">No parents match this search.</td></tr>';
   }
 
   async function refreshAll() {
@@ -155,6 +171,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener(id === 'umSearch' ? 'input' : 'change', renderUserTable);
   });
+
+  document.getElementById('credSearch')?.addEventListener('input', renderCredentials);
+  document.getElementById('parentCredSearch')?.addEventListener('input', renderParentCredentials);
 
   const credToggle = document.getElementById('umCredentialsToggleBtn');
   if (credToggle) {

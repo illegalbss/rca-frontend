@@ -512,7 +512,7 @@
 
 @media print {
   .um-toolbar, .um-stats, .um-card,
-  .admin-sidebar, .admin-topbar, .um-actions { display: none !important; }
+  .admin-sidebar, .admin-topbar, .um-actions, .no-print { display: none !important; }
   /* No forced display here — printCredSection() in user-management.js
      explicitly shows exactly the requested .um-cred-section and hides
      every other one (staff vs parent) right before calling window.print(),
