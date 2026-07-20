@@ -172,6 +172,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Printing whichever .um-cred-section happened to be toggled open was
+  // fragile — if both the staff and parent sections were ever open at
+  // once (or neither), the print output wouldn't reliably match what was
+  // clicked. This forces exactly the requested section visible and every
+  // other .um-cred-section hidden for the print, then restores whatever
+  // was on screen before once the print dialog closes.
+  window.printCredSection = function (sectionId) {
+    document.querySelectorAll('.um-cred-section').forEach(el => {
+      el.dataset.prevDisplay = el.style.display;
+      el.style.display = (el.id === sectionId) ? 'block' : 'none';
+    });
+    const restore = () => {
+      document.querySelectorAll('.um-cred-section').forEach(el => {
+        el.style.display = el.dataset.prevDisplay || 'none';
+      });
+      window.removeEventListener('afterprint', restore);
+    };
+    window.addEventListener('afterprint', restore);
+    window.print();
+  };
+
   /* ============================================================
      CREATE / EDIT MODAL
      ============================================================ */

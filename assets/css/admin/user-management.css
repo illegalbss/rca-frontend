@@ -513,10 +513,9 @@
 @media print {
   .um-toolbar, .um-stats, .um-card,
   .admin-sidebar, .admin-topbar, .um-actions { display: none !important; }
-  /* Deliberately no forced display:block here — there are now two
-     .um-cred-section blocks (staff, parent). Printing should reflect
-     whichever one is currently toggled open on screen (its own Print
-     button only becomes reachable once it is), not force both to show
-     regardless of which the admin actually wants. */
+  /* No forced display here — printCredSection() in user-management.js
+     explicitly shows exactly the requested .um-cred-section and hides
+     every other one (staff vs parent) right before calling window.print(),
+     so there's nothing left for CSS to guess about at print time. */
   .admin-content { margin-left: 0 !important; }
 }
