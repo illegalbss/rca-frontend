@@ -524,7 +524,7 @@
      a tray loaded with A4 and get reported as a paper problem instead of
      a size mismatch. Matches the convention already used for report
      cards elsewhere in this app. */
-  @page { size: A4 portrait; margin: 1cm; }
+  @page { size: A4; margin: 1cm; }
 
   /* A parent/staff list can run to 100+ rows — at the on-screen row
      height that's several pages, easy to run out of loaded paper on.
