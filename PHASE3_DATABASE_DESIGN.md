@@ -777,7 +777,7 @@ ORDER BY subject_code;
 -- 2. Check if a teacher can enter scores for a class/subject
 SELECT 1 FROM teacher_assignments ta
 JOIN users u ON u.id = ta.user_id
-WHERE u.email = 'chiamaka.nnaji@royalcrystalacademy.edu.ng'
+WHERE u.email = 'chiamaka.nnaji@royalcrystalacademy.com'
   AND ta.class_id = (SELECT id FROM classes WHERE name = 'Basic 4')
   AND ta.subject_id = (SELECT id FROM subjects WHERE code = 'eng');
 

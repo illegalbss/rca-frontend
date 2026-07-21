@@ -91,7 +91,7 @@
       legacy_role: legacyLabel,
       assigned_classes: assignedClasses,
       subjects,
-      email: extras.email || `${nameParts[0]}.${nameParts[nameParts.length-1]}@royalcrystalacademy.edu.ng`,
+      email: extras.email || `${nameParts[0]}.${nameParts[nameParts.length-1]}@royalcrystalacademy.com`,
       phone: `080${Math.floor(10000000 + Math.random()*89999999)}`,
       date_joined: '2022-09-01',
       status: 'active',
@@ -107,17 +107,17 @@
 
     staff('Ada Nwankwo', ['head_teacher'], [], [],
       { job_title: 'Head Teacher',
-        email: 'headteacher@royalcrystalacademy.edu.ng' }),
+        email: 'headteacher@royalcrystalacademy.com' }),
 
     staff('Chukwuma Joseph', ['ict_admin'], [], [],
       { job_title: 'Proprietor',
-        email: 'proprietor@royalcrystalacademy.edu.ng' }),
+        email: 'proprietor@royalcrystalacademy.com' }),
 
     staff('Chukwuma Izuchukwu', ['ict_admin','subject_teacher'],
       [...ALL_BASIC_CLASSES, ...NURSERY_CLASSES],
       ['Computer'],
       { job_title: 'ICT Administrator',
-        email: 'ictadmin@royalcrystalacademy.edu.ng' }),
+        email: 'ictadmin@royalcrystalacademy.com' }),
 
     staff('Chukwuma Nonso', ['accountant'], [], [],
       { job_title: 'Accountant',

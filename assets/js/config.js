@@ -20,7 +20,7 @@
   : 'https://rca-backend-five.vercel.app/api',
 
     SCHOOL_NAME:   'Royal Crystal Academy',
-    SCHOOL_DOMAIN: 'royalcrystalacademy.edu.ng',
+    SCHOOL_DOMAIN: 'royalcrystalacademy.com',
     SESSION:       '2025/2026',
     CURRENT_TERM:  'term2',
 

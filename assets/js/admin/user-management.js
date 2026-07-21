@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (parts.length === 0) return '';
     const first = parts[0].replace(/[^a-z]/g, '');
     const last  = parts[parts.length - 1].replace(/[^a-z]/g, '');
-    return `${first}.${last}@royalcrystalacademy.edu.ng`;
+    return `${first}.${last}@${window.RCA_CONFIG?.SCHOOL_DOMAIN || 'royalcrystalacademy.com'}`;
   }
 
   function openCreateModal() {
