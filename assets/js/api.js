@@ -76,10 +76,12 @@
     }
   }
 
-  async function saveClassReview(studentId, term, ratings, comment) {
+  async function saveClassReview(studentId, term, ratings, comment, nursery_record) {
+    const body = { term, ratings, comment };
+    if (nursery_record) body.nursery_record = nursery_record;
     return apiCall(`/students/${encodeURIComponent(studentId)}/review`, {
       method: 'PUT',
-      body: { term, ratings, comment }
+      body
     });
   }
 

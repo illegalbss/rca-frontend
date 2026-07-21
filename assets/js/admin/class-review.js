@@ -22,6 +22,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   const traits         = window.BEHAVIOR_TRAITS || [];
   const ratingScale     = window.RATING_SCALE || [];
   const scoreToGrade      = window.scoreToGrade;
+  const isNurseryClass    = window.isNurseryClass || (c => !!c && c.includes('Nursery'));
+
+  const NURSERY_FIELDS = [
+    ['breakfast_lunch', 'Breakfast/Lunch'],
+    ['dressing', 'Dressing'],
+    ['siesta', 'Siesta'],
+    ['learning_ability', 'Learning Ability'],
+    ['positive_traits', 'Positive Personality Traits'],
+    ['negative_traits', 'Negative Traits']
+  ];
 
   // Cache of admission_no -> results for the current term, populated
   // on demand so the pupil list and the open pupil panel don't refetch.
@@ -159,6 +169,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const student = allStudents.find(s => s.admission_no === admissionNo);
     const data = await getReview(admissionNo, term);
     const scores = data?.scores || [];
+    const isNursery = isNurseryClass(student.class_name);
+    const nurseryRecord = data?.nursery_record || {};
 
     const ratingsMap = {};
     (data?.behavior || []).forEach(b => { ratingsMap[b.trait_code] = b.rating; });
@@ -226,6 +238,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         </table>
       </details>
 
+      ${isNursery ? `
+      <div class="traits-section">
+        <h4>Cognitive &amp; Behavioural Records</h4>
+        <p style="font-size:0.78rem;color:#6b7280;margin-bottom:12px">Nursery classes use this instead of the 1-5 trait ratings — matches the school's paper Nursery report card.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          ${NURSERY_FIELDS.map(([key, label]) => `
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.8rem">${label}</label>
+              <textarea class="form-control nursery-field-input" data-field="${key}" rows="2" style="font-size:0.85rem">${nurseryRecord[key] || ''}</textarea>
+            </div>
+          `).join('')}
+          <div class="form-group">
+            <label class="form-label" style="font-size:0.8rem">Number of Times School Opened</label>
+            <input type="number" class="form-control nursery-field-input" data-field="times_school_opened" value="${nurseryRecord.times_school_opened ?? ''}">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:0.8rem">Number of Times Present</label>
+            <input type="number" class="form-control nursery-field-input" data-field="times_present" value="${nurseryRecord.times_present ?? ''}">
+          </div>
+        </div>
+      </div>
+      ` : `
       <div class="traits-section">
         <h4>Behavioral &amp; Affective Ratings</h4>
         <div class="ratings-scale-legend">
@@ -234,6 +268,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div class="traits-grid">${traitsHTML}</div>
       </div>
+      `}
 
       <div class="comment-section">
         <h4>Class Teacher's Comment</h4>
@@ -262,14 +297,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     });
 
+    reviewPanel.querySelectorAll('.nursery-field-input').forEach(el => {
+      el.addEventListener('input', () => saveStatus_set('Unsaved changes', 'unsaved'));
+    });
+
     /* Save this pupil button */
     document.getElementById('savePupilBtn').addEventListener('click', async () => {
       const comment = document.getElementById('teacherComment').value.trim();
       const saveBtn = document.getElementById('savePupilBtn');
       saveBtn.disabled = true;
 
+      let nurseryPayload;
+      if (isNursery) {
+        nurseryPayload = {};
+        reviewPanel.querySelectorAll('.nursery-field-input').forEach(el => {
+          const field = el.getAttribute('data-field');
+          if (field === 'times_school_opened' || field === 'times_present') {
+            nurseryPayload[field] = el.value === '' ? null : Number(el.value);
+          } else {
+            nurseryPayload[field] = el.value.trim();
+          }
+        });
+      }
+
       try {
-        await window.RCA_API.saveClassReview(admissionNo, term, ratingRecord.ratings, comment);
+        await window.RCA_API.saveClassReview(admissionNo, term, ratingRecord.ratings, comment, nurseryPayload);
       } catch (e) {
         saveBtn.disabled = false;
         saveStatus_set('Save failed: ' + e.message, 'unsaved');
