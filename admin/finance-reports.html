@@ -322,6 +322,19 @@
         </div>
       </div>
     </div>
+
+    <!-- Student Financial Profile modal -->
+    <div id="finProfileModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:720px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="background:#1a3a5c;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0;position:sticky;top:0;z-index:1">
+          <span style="color:#fff;font-weight:700;font-size:1rem">📄 Student Financial Profile</span>
+          <button id="closeFinProfileModal" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <div style="padding:22px" id="finProfileBody">
+          <p style="font-size:0.85rem;color:#9ca3af">Loading…</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -621,12 +634,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${r.sibling_count} ${r.sibling_count === 1 ? 'child' : 'children'} on file${r.sibling_count >= 3 ? ' ⚠' : ''}</td>
           <td><span class="${r.has_approved_discount ? 'badge-paid' : 'badge-unpaid'}">${r.has_approved_discount ? 'Yes' : 'No'}</span></td>
           <td class="no-print" style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm fin-profile-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" style="font-size:0.72rem;padding:4px 10px">📄 Profile</button>
             <button class="btn btn-outline btn-sm fee-cat-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" data-category="${r.fee_category}" style="font-size:0.72rem;padding:4px 10px">💰 Fee Structure</button>
             <button class="btn btn-outline btn-sm fee-adj-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" style="font-size:0.72rem;padding:4px 10px">🏷 Discount</button>
           </td>
         </tr>
       `).join('');
 
+    document.querySelectorAll('.fin-profile-btn').forEach(btn => {
+      btn.addEventListener('click', () => openFinancialProfile(btn.dataset.admission));
+    });
     document.querySelectorAll('.fee-cat-btn').forEach(btn => {
       btn.addEventListener('click', () => openFeeCategoryModal(btn.dataset.admission, btn.dataset.name, btn.dataset.category));
     });
@@ -781,6 +798,100 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     btn.disabled = false;
   });
+
+  /* ── Student Financial Profile modal ── */
+  const STATUS_LABEL = { paid: 'Fully Paid', partial: 'Partially Paid', unpaid: 'Unpaid' };
+
+  async function openFinancialProfile(admissionNo) {
+    document.getElementById('finProfileModal').style.display = 'flex';
+    const body = document.getElementById('finProfileBody');
+    body.innerHTML = '<p style="font-size:0.85rem;color:#9ca3af">Loading…</p>';
+    try {
+      const data = await window.RCA_API.call(`/payments/financial-profile/${encodeURIComponent(admissionNo)}`);
+      renderFinancialProfile(data);
+    } catch (e) {
+      body.innerHTML = `<p style="font-size:0.85rem;color:#dc2626">Could not load: ${e.message}</p>`;
+    }
+  }
+  function closeFinancialProfile() { document.getElementById('finProfileModal').style.display = 'none'; }
+  document.getElementById('closeFinProfileModal').addEventListener('click', closeFinancialProfile);
+
+  function renderFinancialProfile(data) {
+    const s = data.student;
+
+    const termCards = ['term1', 'term2', 'term3'].map(term => {
+      const b = data.breakdown[term];
+      if (!b) {
+        return `
+          <div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px">
+            <div style="font-weight:700;font-size:0.85rem;margin-bottom:6px">${TERM_LABELS[term]}</div>
+            <p style="font-size:0.78rem;color:#9ca3af;margin:0">No fee schedule set for this term.</p>
+          </div>`;
+      }
+      const lineRows = (b.lines || []).map(l => `
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:2px 0">
+          <span>${l.label}</span><span>${fmt(l.amount)}</span>
+        </div>`).join('');
+      const adjRows = (b.adjustments || []).map(a => {
+        const isCharge = a.adjustment_type === 'additional_charge';
+        return `
+          <div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:2px 0;color:${isCharge ? '#dc2626' : '#059669'}">
+            <span>${a.description || a.adjustment_type.replace('_', ' ')}</span><span>${isCharge ? '+' : '-'}${fmt(a.amount)}</span>
+          </div>`;
+      }).join('');
+      return `
+        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-weight:700;font-size:0.85rem">${TERM_LABELS[term]}</span>
+            <span class="${BADGE[b.status]}">${STATUS_LABEL[b.status]}</span>
+          </div>
+          ${lineRows}
+          <div style="border-top:1px dashed #e5e7eb;margin:6px 0"></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;padding:2px 0"><span>Gross Total</span><span>${fmt(b.gross_total)}</span></div>
+          ${adjRows}
+          <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;padding:4px 0;color:#1a3a5c"><span>Net Total (School Fees)</span><span>${fmt(b.net_total)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:2px 0"><span>Total Paid</span><span>${fmt(b.amount_paid)}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:2px 0;font-weight:600;color:${b.balance > 0 ? '#dc2626' : '#059669'}"><span>Outstanding Balance</span><span>${fmt(b.balance)}</span></div>
+          ${b.ict_fee_amount ? `
+          <div style="border-top:1px solid #f1f5f9;margin:10px 0 6px;padding-top:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem">
+              <span style="font-weight:600;color:#6b7280">ICT / Portal Fee (tracked separately from School Fees)</span>
+              <span class="${BADGE[b.ict_fee_status]}">${STATUS_LABEL[b.ict_fee_status]}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#6b7280;padding:2px 0"><span>Amount</span><span>${fmt(b.ict_fee_amount)}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:#6b7280;padding:2px 0"><span>Paid</span><span>${fmt(b.ict_fee_paid)}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;padding:2px 0;color:${b.ict_fee_balance > 0 ? '#dc2626' : '#059669'}"><span>Balance</span><span>${fmt(b.ict_fee_balance)}</span></div>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+
+    const historyRows = (data.payment_history || []).map(p => `
+      <tr style="${p.voided ? 'opacity:0.5;text-decoration:line-through' : ''}">
+        <td style="font-size:0.75rem">${new Date(p.payment_date).toLocaleDateString()}</td>
+        <td style="font-size:0.75rem">${TERM_LABELS[p.term] || p.term}</td>
+        <td style="font-size:0.75rem">${p.fee_type || '—'}</td>
+        <td style="font-size:0.75rem">${fmt(p.amount)}</td>
+        <td style="font-size:0.75rem">${p.payment_method || ''}</td>
+        <td style="font-size:0.75rem">${p.voided ? 'VOIDED' + (p.void_reason ? ' — ' + p.void_reason : '') : ''}</td>
+      </tr>`).join('');
+
+    document.getElementById('finProfileBody').innerHTML = `
+      <div style="margin-bottom:16px">
+        <div style="font-weight:700;font-size:1rem;color:#111827">${s.full_name}</div>
+        <div style="font-size:0.8rem;color:#6b7280">${s.admission_no} · ${s.class_name} · ${FEE_CAT_LABELS[s.fee_category] || s.fee_category} fee structure${s.fee_category === 'custom' && s.custom_fee_amount ? ' (' + fmt(s.custom_fee_amount) + ')' : ''}</div>
+        <div style="font-size:0.75rem;color:#9ca3af;margin-top:2px">Session: ${data.session}</div>
+      </div>
+      <div style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px">Fee Breakdown by Term</div>
+      ${termCards}
+      <div style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin:16px 0 8px">Payment History</div>
+      <div style="overflow-x:auto">
+        <table class="finance-table" style="width:100%">
+          <thead><tr><th>Date</th><th>Term</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+          <tbody>${historyRows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:1rem">No payments recorded.</td></tr>'}</tbody>
+        </table>
+      </div>
+    `;
+  }
 
   document.getElementById('applyReportFilter').addEventListener('click', render);
   render();
