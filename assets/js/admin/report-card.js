@@ -540,10 +540,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const el = document.getElementById('reportCard');
     if (!el) return;
 
-    // Reset both adjustments so we measure natural, unadjusted height.
+    // Reset before measuring natural, unadjusted height — padding-bottom
+    // from a PREVIOUS print (short content) would otherwise inflate
+    // scrollHeight and permanently disable the shrink path.
     document.documentElement.style.setProperty('--rc-print-scale', '1');
-    document.documentElement.style.setProperty('--rc-fill-height', 'auto');
-    el.classList.remove('rc-fill-page');
+    el.style.paddingBottom = '';
     void el.offsetHeight; // force reflow
 
     const A4_PRINTABLE_HEIGHT_PX = 1060; // ~297mm minus 0.8cm top/bottom margins, at 96dpi
@@ -553,8 +554,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const scale = Math.max(0.65, A4_PRINTABLE_HEIGHT_PX / contentHeight);
       document.documentElement.style.setProperty('--rc-print-scale', scale.toFixed(3));
     } else {
-      document.documentElement.style.setProperty('--rc-fill-height', A4_PRINTABLE_HEIGHT_PX + 'px');
-      el.classList.add('rc-fill-page');
+      // Shorter-than-one-page content (e.g. a Nursery pupil with one
+      // subject): pad the bottom of the card itself so its own box is
+      // exactly one page tall, instead of relying on flex justify-content
+      // to distribute gaps between sections — that approach silently
+      // failed to stretch in the print engine, leaving a blank lower half.
+      const gap = A4_PRINTABLE_HEIGHT_PX - contentHeight;
+      if (gap > 0) el.style.paddingBottom = gap + 'px';
     }
   }
   window.addEventListener('beforeprint', fitReportCardToOnePage);
