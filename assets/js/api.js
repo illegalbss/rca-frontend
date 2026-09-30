@@ -194,6 +194,10 @@
     return await apiCall(`/users/${userId}`, { method: 'PUT', body: userData });
   }
 
+  async function updateMyDetails(data) {
+    return await apiCall('/users/me', { method: 'PUT', body: data });
+  }
+
   async function resetPassword(userId) {
     return await apiCall(`/users/${userId}/reset-password`, { method: 'POST' });
   }
@@ -428,6 +432,7 @@
     getStaffDirectory,
     createUser,
     updateUser,
+    updateMyDetails,
     resetPassword,
 
     // Approvals

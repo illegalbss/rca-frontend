@@ -544,7 +544,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     view: openViewModal,
     edit: openEditModal,
     resetPassword: openResetModal,
-    toggleStatus: openDeactModal
+    toggleStatus: openDeactModal,
+    unlockDetails: async (userId) => {
+      if (!confirm('Unlock this account so they can edit their name/phone again?')) return;
+      try {
+        await window.RCA_API.updateUser(userId, { details_locked: false });
+      } catch (e) {
+        alert('Could not unlock: ' + e.message);
+        return;
+      }
+      await renderParents();
+    }
   };
 
   /* ============================================================
@@ -576,6 +586,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return `<div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
           <strong style="font-size:0.9rem;color:#111">${p.full_name}</strong>
+          ${p.details_locked ? '<span style="font-size:0.68rem;color:#92400e;background:#fef3c7;padding:2px 8px;border-radius:20px;margin-left:6px" title="This parent saved their own details — locked from further self-edits">🔒 Locked</span>' : ''}
           <span style="display:block;font-size:0.78rem;color:#6b7280">${p.email} • ${p.phone || 'No phone'}</span>
           <span style="display:block;font-size:0.75rem;color:#1d4ed8;margin-top:4px">
             ${children.length > 0 ? '👦 ' + children.map(c => c.full_name + ' (' + c.class_name + ')').join(', ') : '⚠ No children linked yet'}
@@ -583,6 +594,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="UM.edit(${p.id})" style="padding:6px 12px;background:#f3f4f6;color:#374151;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">Edit</button>
+          ${p.details_locked ? `<button onclick="UM.unlockDetails(${p.id})" style="padding:6px 12px;background:#fef3c7;color:#92400e;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">🔓 Unlock</button>` : ''}
           <button onclick="linkChildModal(${p.id})" style="padding:6px 12px;background:#dbeafe;color:#1d4ed8;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">+ Link Child</button>
           <button onclick="deleteParent(${p.id})" style="padding:6px 12px;background:#fef2f2;color:#dc2626;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">Delete</button>
         </div>

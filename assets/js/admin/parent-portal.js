@@ -1089,27 +1089,90 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ============================================
      PROFILE PAGE — the logged-in parent's own account
      ============================================ */
+  // Persist a self-service edit into sessionStorage's cached login payload
+  // too, not just window.CURRENT_USER — otherwise a page refresh (which
+  // re-reads sessionStorage before this script runs) would show the old
+  // unlocked state until the next real login.
+  function persistCurrentUser() {
+    try {
+      const stored = JSON.parse(sessionStorage.getItem('rca_user_data') || '{}');
+      sessionStorage.setItem('rca_user_data', JSON.stringify({ ...stored, ...user }));
+    } catch (e) {}
+  }
+
   function renderProfilePage() {
     const content = document.getElementById('profileContent');
     if (!content) return;
 
-    const rows = [
-      ['Full Name', user.full_name],
+    const readOnlyRows = [
       ['Email', user.email],
-      ['Phone', user.phone || '—'],
       ['Role', 'Parent / Guardian'],
       ['Status', (user.status || 'active').charAt(0).toUpperCase() + (user.status || 'active').slice(1)],
       ['Linked Children', myChildren.length ? myChildren.map(c => c.full_name).join(', ') : 'None linked yet'],
     ];
 
+    if (user.details_locked) {
+      content.innerHTML = `
+        <div class="pp-profile-grid">
+          <div class="pp-profile-row"><span class="pp-profile-label">Full Name</span><span class="pp-profile-value">${user.full_name || '—'}</span></div>
+          <div class="pp-profile-row"><span class="pp-profile-label">Phone</span><span class="pp-profile-value">${user.phone || '—'}</span></div>
+          ${readOnlyRows.map(([label, value]) => `
+            <div class="pp-profile-row"><span class="pp-profile-label">${label}</span><span class="pp-profile-value">${value || '—'}</span></div>
+          `).join('')}
+        </div>
+        <p style="margin-top:16px;font-size:0.78rem;color:#9ca3af">🔒 Your name and phone number are locked. Contact the school's ICT Administrator if you need to make changes.</p>
+      `;
+      return;
+    }
+
     content.innerHTML = `
+      <div id="profileEditAlert" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem"></div>
       <div class="pp-profile-grid">
-        ${rows.map(([label, value]) => `
+        <div class="pp-profile-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <span class="pp-profile-label">Full Name</span>
+          <input type="text" id="profileFullName" class="form-control" value="${user.full_name || ''}" style="width:100%;max-width:340px">
+        </div>
+        <div class="pp-profile-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <span class="pp-profile-label">Phone</span>
+          <input type="text" id="profilePhone" class="form-control" value="${user.phone || ''}" style="width:100%;max-width:340px">
+        </div>
+        ${readOnlyRows.map(([label, value]) => `
           <div class="pp-profile-row"><span class="pp-profile-label">${label}</span><span class="pp-profile-value">${value || '—'}</span></div>
         `).join('')}
       </div>
-      <p style="margin-top:16px;font-size:0.78rem;color:#9ca3af">To update your contact details, please contact the school's ICT Administrator.</p>
+      <p style="margin-top:16px;font-size:0.78rem;color:#9ca3af">You can edit and save your name and phone number once — after saving, they'll be locked and the ICT Administrator will need to make any further changes.</p>
+      <button id="profileSaveLockBtn" class="btn btn-primary" style="margin-top:8px">Save &amp; Lock My Details</button>
     `;
+
+    document.getElementById('profileSaveLockBtn').addEventListener('click', async () => {
+      const fullName = document.getElementById('profileFullName').value.trim();
+      const phone = document.getElementById('profilePhone').value.trim();
+      const alertEl = document.getElementById('profileEditAlert');
+      alertEl.style.display = 'none';
+
+      if (!fullName) {
+        alertEl.textContent = 'Full name is required.';
+        alertEl.style.display = 'block';
+        return;
+      }
+      if (!confirm('Save these details? Once saved, your name and phone number will be locked and only the ICT Administrator can change them again.')) return;
+
+      const btn = document.getElementById('profileSaveLockBtn');
+      btn.disabled = true;
+      try {
+        const updated = await window.RCA_API.updateMyDetails({ full_name: fullName, phone });
+        user.full_name = updated.full_name;
+        user.phone = updated.phone;
+        user.details_locked = updated.details_locked;
+        persistCurrentUser();
+        renderDashboardHeader();
+        renderProfilePage();
+      } catch (e) {
+        alertEl.textContent = e.message || 'Could not save details.';
+        alertEl.style.display = 'block';
+        btn.disabled = false;
+      }
+    });
   }
 
   const pcpSaveBtn = document.getElementById('pcpSaveBtn');
