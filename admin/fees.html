@@ -170,18 +170,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function computeTotals(term) {
     const val = (field) => Number(document.querySelector(`[data-term="${term}"][data-field="${field}"]`)?.value || 0);
-    const standard = val('school_fees') + val('utility_bill') + val('lesson_fee') + val('levy_amount') + val('ict_fee');
-    const sibling  = val('school_fees_sibling') + val('utility_bill') + val('lesson_fee') + val('levy_amount') + val('ict_fee');
-    return { standard, sibling };
+    const standard   = val('school_fees') + val('utility_bill') + val('lesson_fee') + val('levy_amount') + val('ict_fee');
+    const newIntake  = (val('new_intake_fee') || val('school_fees')) + val('utility_bill') + val('lesson_fee') + val('levy_amount') + val('ict_fee');
+    return { standard, newIntake };
   }
 
   function renderTotals(term) {
     const el = document.getElementById(`total-${term}`);
     if (!el) return;
-    const { standard, sibling } = computeTotals(term);
+    const { standard, newIntake } = computeTotals(term);
     el.innerHTML = `
       <span>Standard total: <strong>${fmt(standard)}</strong></span>
-      <span style="margin-left:16px">Sibling-discount total: <strong>${fmt(sibling)}</strong></span>
+      <span style="margin-left:16px">New Intake total: <strong>${fmt(newIntake)}</strong></span>
     `;
   }
 
@@ -193,8 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="fee-grid">
         ${fieldHtml(t.term, 'school_fees', 'School Fees (standard)', t.school_fees)}
-        ${fieldHtml(t.term, 'school_fees_sibling', 'School Fees (sibling discount)', t.school_fees_sibling)}
-        ${fieldHtml(t.term, 'sibling_threshold', 'Sibling Threshold (children)', t.sibling_threshold, false)}
+        ${fieldHtml(t.term, 'new_intake_fee', 'School Fees (New Intake)', t.new_intake_fee ?? t.school_fees)}
         ${fieldHtml(t.term, 'utility_bill', 'Utility Bill', t.utility_bill)}
         ${fieldHtml(t.term, 'lesson_fee', 'Lesson Fee', t.lesson_fee)}
         ${fieldHtml(t.term, 'levy_amount', 'Levy Amount', t.levy_amount)}
@@ -206,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${fieldHtml(t.term, 'ict_fee', 'ICT / Portal Fee', t.ict_fee)}
       </div>
       <p style="font-size:0.75rem;color:#9ca3af;margin-top:6px">The ICT / Portal Fee covers website and results-portal maintenance, and applies to every pupil — it's required (along with the rest of the fees below) before a parent can view results online.</p>
+      <p style="font-size:0.75rem;color:#9ca3af;margin-top:4px">New Intake only applies to a pupil an administrator has explicitly assigned that fee structure to (Finance Reports → Fee Structure &amp; Discounts) — it's never charged automatically just because someone was recently admitted. Sibling discounts, deductions, waivers, and any other adjustment are also assigned per pupil there, never automatically.</p>
       <div id="total-${t.term}" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--color-border);font-size:0.85rem;color:var(--color-text-muted)"></div>
       ${canEdit ? `
         <div class="fee-save-row">
