@@ -677,17 +677,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     content.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Checking payment status…</p>';
 
     try {
-      const feeData = await window.RCA_API.call(
-        `/payments/lookup?admission_no=${encodeURIComponent(child.admission_no)}&term=${term}&session=${SESSION}`
-      );
+      // Whether results require full payment at all is an admin-configured
+      // setting (Payment Settings → "Require full payment before results
+      // unlock"), not something hardcoded here — skip the check entirely
+      // if the school has turned it off.
+      let requirePayment = true;
+      try {
+        const settings = await window.RCA_API.call('/settings/payment');
+        requirePayment = settings?.enable_result_unlock !== false;
+      } catch (e) { /* default to requiring payment if settings can't be read */ }
 
-      if (feeData.status !== 'paid') {
-        content.innerHTML = `
-          <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:20px;text-align:center;color:#92400e">
-            🔒 Results for ${TERM_LABELS[term]} are locked until school fees are paid in full.<br>
-            <span style="font-size:0.8rem">Outstanding balance: ${fmt(feeData.balance)}</span>
-          </div>`;
-        return;
+      if (requirePayment) {
+        const feeData = await window.RCA_API.call(
+          `/payments/lookup?admission_no=${encodeURIComponent(child.admission_no)}&term=${term}&session=${SESSION}`
+        );
+
+        if (feeData.status !== 'paid') {
+          content.innerHTML = `
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:20px;text-align:center;color:#92400e">
+              🔒 Results for ${TERM_LABELS[term]} are locked until school fees are paid in full.<br>
+              <span style="font-size:0.8rem">Outstanding balance: ${fmt(feeData.balance)}</span>
+            </div>`;
+          return;
+        }
       }
 
       // Results aren't released to parents until the Head Teacher has
