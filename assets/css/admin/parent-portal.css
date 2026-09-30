@@ -283,6 +283,16 @@
   margin-bottom: 20px;
 }
 
+/* My Children cards + Quick Links — side by side on desktop, stacked
+   on mobile so Quick Links moves below the children instead of
+   squeezing them into a narrow column with empty space beside it. */
+.pp-children-quicklinks-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: start;
+}
+
 /* ---- Card component ---- */
 .pp-card {
   background: #fff;
@@ -997,6 +1007,7 @@
   .pp-user-name { display: none; } /* avatar + bell fit better without the name on a narrow topbar */
   .pp-stats { grid-template-columns: 1fr 1fr; }
   .pp-dash-grid { grid-template-columns: 1fr; }
+  .pp-children-quicklinks-grid { grid-template-columns: 1fr; }
   .pp-result-summary { grid-template-columns: 1fr 1fr; }
 }
 
