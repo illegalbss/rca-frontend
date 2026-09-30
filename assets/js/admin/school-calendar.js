@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const curUser  = window.CURRENT_USER;
   const curRoles = curUser ? (curUser.roles || [curUser.role]) : [];
-  const canManage= curRoles.includes('ict_admin') || curRoles.includes('head_teacher');
+  const canManage= curRoles.includes('ict_admin') || curRoles.includes('head_teacher') || curRoles.includes('proprietor');
 
   if (canManage) {
     const addBtn = document.getElementById('addEventBtn');

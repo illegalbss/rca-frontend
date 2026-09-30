@@ -31,7 +31,7 @@
     const roles = user ? (user.roles || [user.role, user.primary_role]).filter(Boolean) : [];
     return {
       user,
-      canManage: roles.some(r => ['ict_admin', 'head_teacher'].includes(r)),
+      canManage: roles.some(r => ['ict_admin', 'head_teacher', 'proprietor'].includes(r)),
     };
   }
 
