@@ -109,6 +109,7 @@
   display: flex;
   gap: var(--space-md);
   flex-wrap: wrap;
+  margin-bottom: 48px;
 }
 
 .hero-actions .btn {
@@ -149,7 +150,7 @@
 
 .hero-dots {
   position: absolute;
-  bottom: 60px;
+  bottom: 90px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
