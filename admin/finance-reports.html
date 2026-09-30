@@ -181,16 +181,16 @@
         </div>
       </div>
 
-      <!-- Sibling / Discounted Fees management -->
+      <!-- Fee Adjustments & Discounts management -->
       <div class="outstanding-card">
         <div class="outstanding-card-header">
-          <h3>&#128106; Sibling / Discounted Fees</h3>
+          <h3>&#128106; Fee Structure &amp; Discounts</h3>
           <span id="discountCount" style="font-size:var(--fs-sm);color:var(--color-text-muted)"></span>
         </div>
         <p class="no-print" style="padding:12px 20px 0;font-size:0.78rem;color:#6b7280">
-          The discount is normally auto-detected by matching parent phone numbers (3+ active children on file = sibling
-          discount). If that misses or wrongly catches a family — a typo'd number, a step-parent using a different
-          phone for one child, etc. — force it on or off per child below instead of guessing at the till.
+          Nothing here is automatic. "Sibling count" is shown purely as a hint (families sharing a phone number) —
+          it does NOT apply a discount by itself. Every discount, deduction, waiver, additional charge, or change to
+          a pupil's fee structure (Standard / New Intake / Custom) must be explicitly approved below, with a reason.
         </p>
 
         <div class="no-print" style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
@@ -208,9 +208,9 @@
             <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Show</label>
             <select id="discountFilter" class="form-control" style="padding:7px 10px;font-size:0.82rem">
               <option value="">Everyone</option>
-              <option value="siblings">Sibling groups only (2+ on same phone)</option>
-              <option value="discounted">Currently receiving discount</option>
-              <option value="overridden">Manually overridden</option>
+              <option value="siblings">Sibling groups only (2+ share a phone)</option>
+              <option value="discounted">Has an approved discount</option>
+              <option value="non-standard">Non-standard fee structure</option>
             </select>
           </div>
         </div>
@@ -222,11 +222,10 @@
                 <th>Admission No.</th>
                 <th>Student Name</th>
                 <th>Class</th>
-                <th>Parent</th>
-                <th>Phone</th>
-                <th>Auto-detected</th>
-                <th>Discount Applied</th>
-                <th class="no-print">Override</th>
+                <th>Fee Structure</th>
+                <th>Sibling Count</th>
+                <th>Approved Discount?</th>
+                <th class="no-print">Actions</th>
               </tr>
             </thead>
             <tbody id="discountBody"></tbody>
@@ -235,6 +234,94 @@
       </div>
 
     </main>
+
+    <!-- Fee Category modal -->
+    <div id="feeCategoryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="background:#1a3a5c;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
+          <span style="color:#fff;font-weight:700;font-size:1rem">💰 Fee Structure</span>
+          <button id="closeFeeCatModal" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <div style="padding:22px">
+          <p id="feeCatStudentName" style="font-size:0.85rem;color:#374151;margin-bottom:14px;font-weight:600"></p>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Fee Category</label>
+            <select id="feeCatSelect" class="form-control">
+              <option value="standard">Standard</option>
+              <option value="new_intake">New Intake</option>
+              <option value="custom">Custom Amount</option>
+            </select>
+          </div>
+          <div class="form-group" id="feeCatCustomGroup" style="margin-bottom:16px;display:none">
+            <label class="form-label">Custom School Fee Amount (₦)</label>
+            <input type="number" id="feeCatCustomAmount" class="form-control" placeholder="e.g. 60000">
+          </div>
+          <div id="feeCatAlert" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:0.78rem"></div>
+          <div style="display:flex;gap:10px">
+            <button id="closeFeeCatModal2" class="btn btn-outline" style="flex:1">Cancel</button>
+            <button id="saveFeeCatBtn" class="btn btn-primary" style="flex:1">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fee Adjustment modal -->
+    <div id="feeAdjModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="background:#1a3a5c;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0;position:sticky;top:0">
+          <span style="color:#fff;font-weight:700;font-size:1rem">🏷 Discount / Deduction / Charge</span>
+          <button id="closeFeeAdjModal" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <div style="padding:22px">
+          <p id="feeAdjStudentName" style="font-size:0.85rem;color:#374151;margin-bottom:14px;font-weight:600"></p>
+
+          <div id="feeAdjExisting" style="margin-bottom:16px"></div>
+
+          <div style="border-top:1px solid #f1f5f9;padding-top:14px">
+            <div class="form-group" style="margin-bottom:14px">
+              <label class="form-label">Type</label>
+              <select id="adjType" class="form-control">
+                <option value="discount">Discount</option>
+                <option value="deduction">Deduction</option>
+                <option value="waiver">Waiver</option>
+                <option value="additional_charge">Additional Charge</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label class="form-label">Description (optional)</label>
+              <input type="text" id="adjDescription" class="form-control" placeholder="e.g. Sibling Discount, Staff Ward Discount">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Flat Amount (₦)</label>
+                <input type="number" id="adjAmount" class="form-control" placeholder="e.g. 5000">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">OR Percentage (%)</label>
+                <input type="number" id="adjPercentage" class="form-control" placeholder="e.g. 10">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+              <label class="form-label">Applies To</label>
+              <div style="display:flex;gap:16px;margin-top:6px">
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer"><input type="checkbox" id="adjTerm1" checked> First Term</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer"><input type="checkbox" id="adjTerm2" checked> Second Term</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer"><input type="checkbox" id="adjTerm3" checked> Third Term</label>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:16px">
+              <label class="form-label">Reason (required) *</label>
+              <textarea id="adjReason" class="form-control" rows="2" placeholder="e.g. Family has 3 children currently enrolled — approved by Head Teacher"></textarea>
+            </div>
+            <div id="feeAdjAlert" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:0.78rem"></div>
+            <div style="display:flex;gap:10px">
+              <button id="closeFeeAdjModal2" class="btn btn-outline" style="flex:1">Cancel</button>
+              <button id="saveFeeAdjBtn" class="btn btn-primary" style="flex:1">Approve &amp; Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -487,13 +574,14 @@ document.addEventListener('DOMContentLoaded', () => {
     a.click(); URL.revokeObjectURL(url);
   });
 
-  /* ── Sibling / Discounted Fees management ── */
+  /* ── Fee Structure & Discounts management ── */
   const discountClassSel = document.getElementById('discountClass');
   allClasses.forEach(c => {
     const o = document.createElement('option'); o.value = c; o.textContent = c;
     discountClassSel.appendChild(o);
   });
 
+  const FEE_CAT_LABELS = { standard: 'Standard', new_intake: 'New Intake', custom: 'Custom' };
   let discountCache = [];
 
   async function fetchDiscountManagement() {
@@ -515,50 +603,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let rows = discountCache;
     if (classFilter) rows = rows.filter(r => r.class_name === classFilter);
     if (nameQ) rows = rows.filter(r => r.full_name.toLowerCase().includes(nameQ));
-    if (showFilter === 'siblings')   rows = rows.filter(r => r.auto_sibling_count >= 2);
-    if (showFilter === 'discounted') rows = rows.filter(r => r.effective_discount);
-    if (showFilter === 'overridden') rows = rows.filter(r => r.override !== null && r.override !== undefined);
+    if (showFilter === 'siblings')     rows = rows.filter(r => r.sibling_count >= 2);
+    if (showFilter === 'discounted')   rows = rows.filter(r => r.has_approved_discount);
+    if (showFilter === 'non-standard') rows = rows.filter(r => r.fee_category !== 'standard');
 
     document.getElementById('discountCount').textContent =
       `${rows.length} student${rows.length !== 1 ? 's' : ''}`;
 
     document.getElementById('discountBody').innerHTML = rows.length === 0
-      ? '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:2rem">No students match this filter.</td></tr>'
+      ? '<tr><td colspan="7" style="text-align:center;color:var(--color-text-muted);padding:2rem">No students match this filter.</td></tr>'
       : rows.map(r => `
         <tr>
           <td style="font-size:0.78rem">${r.admission_no}</td>
           <td style="font-weight:600">${r.full_name}</td>
           <td>${r.class_name}</td>
-          <td>${r.parent_name || '—'}</td>
-          <td style="font-size:0.78rem">${r.parent_phone || '—'}</td>
-          <td>${r.auto_sibling_count} sibling${r.auto_sibling_count !== 1 ? 's' : ''}${r.auto_discount ? ' — qualifies' : ''}</td>
-          <td><span class="${r.effective_discount ? 'badge-paid' : 'badge-unpaid'}">${r.effective_discount ? 'Yes' : 'No'}</span>${r.override !== null && r.override !== undefined ? ' <span style="font-size:0.68rem;color:#9ca3af">(manual)</span>' : ''}</td>
-          <td class="no-print">
-            <select class="form-control discount-override-select" data-admission="${r.admission_no}" style="padding:5px 8px;font-size:0.78rem">
-              <option value="auto"${r.override === null || r.override === undefined ? ' selected' : ''}>Auto-detect</option>
-              <option value="on"${r.override === true ? ' selected' : ''}>Force discount ON</option>
-              <option value="off"${r.override === false ? ' selected' : ''}>Force discount OFF</option>
-            </select>
+          <td>${FEE_CAT_LABELS[r.fee_category] || r.fee_category}</td>
+          <td>${r.sibling_count} ${r.sibling_count === 1 ? 'child' : 'children'} on file${r.sibling_count >= 3 ? ' ⚠' : ''}</td>
+          <td><span class="${r.has_approved_discount ? 'badge-paid' : 'badge-unpaid'}">${r.has_approved_discount ? 'Yes' : 'No'}</span></td>
+          <td class="no-print" style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm fee-cat-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" data-category="${r.fee_category}" style="font-size:0.72rem;padding:4px 10px">💰 Fee Structure</button>
+            <button class="btn btn-outline btn-sm fee-adj-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" style="font-size:0.72rem;padding:4px 10px">🏷 Discount</button>
           </td>
         </tr>
       `).join('');
 
-    document.querySelectorAll('.discount-override-select').forEach(sel => {
-      sel.addEventListener('change', async () => {
-        const admissionNo = sel.getAttribute('data-admission');
-        const val = sel.value === 'auto' ? null : (sel.value === 'on');
-        sel.disabled = true;
-        try {
-          await window.RCA_API.call(`/payments/discount-override/${encodeURIComponent(admissionNo)}`, {
-            method: 'PUT', body: { override: val }
-          });
-          discountCache = await fetchDiscountManagement();
-          renderDiscountTable();
-        } catch (e) {
-          alert('Could not update: ' + e.message);
-          sel.disabled = false;
-        }
-      });
+    document.querySelectorAll('.fee-cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => openFeeCategoryModal(btn.dataset.admission, btn.dataset.name, btn.dataset.category));
+    });
+    document.querySelectorAll('.fee-adj-btn').forEach(btn => {
+      btn.addEventListener('click', () => openFeeAdjustmentModal(btn.dataset.admission, btn.dataset.name));
     });
   }
 
@@ -574,6 +647,139 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   ['discountClass','discountFilter'].forEach(id => {
     document.getElementById(id).addEventListener('change', renderDiscountTable);
+  });
+
+  /* ── Fee Category modal ── */
+  function openFeeCategoryModal(admissionNo, name, currentCategory) {
+    document.getElementById('feeCategoryModal').style.display = 'flex';
+    document.getElementById('feeCategoryModal').dataset.admission = admissionNo;
+    document.getElementById('feeCatStudentName').textContent = name;
+    document.getElementById('feeCatSelect').value = currentCategory || 'standard';
+    document.getElementById('feeCatCustomAmount').value = '';
+    document.getElementById('feeCatCustomGroup').style.display = currentCategory === 'custom' ? 'block' : 'none';
+    document.getElementById('feeCatAlert').style.display = 'none';
+  }
+  function closeFeeCategoryModal() { document.getElementById('feeCategoryModal').style.display = 'none'; }
+  document.getElementById('closeFeeCatModal').addEventListener('click', closeFeeCategoryModal);
+  document.getElementById('closeFeeCatModal2').addEventListener('click', closeFeeCategoryModal);
+  document.getElementById('feeCatSelect').addEventListener('change', (e) => {
+    document.getElementById('feeCatCustomGroup').style.display = e.target.value === 'custom' ? 'block' : 'none';
+  });
+  document.getElementById('saveFeeCatBtn').addEventListener('click', async () => {
+    const admissionNo = document.getElementById('feeCategoryModal').dataset.admission;
+    const fee_category = document.getElementById('feeCatSelect').value;
+    const customAmount = document.getElementById('feeCatCustomAmount').value;
+    const alertEl = document.getElementById('feeCatAlert');
+    alertEl.style.display = 'none';
+
+    if (fee_category === 'custom' && !customAmount) {
+      alertEl.textContent = 'Enter the custom fee amount.';
+      alertEl.style.display = 'block';
+      return;
+    }
+    const btn = document.getElementById('saveFeeCatBtn');
+    btn.disabled = true;
+    try {
+      await window.RCA_API.call(`/payments/fee-category/${encodeURIComponent(admissionNo)}`, {
+        method: 'PUT', body: { fee_category, custom_fee_amount: fee_category === 'custom' ? Number(customAmount) : undefined }
+      });
+      closeFeeCategoryModal();
+      discountCache = await fetchDiscountManagement();
+      renderDiscountTable();
+    } catch (e) {
+      alertEl.textContent = e.message || 'Could not save.';
+      alertEl.style.display = 'block';
+    }
+    btn.disabled = false;
+  });
+
+  /* ── Fee Adjustment modal ── */
+  async function openFeeAdjustmentModal(admissionNo, name) {
+    document.getElementById('feeAdjModal').style.display = 'flex';
+    document.getElementById('feeAdjModal').dataset.admission = admissionNo;
+    document.getElementById('feeAdjStudentName').textContent = name;
+    ['adjDescription','adjAmount','adjPercentage','adjReason'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('adjType').value = 'discount';
+    ['adjTerm1','adjTerm2','adjTerm3'].forEach(id => document.getElementById(id).checked = true);
+    document.getElementById('feeAdjAlert').style.display = 'none';
+    await renderExistingAdjustments(admissionNo);
+  }
+  function closeFeeAdjustmentModal() { document.getElementById('feeAdjModal').style.display = 'none'; }
+  document.getElementById('closeFeeAdjModal').addEventListener('click', closeFeeAdjustmentModal);
+  document.getElementById('closeFeeAdjModal2').addEventListener('click', closeFeeAdjustmentModal);
+
+  async function renderExistingAdjustments(admissionNo) {
+    const wrap = document.getElementById('feeAdjExisting');
+    wrap.innerHTML = '<p style="font-size:0.78rem;color:#9ca3af">Loading existing adjustments…</p>';
+    try {
+      const data = await window.RCA_API.call(`/payments/fee-adjustments?admission_no=${encodeURIComponent(admissionNo)}`);
+      const active = (data.adjustments || []).filter(a => a.active);
+      wrap.innerHTML = active.length === 0
+        ? '<p style="font-size:0.78rem;color:#9ca3af">No active adjustments for this pupil.</p>'
+        : `<div style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:6px">Active Adjustments</div>` +
+          active.map(a => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:#f9fafb;border-radius:8px;margin-bottom:6px;font-size:0.78rem">
+              <span><strong>${a.adjustment_type.replace('_',' ')}</strong> — ${a.percentage != null ? a.percentage + '%' : fmt(a.amount)} (${TERM_LABELS[a.term] || a.term})${a.description ? ' — ' + a.description : ''}</span>
+              <button class="remove-adj-btn" data-id="${a.id}" style="background:none;border:1px solid #fca5a5;color:#dc2626;border-radius:6px;padding:2px 8px;font-size:0.7rem;cursor:pointer">Remove</button>
+            </div>
+          `).join('');
+      wrap.querySelectorAll('.remove-adj-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Remove this adjustment?')) return;
+          try {
+            await window.RCA_API.call(`/payments/fee-adjustments/${btn.dataset.id}`, { method: 'DELETE' });
+            await renderExistingAdjustments(admissionNo);
+            discountCache = await fetchDiscountManagement();
+            renderDiscountTable();
+          } catch (e) { alert('Could not remove: ' + e.message); }
+        });
+      });
+    } catch (e) {
+      wrap.innerHTML = `<p style="font-size:0.78rem;color:#dc2626">Could not load: ${e.message}</p>`;
+    }
+  }
+
+  document.getElementById('saveFeeAdjBtn').addEventListener('click', async () => {
+    const admissionNo = document.getElementById('feeAdjModal').dataset.admission;
+    const adjustment_type = document.getElementById('adjType').value;
+    const description = document.getElementById('adjDescription').value.trim();
+    const amount = document.getElementById('adjAmount').value;
+    const percentage = document.getElementById('adjPercentage').value;
+    const reason = document.getElementById('adjReason').value.trim();
+    const terms = [
+      ['adjTerm1', 'term1'], ['adjTerm2', 'term2'], ['adjTerm3', 'term3']
+    ].filter(([id]) => document.getElementById(id).checked).map(([, term]) => term);
+    const alertEl = document.getElementById('feeAdjAlert');
+    alertEl.style.display = 'none';
+
+    if (!reason) { alertEl.textContent = 'A reason is required.'; alertEl.style.display = 'block'; return; }
+    if (!amount && !percentage) { alertEl.textContent = 'Enter either a flat amount or a percentage.'; alertEl.style.display = 'block'; return; }
+    if (terms.length === 0) { alertEl.textContent = 'Select at least one term.'; alertEl.style.display = 'block'; return; }
+
+    const btn = document.getElementById('saveFeeAdjBtn');
+    btn.disabled = true;
+    try {
+      for (const term of terms) {
+        await window.RCA_API.call('/payments/fee-adjustments', {
+          method: 'POST',
+          body: {
+            admission_no: admissionNo, term, adjustment_type,
+            description: description || null,
+            amount: amount ? Number(amount) : undefined,
+            percentage: percentage ? Number(percentage) : undefined,
+            reason
+          }
+        });
+      }
+      await renderExistingAdjustments(admissionNo);
+      discountCache = await fetchDiscountManagement();
+      renderDiscountTable();
+      ['adjDescription','adjAmount','adjPercentage','adjReason'].forEach(id => document.getElementById(id).value = '');
+    } catch (e) {
+      alertEl.textContent = e.message || 'Could not save.';
+      alertEl.style.display = 'block';
+    }
+    btn.disabled = false;
   });
 
   document.getElementById('applyReportFilter').addEventListener('click', render);

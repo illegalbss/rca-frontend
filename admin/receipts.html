@@ -194,18 +194,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     tbody.innerHTML = rows.map(r => `
-      <tr>
-        <td style="font-size:0.75rem;font-weight:600">${r.reference || '—'}</td>
-        <td>${r.payment_date ? String(r.payment_date).substring(0, 10) : '—'}</td>
+      <tr style="${r.voided ? 'opacity:0.55' : ''}">
+        <td style="font-size:0.75rem;font-weight:600;${r.voided ? 'text-decoration:line-through' : ''}">${r.reference || '—'}</td>
+        <td style="${r.voided ? 'text-decoration:line-through' : ''}">${r.payment_date ? String(r.payment_date).substring(0, 10) : '—'}</td>
         <td>${r.admission_no}</td>
         <td>${r.full_name}</td>
         <td>${r.class_name}</td>
-        <td class="amount-col">${fmt(r.amount)}</td>
-        <td>${r.payment_method || '—'}</td>
+        <td class="amount-col" style="${r.voided ? 'text-decoration:line-through' : ''}">${fmt(r.amount)}</td>
+        <td>${r.payment_method || '—'}${r.voided ? ' <span style="font-size:0.65rem;font-weight:700;color:#dc2626;border:1px solid #fca5a5;border-radius:20px;padding:1px 6px">VOIDED</span>' : ''}</td>
         <td style="font-size:0.75rem">${r.recorded_by_name || '—'}</td>
         <td class="no-print">
           <button class="btn btn-outline btn-sm" onclick="showReceiptById(${r.id})">View</button>
-          <button class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fca5a5" onclick="deletePayment(${r.id})">Delete</button>
+          ${r.voided
+            ? `<span style="font-size:0.72rem;color:#9ca3af" title="${r.void_reason || ''}">Voided${r.voided_by_name ? ' by ' + r.voided_by_name : ''}</span>`
+            : `<button class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fca5a5" onclick="deletePayment(${r.id})">Void</button>`}
         </td>
       </tr>
     `).join('');
@@ -345,19 +347,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('receiptPrintSection').style.display = 'block';
   };
 
-  /* ---- Delete a payment record ---- */
+  /* ---- Void a payment record (soft-delete — keeps financial history) ---- */
   window.deletePayment = async function(id) {
     const payment = currentRows.find(r => r.id === id);
     if (!payment) return;
 
-    if (!confirm(`Delete this payment record?\n\n${payment.full_name} — ${fmt(payment.amount)} — ${payment.reference || 'no receipt no.'}\n\nThis cannot be undone.`)) return;
+    const reason = prompt(`Reason for voiding this payment?\n\n${payment.full_name} — ${fmt(payment.amount)} — ${payment.reference || 'no receipt no.'}\n\nThe record stays in the audit history — it just stops counting toward what they've paid.`);
+    if (!reason || !reason.trim()) return;
 
     try {
-      await window.RCA_API.call(`/payments/${id}`, { method: 'DELETE' });
+      await window.RCA_API.call(`/payments/${id}`, { method: 'DELETE', body: { reason: reason.trim() } });
       // Refresh the current view
       document.getElementById('receiptSearchBtn').click();
     } catch (e) {
-      alert('Could not delete payment: ' + e.message);
+      alert('Could not void payment: ' + e.message);
     }
   };
 

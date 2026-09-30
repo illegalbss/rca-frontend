@@ -458,11 +458,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   window._ictFeePaymentDelete = async function(id, pupilName) {
-    if (!confirm(`Delete this ICT fee payment for ${pupilName}? This cannot be undone.`)) return;
+    const reason = prompt(`Reason for voiding this ICT fee payment for ${pupilName}? (required — the record stays in the audit history, it just stops counting toward what they've paid)`);
+    if (!reason || !reason.trim()) return;
     try {
-      await window.RCA_API.call(`/payments/${id}`, { method: 'DELETE' });
+      await window.RCA_API.call(`/payments/${id}`, { method: 'DELETE', body: { reason: reason.trim() } });
     } catch (e) {
-      alert('Could not delete payment: ' + e.message);
+      alert('Could not void payment: ' + e.message);
       return;
     }
     loadAndRenderIctFeeReport();

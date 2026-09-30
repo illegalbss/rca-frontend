@@ -581,8 +581,12 @@ document.addEventListener('DOMContentLoaded', async function () {
           return '<span style="margin-right:16px">' + l.label + ': <strong>' + fmt(l.amount) + '</strong></span>';
         }).join('');
 
-        document.getElementById('lookupDiscount').innerHTML = data.has_sibling_discount
-          ? '&#128106; Sibling discount applied (' + data.sibling_count + ' children enrolled) — school fees reduced to ' + fmt(15000)
+        var adjustments = data.adjustments || [];
+        document.getElementById('lookupDiscount').innerHTML = adjustments.length
+          ? '&#128106; ' + adjustments.map(function(a) {
+              var kind = a.adjustment_type === 'additional_charge' ? 'Additional charge' : (a.adjustment_type.charAt(0).toUpperCase() + a.adjustment_type.slice(1));
+              return kind + (a.description ? ' (' + a.description + ')' : '') + ': ' + fmt(a.amount);
+            }).join(' · ')
           : '';
 
         document.getElementById('lookupResult').classList.add('visible');
