@@ -386,6 +386,31 @@
   }
 
   /* ============================================
+     SCHOOL PROGRAMMES
+     ============================================ */
+  async function getSchoolProgrammes() {
+    try {
+      const data = await apiCall('/programmes');
+      return data.programmes;
+    } catch (e) {
+      console.warn('API unavailable:', e.message);
+      return [];
+    }
+  }
+
+  async function createSchoolProgramme(data) {
+    return apiCall('/programmes', { method: 'POST', body: data });
+  }
+
+  async function updateSchoolProgramme(id, data) {
+    return apiCall(`/programmes/${id}`, { method: 'PUT', body: data });
+  }
+
+  async function deleteSchoolProgramme(id) {
+    return apiCall(`/programmes/${id}`, { method: 'DELETE' });
+  }
+
+  /* ============================================
      CHANGE PASSWORD
      ============================================ */
   async function changePassword(currentPassword, newPassword) {
@@ -468,6 +493,12 @@
     createCalendarEvent,
     updateCalendarEvent,
     deleteCalendarEvent,
+
+    // School Programmes
+    getSchoolProgrammes,
+    createSchoolProgramme,
+    updateSchoolProgramme,
+    deleteSchoolProgramme,
 
     // Auth
     changePassword,

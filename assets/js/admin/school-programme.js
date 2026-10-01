@@ -2,26 +2,42 @@
    SCHOOL PROGRAMME OF EVENTS — school-programme.js
    Royal Crystal Academy
    ============================================
-   Who can CREATE / EDIT / DELETE : ict_admin, head_teacher
+   Who can CREATE / EDIT / DELETE : ict_admin, head_teacher, proprietor
    Who can VIEW                   : all staff (not parents — parent portal excluded)
-   Storage key                    : rca_school_programmes
-   (outside rca_v1_ prefix — permanent, survives version bumps and resets)
+
+   Backed by the real `school_programmes` table via
+   RCA_API.getSchoolProgrammes()/createSchoolProgramme()/
+   updateSchoolProgramme()/deleteSchoolProgramme() — this used to live
+   only in the creating admin's own browser localStorage, invisible to
+   every other staff member and gone the moment that browser's site
+   data was cleared.
 */
 
 (function () {
 
   /* ============================================================
-     STORAGE
+     DATA — fetched once on load, cached here, refreshed after
+     every create/update/delete so renders stay in sync without
+     re-fetching on every click.
   ============================================================ */
-  function getPrograms() {
-    try { return JSON.parse(localStorage.getItem('rca_school_programmes') || '[]'); }
-    catch (e) { return []; }
+  let _programmes = [];
+
+  // The rest of this file was written against a simpler shape
+  // (session/created_by/updated_by as plain display strings) than the
+  // real table's columns (session_label, created_by_name as a separate
+  // denormalized name next to the numeric created_by id) — normalize
+  // once here rather than touching every render function below.
+  async function loadProgrammes() {
+    const rows = (window.RCA_API ? await window.RCA_API.getSchoolProgrammes() : []) || [];
+    _programmes = rows.map(p => ({
+      ...p,
+      session: p.session_label,
+      created_by: p.created_by_name || 'Administration',
+      updated_by: p.updated_by_name || p.created_by_name || 'Administration',
+    }));
   }
 
-  function savePrograms(arr) {
-    try { localStorage.setItem('rca_school_programmes', JSON.stringify(arr)); }
-    catch (e) { if (e.name === 'QuotaExceededError') alert('Storage full. Contact ICT Administrator.'); }
-  }
+  function getPrograms() { return _programmes; }
 
   /* ============================================================
      RBAC
@@ -106,7 +122,10 @@
   /* ============================================================
      MAIN ENTRY POINT
   ============================================================ */
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    const container = document.getElementById('progContainer');
+    if (container) container.innerHTML = '<p style="padding:40px;text-align:center;color:#9ca3af">Loading programmes…</p>';
+    await loadProgrammes();
     render();
     document.getElementById('newProgBtn')?.addEventListener('click', showCreateModal);
   });
@@ -447,25 +466,30 @@
     renderEditor();
   };
 
-  window._spSaveEdit = () => {
+  window._spSaveEdit = async () => {
     if (_editWeeks.length === 0) { showToast('Add at least one week before saving.', '#dc2626'); return; }
-    const { user } = getAccess();
-    const all = getPrograms();
-    const now = new Date().toISOString();
-    const idx = all.findIndex(p => p.id === _activeProg.id);
-    const updated = {
-      ..._activeProg,
-      weeks:      JSON.parse(JSON.stringify(_editWeeks)),
-      updated_at: now,
-      updated_by: user?.full_name || 'Administration',
-    };
-    if (idx > -1) all[idx] = updated;
-    else all.push(updated);
-    savePrograms(all);
-    _activeProg = updated;
-    _view = 'view';
-    renderProgramView(_activeProg);
-    showToast('Programme saved ✅');
+    if (!window.RCA_API) { showToast('Cannot reach the server.', '#dc2626'); return; }
+
+    const weeks = JSON.parse(JSON.stringify(_editWeeks));
+    try {
+      let saved;
+      if (_activeProg._isNew) {
+        saved = await window.RCA_API.createSchoolProgramme({
+          session_label: _activeProg.session,
+          term: _activeProg.term,
+          weeks
+        });
+      } else {
+        saved = await window.RCA_API.updateSchoolProgramme(_activeProg.id, { weeks });
+      }
+      await loadProgrammes();
+      _activeProg = getPrograms().find(p => String(p.id) === String(saved.id)) || saved;
+      _view = 'view';
+      renderProgramView(_activeProg);
+      showToast('Programme saved ✅');
+    } catch (e) {
+      showToast('Could not save: ' + e.message, '#dc2626');
+    }
   };
 
   window._spCancelEdit = () => {
@@ -482,27 +506,35 @@
      NAVIGATION ACTIONS
   ============================================================ */
   window._spView = (id) => {
-    const prog = getPrograms().find(p => p.id === id);
+    // Real ids are numeric (database serial); onclick attributes pass
+    // them through as strings, so compare loosely rather than ===.
+    const prog = getPrograms().find(p => String(p.id) === String(id));
     if (!prog) return;
     _activeProg = prog;
     renderProgramView(prog);
   };
 
   window._spEdit = (id) => {
-    const prog = getPrograms().find(p => p.id === id);
+    const prog = getPrograms().find(p => String(p.id) === String(id));
     if (!prog) return;
     _activeProg = prog;
     _editWeeks  = JSON.parse(JSON.stringify(prog.weeks || []));
     renderEditor();
   };
 
-  window._spDelete = (id) => {
-    const prog = getPrograms().find(p => p.id === id);
+  window._spDelete = async (id) => {
+    const prog = getPrograms().find(p => String(p.id) === String(id));
     if (!prog) return;
     if (!confirm(`Delete the ${TERM_LABELS[prog.term]} ${prog.session} programme? This cannot be undone.`)) return;
-    savePrograms(getPrograms().filter(p => p.id !== id));
-    showToast('Programme deleted.');
-    renderList();
+    if (!window.RCA_API) { showToast('Cannot reach the server.', '#dc2626'); return; }
+    try {
+      await window.RCA_API.deleteSchoolProgramme(prog.id);
+      await loadProgrammes();
+      showToast('Programme deleted.');
+      renderList();
+    } catch (e) {
+      showToast('Could not delete: ' + e.message, '#dc2626');
+    }
   };
 
   window._spBackToList = () => {
@@ -599,7 +631,7 @@
       }
 
       const prog = {
-        id:         'spe-' + Date.now(),
+        _isNew:     true, // not persisted yet — _spSaveEdit creates it on first save
         session,
         term,
         weeks,
@@ -623,7 +655,7 @@
      PRINT
   ============================================================ */
   window._spPrint = (id) => {
-    const prog = getPrograms().find(p => p.id === id) || _activeProg;
+    const prog = getPrograms().find(p => String(p.id) === String(id)) || _activeProg;
     if (!prog) return;
 
     const weeks = prog.weeks || [];
