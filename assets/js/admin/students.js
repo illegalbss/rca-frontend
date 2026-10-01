@@ -1,9 +1,19 @@
 /* ============================================
    STUDENT MANAGEMENT — students.js
    ============================================
-   This file depends on window.SAMPLE_STUDENTS and
-   window.SCHOOL_CLASSES, both created by sample-students.js
-   (which MUST be loaded first - see students.html script order).
+   Pupil data is loaded directly from the live database via
+   window.RCA_API.getStudents() — NOT from window.SAMPLE_STUDENTS /
+   localStorage. This page used to seed itself from a per-browser
+   localStorage snapshot and patch it with fresher API data afterward;
+   that meant a pupil promoted elsewhere (Admission Register) could
+   still show under their old class card here until the async merge
+   happened to run, and any stale/incomplete local snapshot could
+   resurface on reload. Trusting the server as the only source of
+   truth removes that whole class of staleness bug.
+
+   window.SCHOOL_CLASSES still comes from sample-students.js — that
+   part is just a static list of class names for dropdowns/cards, not
+   pupil data.
 
    Two views on one page:
    1. #classPickerView - grid of 11 class cards with pupil counts
@@ -13,11 +23,9 @@
    we never reload the page or navigate to a new URL.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  // Use window.SAMPLE_STUDENTS directly so delete/add updates persist
-  if (!window.SAMPLE_STUDENTS) window.SAMPLE_STUDENTS = [];
-  const allStudents = window.SAMPLE_STUDENTS;
+  let allStudents = [];
   const allClasses = window.SCHOOL_CLASSES || [];
 
   // Track which class is currently being viewed in detail (null = none)
@@ -547,7 +555,6 @@ Status:       ${student.status}
         parent_phone:  phone || null,
         status:        'active'
       });
-      if (window.RCA) window.RCA.save('students');
 
       document.getElementById('studentModal').remove();
 
@@ -586,7 +593,6 @@ Status:       ${student.status}
       student.class_name    = cls;
       student.date_of_birth = dob || student.date_of_birth;
       student.parent_phone  = phone || student.parent_phone;
-      if (window.RCA) window.RCA.save('students');
 
       document.getElementById('studentModal').remove();
       renderStudentTable();
@@ -602,7 +608,6 @@ Status:       ${student.status}
 This will archive the record. You can restore it from User Management if needed.`)) return;
 
     student.status = 'archived';
-    if (window.RCA) window.RCA.save('students');
 
     // Phase 4: update in real database
     if (window.RCA_API) {
@@ -619,6 +624,27 @@ This will archive the record. You can restore it from User Management if needed.
      INIT
      ============================================ */
 
+  // Loading state so the class cards don't briefly flash "0 pupils"
+  // while the real roster is still in flight.
+  totalPupilsPill.textContent = 'Loading…';
+
+  if (window.RCA_API) {
+    try {
+      const apiStudents = await window.RCA_API.getStudents();
+      // Normalize gender to lowercase so comparisons like
+      // s.gender === 'male' elsewhere in this file work correctly —
+      // the database stores "Male"/"Female" (capitalized).
+      allStudents = (apiStudents || []).map(s => ({ ...s, gender: (s.gender || '').toLowerCase() }));
+    } catch (e) {
+      console.warn('Could not load students from API:', e.message);
+      totalPupilsPill.textContent = 'Could not load pupils';
+    }
+  }
+  // Kept in sync for any other script on this page that still reads
+  // the shared global — this page itself no longer treats it as a
+  // data source.
+  window.SAMPLE_STUDENTS = allStudents;
+
   renderClassCards();
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -626,30 +652,6 @@ This will archive the record. You can restore it from User Management if needed.
 
   if (requestedClass && allClasses.includes(requestedClass)) {
     openClassDetail(requestedClass);
-  }
-
-  // Phase 4: load real students from API
-  if (window.RCA_API) {
-    window.RCA_API.getStudents().then(apiStudents => {
-      if (apiStudents && apiStudents.length > 0) {
-        // Merge API students with localStorage
-        apiStudents.forEach(s => {
-          // Normalize gender to lowercase so comparisons like
-          // s.gender === 'male' elsewhere in this file work correctly
-          // — the database stores "Male"/"Female" (capitalized).
-          const normalized = { ...s, gender: (s.gender || '').toLowerCase() };
-          const idx = allStudents.findIndex(ls =>
-            ls.admission_no === s.admission_no);
-          if (idx >= 0) {
-            allStudents[idx] = { ...allStudents[idx], ...normalized };
-          } else {
-            allStudents.push(normalized);
-          }
-        });
-        renderClassCards();
-        if (requestedClass) openClassDetail(requestedClass);
-      }
-    }).catch(e => console.warn('Could not load students from API:', e.message));
   }
 
 });
