@@ -47,7 +47,17 @@
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-.pp-sidebar-logo img { width: 32px; height: 32px; }
+/* Matches the staff dashboard's sidebar badge treatment —
+   rounded square on a white card instead of a bare logo image. */
+.pp-sidebar-logo img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #fff;
+  padding: 2px;
+  flex-shrink: 0;
+}
 
 .pp-sidebar-logo span {
   font-family: var(--font-heading);
@@ -79,14 +89,17 @@
 }
 
 .pp-nav-link:hover {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.07);
   color: #fff;
 }
 
+/* Matches the staff dashboard's active nav state — a solid fill
+   (one step lighter than the sidebar's own background) with a gold
+   accent bar, instead of a translucent white overlay. */
 .pp-nav-link.active {
-  background: rgba(255,255,255,0.15);
+  background: var(--color-primary);
   color: #fff;
-  border-left: 3px solid #f4b400;
+  border-left: 3px solid var(--color-secondary);
   padding-left: 15px;
 }
 
@@ -163,6 +176,26 @@
   border-radius: 50%;
   border: 2px solid #fff;
   display: none; /* shown by parent-portal.js only once a real unread count is known */
+}
+
+/* School badge in the topbar — matches the staff dashboard's
+   .user-avatar treatment: a rounded-square shield, not circular. */
+.pp-school-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pp-school-badge img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .pp-user-chip {
@@ -1005,6 +1038,7 @@
   .pp-topbar { padding: 0 14px; }
   .pp-main { padding: 16px; }
   .pp-user-name { display: none; } /* avatar + bell fit better without the name on a narrow topbar */
+  .pp-school-badge { display: none; } /* same reasoning — the sidebar already shows the school logo when opened */
   .pp-stats { grid-template-columns: 1fr 1fr; }
   .pp-dash-grid { grid-template-columns: 1fr; }
   .pp-children-quicklinks-grid { grid-template-columns: 1fr; }
