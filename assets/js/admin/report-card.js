@@ -521,30 +521,24 @@ document.addEventListener('DOMContentLoaded', async () => {
      --------------------------------------------
      window.print() opens the browser's native print dialog. Our
      @media print CSS rules (in report-card.css) handle hiding the
-     sidebar/toolbar and compressing the layout — but content length
-     varies (up to 19 subjects, 13 behaviour traits, and a free-text,
-     admin-editable Head Teacher's comment), so on 'beforeprint' we
-     measure the actual rendered height against the A4 printable area
-     and go one of two ways:
-       - too tall  -> shrink the whole card down (transform: scale)
-                      so it still fits on one sheet
-       - shorter   -> stretch it to fill the sheet (flex column,
-                      justify-content: space-between) instead of
-                      leaving blank space hanging below the signatures
-     Order matters: we measure the NATURAL height first (both
-     adjustments reset), before applying either one — otherwise the
-     fill-to-height class would inflate scrollHeight and the overflow
-     check could never trigger.
+     sidebar/toolbar, compressing the layout, and — via min-height on
+     .report-card — filling the page even when content is short (e.g.
+     a Pre-Nursery pupil with one subject). That part needs no JS at
+     all, which avoids depending on scrollHeight being measured at the
+     exact right moment relative to the print stylesheet being applied.
+     The only thing JS still needs to handle is the opposite case:
+     content long enough (many subjects/behaviour traits, a long Head
+     Teacher's comment) to overflow one sheet, which min-height can't
+     prevent since it's only a floor — so on 'beforeprint' we measure
+     the natural height and shrink the whole card down if needed.
   */
   function fitReportCardToOnePage() {
     const el = document.getElementById('reportCard');
     if (!el) return;
 
-    // Reset before measuring natural, unadjusted height — padding-bottom
-    // from a PREVIOUS print (short content) would otherwise inflate
-    // scrollHeight and permanently disable the shrink path.
+    // Reset before measuring — a scale from a PREVIOUS print would
+    // otherwise distort this measurement.
     document.documentElement.style.setProperty('--rc-print-scale', '1');
-    el.style.paddingBottom = '';
     void el.offsetHeight; // force reflow
 
     const A4_PRINTABLE_HEIGHT_PX = 1060; // ~297mm minus 0.8cm top/bottom margins, at 96dpi
@@ -553,14 +547,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (contentHeight > A4_PRINTABLE_HEIGHT_PX) {
       const scale = Math.max(0.65, A4_PRINTABLE_HEIGHT_PX / contentHeight);
       document.documentElement.style.setProperty('--rc-print-scale', scale.toFixed(3));
-    } else {
-      // Shorter-than-one-page content (e.g. a Nursery pupil with one
-      // subject): pad the bottom of the card itself so its own box is
-      // exactly one page tall, instead of relying on flex justify-content
-      // to distribute gaps between sections — that approach silently
-      // failed to stretch in the print engine, leaving a blank lower half.
-      const gap = A4_PRINTABLE_HEIGHT_PX - contentHeight;
-      if (gap > 0) el.style.paddingBottom = gap + 'px';
     }
   }
   window.addEventListener('beforeprint', fitReportCardToOnePage);

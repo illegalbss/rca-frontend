@@ -358,6 +358,15 @@
     display: block;
   }
 
+  /* The dashboard's content column is offset by the sidebar's width
+     on screen — that offset is dead space once the sidebar is hidden
+     for print, and it was quietly eating into the printable width,
+     leaving the card narrower than the page instead of filling it. */
+  .admin-content {
+    margin-left: 0;
+    display: block;
+  }
+
   .admin-main {
     padding: 0;
   }
@@ -379,6 +388,12 @@
     max-width: 100%;
     padding: 0.5cm;
     font-size: 10px;
+    /* Guarantees the card fills a full A4 page (minus @page margins)
+       even when the content itself is short (e.g. a Pre-Nursery pupil
+       with one subject) — a pure-CSS floor that doesn't depend on JS
+       measuring the right height before printing. box-sizing:border-box
+       (set globally) means this includes the padding above. */
+    min-height: calc(297mm - 1.6cm);
     /* Safety-net shrink-to-fit for unusually long content (e.g. a long
        Head Teacher's comment) — see fitReportCardToOnePage() in
        report-card.js, which sets this custom property before printing. */
