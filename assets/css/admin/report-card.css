@@ -375,10 +375,12 @@
     background: #fff;
   }
 
-  /* Page setup: A4, tight margins */
+  /* Page setup: A4, minimal margins — just enough to stay inside most
+     printers' hardware-limited printable area, so the card's white
+     background fills almost the whole physical sheet. */
   @page {
     size: A4 portrait;
-    margin: 0.8cm;
+    margin: 0.4cm;
   }
 
   /* Report card container */
@@ -396,7 +398,7 @@
        are shaved off the exact page height as a safety margin — sitting
        flush against the printable boundary risked tipping a near-empty
        second page into existence on sub-pixel rounding in some browsers. */
-    min-height: calc(297mm - 1.6cm - 4mm);
+    min-height: calc(297mm - 0.8cm - 4mm);
     /* Safety-net shrink-to-fit for unusually long content (e.g. a long
        Head Teacher's comment) — see fitReportCardToOnePage() in
        report-card.js, which sets this custom property before printing. */
