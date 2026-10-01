@@ -42,9 +42,11 @@
   transition: opacity 0.8s ease;
   display: flex;
   align-items: center;
-  /* Reserves a dead zone at the bottom that the centered content can
-     never grow into, so the dots below are guaranteed clear of the
-     "Our Story" / "Apply for Admission" buttons on every slide. */
+  /* Reserves dead zones at the top and bottom that the vertically-
+     centered content can never grow into: padding-top keeps the badge
+     clear of the fixed site header, padding-bottom keeps the buttons
+     clear of the dots below, on every slide regardless of text length. */
+  padding-top: 130px;
   padding-bottom: 110px;
 }
 
@@ -761,6 +763,7 @@
   .hero-prev, .hero-next { width: 40px; height: 40px; font-size: 1.4rem; }
   .hero-prev { left: 12px; }
   .hero-next { right: 12px; }
+  .hero-slide { padding-top: 90px; }
 
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .stat-item  { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -796,7 +799,7 @@
   .hero-title { font-size: 1.8rem; }
   .hero-badge { font-size: 0.65rem; }
   .hero-actions .btn { font-size: var(--fs-xs); padding: 10px 20px; }
-  .hero-slide { padding-bottom: 80px; }
+  .hero-slide { padding-top: 80px; padding-bottom: 80px; }
   .hero-dots { bottom: 24px; }
 
   .stats-grid { grid-template-columns: 1fr 1fr; gap: var(--space-md); }
