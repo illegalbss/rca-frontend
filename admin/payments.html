@@ -211,7 +211,7 @@
             <div class="form-group" style="margin:0">
               <label>Student Name</label>
               <div style="position:relative">
-                <input type="text" id="lookupNameInput" class="form-control" placeholder="Type name to search…" autocomplete="off">
+                <input type="text" id="lookupNameInput" class="form-control" placeholder="Type name to search…" autocomplete="new-password">
                 <div id="nameDropdown" class="lookup-dropdown" style="display:none"></div>
               </div>
             </div>
@@ -264,7 +264,7 @@
           <div class="lookup-meta" id="lookupMeta"></div>
           <div class="lookup-balance-row">
             <div class="lookup-balance-item total">
-              <span>Total Fee</span>
+              <span>School Fees Total</span>
               <strong id="lookupTotal"></strong>
             </div>
             <div class="lookup-balance-item paid">
@@ -278,6 +278,31 @@
           </div>
           <div id="lookupBreakdown" style="margin-top:10px;font-size:0.78rem;color:#6b7280"></div>
           <div id="lookupDiscount" style="font-size:var(--fs-sm);margin-top:var(--space-sm);color:var(--color-primary)"></div>
+
+          <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <span style="font-size:0.72rem;font-weight:700;color:#9ca3af;text-transform:uppercase">Fee Structure &amp; Discounts</span>
+            <span id="lookupFeeCategory" style="font-size:0.78rem;font-weight:600;color:#1a3a5c"></span>
+            <a id="lookupFeeCatLink" href="#" class="btn btn-outline btn-sm" style="font-size:0.72rem;padding:4px 10px">💰 Fee Structure</a>
+            <a id="lookupFeeAdjLink" href="#" class="btn btn-outline btn-sm" style="font-size:0.72rem;padding:4px 10px">🏷 Discount</a>
+            <span style="font-size:0.72rem;color:#9ca3af">— opens Finance Reports for this pupil</span>
+          </div>
+
+          <!-- ICT / Portal Fee is tracked completely separately: it's not
+               school income, so it is never bundled into the School Fees
+               total/payment above and must be recorded as its own
+               transaction here instead. -->
+          <div id="lookupIctFeeCard" style="margin-top:14px;padding:12px 14px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;display:none">
+            <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px">
+              <div style="font-size:0.82rem">
+                <strong>ICT / Portal Fee</strong> —
+                <span id="lookupIctAmount"></span> ·
+                Paid: <span id="lookupIctPaid"></span> ·
+                Balance: <span id="lookupIctBalance" style="font-weight:700"></span>
+                <span id="lookupIctStatus" style="margin-left:6px"></span>
+              </div>
+              <button id="recordIctFeeBtn" class="btn btn-outline btn-sm" style="font-size:0.72rem;padding:4px 10px">Record ICT Fee Payment</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -383,6 +408,48 @@
       </div>
 
     </main>
+
+    <!-- Record ICT Fee Payment modal — deliberately separate from the
+         main payment form above so this money is never recorded as
+         fee_type 'school_fees' and never counts toward Finance
+         Reports/Debtors totals (see /ict-fee-report on the backend). -->
+    <div id="ictFeePayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="background:#1a3a5c;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
+          <span style="color:#fff;font-weight:700;font-size:1rem">💻 Record ICT Fee Payment</span>
+          <button id="closeIctFeeModal" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:1rem">✕</button>
+        </div>
+        <div style="padding:22px">
+          <p id="ictFeeModalStudentName" style="font-size:0.85rem;color:#374151;margin-bottom:14px;font-weight:600"></p>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Amount (&#8358;)</label>
+            <input type="number" id="ictFeeAmount" class="form-control" min="1">
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Payment Method</label>
+            <select id="ictFeeMethod" class="form-control">
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="POS">POS</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Payment Date</label>
+            <input type="date" id="ictFeeDate" class="form-control">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label class="form-label">Receipt Number <span style="font-weight:400;color:#9ca3af">(auto-generated if blank)</span></label>
+            <input type="text" id="ictFeeReceipt" class="form-control" placeholder="RCA-RCP-…">
+          </div>
+          <div id="ictFeeAlert" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:0.78rem"></div>
+          <div style="display:flex;gap:10px">
+            <button id="closeIctFeeModal2" class="btn btn-outline" style="flex:1">Cancel</button>
+            <button id="saveIctFeeBtn" class="btn btn-primary" style="flex:1">Save Payment</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -421,12 +488,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!el || !currentLookup) { if (el) el.textContent = ''; return; }
     var amount = parseFloat(document.getElementById('payAmount').value) || 0;
     if (amount <= 0) { el.textContent = ''; return; }
-    var willBeFull = (currentLookup.amount_paid + amount) >= currentLookup.grand_total;
+    var willBeFull = (currentLookup.schoolFeesPaid + amount) >= currentLookup.schoolFeesTotal;
     if (willBeFull) {
-      el.textContent = '✓ Full Payment — balance will be cleared';
+      el.textContent = '✓ Full Payment — School Fees balance will be cleared';
       el.style.color = '#16a34a';
     } else {
-      var remaining = currentLookup.grand_total - (currentLookup.amount_paid + amount);
+      var remaining = currentLookup.schoolFeesTotal - (currentLookup.schoolFeesPaid + amount);
       el.textContent = '⚠ Part Payment — ' + fmt(remaining) + ' will still be owing';
       el.style.color = '#a0522d';
     }
@@ -572,12 +639,30 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         document.getElementById('lookupName').textContent = data.full_name;
         document.getElementById('lookupMeta').textContent = data.class_name + ' · ' + data.admission_no + ' · ' + TERM_LABELS[term];
-        document.getElementById('lookupTotal').textContent   = fmt(data.grand_total);
-        document.getElementById('lookupPaid').textContent    = fmt(data.amount_paid);
-        document.getElementById('lookupBalance').textContent = fmt(data.balance);
+
+        // The ICT/Portal Fee is personal income for the ICT admin, not
+        // school revenue — it must never be bundled into the School
+        // Fees total shown/recorded here. Back it out of the combined
+        // figures the backend returns (which include it only so the
+        // result-unlock check can require both to be cleared at once).
+        var ictAmount  = data.ict_fee_amount || 0;
+        var ictPaid    = data.ict_fee_paid   || 0;
+        var ictBalance = data.ict_fee_balance != null ? data.ict_fee_balance : Math.max(ictAmount - ictPaid, 0);
+        var schoolFeesTotal   = data.grand_total - ictAmount;
+        var schoolFeesPaid    = data.amount_paid - ictPaid;
+        var schoolFeesBalance = Math.max(schoolFeesTotal - schoolFeesPaid, 0);
+        currentLookup.schoolFeesTotal   = schoolFeesTotal;
+        currentLookup.schoolFeesPaid    = schoolFeesPaid;
+        currentLookup.schoolFeesBalance = schoolFeesBalance;
+
+        document.getElementById('lookupTotal').textContent   = fmt(schoolFeesTotal);
+        document.getElementById('lookupPaid').textContent    = fmt(schoolFeesPaid);
+        document.getElementById('lookupBalance').textContent = fmt(schoolFeesBalance);
 
         var bkd = document.getElementById('lookupBreakdown');
-        bkd.innerHTML = data.lines.map(function(l) {
+        bkd.innerHTML = data.lines.filter(function(l) {
+          return !/ICT|Portal/i.test(l.label);
+        }).map(function(l) {
           return '<span style="margin-right:16px">' + l.label + ': <strong>' + fmt(l.amount) + '</strong></span>';
         }).join('');
 
@@ -589,20 +674,44 @@ document.addEventListener('DOMContentLoaded', async function () {
             }).join(' · ')
           : '';
 
+        var FEE_CAT_LABELS = { standard: 'Standard', new_intake: 'New Intake', custom: 'Custom' };
+        var feeCat = data.fee_category || 'standard';
+        document.getElementById('lookupFeeCategory').textContent = '(' + (FEE_CAT_LABELS[feeCat] || feeCat) + ')';
+        document.getElementById('lookupFeeCatLink').href = 'finance-reports.html?admission_no=' + encodeURIComponent(data.admission_no) + '&open=category';
+        document.getElementById('lookupFeeAdjLink').href = 'finance-reports.html?admission_no=' + encodeURIComponent(data.admission_no) + '&open=discount';
+
+        var ictCard = document.getElementById('lookupIctFeeCard');
+        if (ictAmount > 0) {
+          ictCard.style.display = 'block';
+          document.getElementById('lookupIctAmount').textContent  = fmt(ictAmount);
+          document.getElementById('lookupIctPaid').textContent    = fmt(ictPaid);
+          document.getElementById('lookupIctBalance').textContent = fmt(ictBalance);
+          var ictStatusEl = document.getElementById('lookupIctStatus');
+          if (ictBalance <= 0) {
+            ictStatusEl.innerHTML = '<span class="badge-paid">Paid</span>';
+            document.getElementById('recordIctFeeBtn').style.display = 'none';
+          } else {
+            ictStatusEl.innerHTML = ictPaid > 0 ? '<span class="badge-partial">Partial</span>' : '<span class="badge-unpaid">Unpaid</span>';
+            document.getElementById('recordIctFeeBtn').style.display = '';
+          }
+        } else {
+          ictCard.style.display = 'none';
+        }
+
         document.getElementById('lookupResult').classList.add('visible');
         document.getElementById('successCard').style.display = 'none';
 
-        if (data.balance <= 0) {
+        if (schoolFeesBalance <= 0) {
           document.getElementById('paymentFormCard').style.display = 'none';
-          errEl.textContent = data.full_name + ' has already paid in full for this term.';
+          errEl.textContent = data.full_name + ' has already paid School Fees in full for this term.';
           errEl.style.display = 'block';
         } else {
           document.getElementById('payStudentName').value = data.full_name;
           document.getElementById('payAdmNo').value       = data.admission_no;
           document.getElementById('payClass').value       = data.class_name;
           document.getElementById('payTermLabel').value   = TERM_LABELS[term];
-          document.getElementById('payAmount').value      = data.balance;
-          document.getElementById('payAmount').max        = data.balance;
+          document.getElementById('payAmount').value      = schoolFeesBalance;
+          document.getElementById('payAmount').max        = schoolFeesBalance;
           document.getElementById('payDate').value        = new Date().toISOString().split('T')[0];
           document.getElementById('payReceiptNo').value   = '';
           document.getElementById('payParentName').value  = '';
@@ -638,7 +747,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     if (!currentLookup) { errEl.textContent = 'Please look up a student first.'; errEl.style.display = 'block'; return; }
     if (!amount || amount <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = 'block'; return; }
-    if (amount > currentLookup.balance) { errEl.textContent = 'Amount cannot exceed balance of ' + fmt(currentLookup.balance) + '.'; errEl.style.display = 'block'; return; }
+    if (amount > currentLookup.schoolFeesBalance) { errEl.textContent = 'Amount cannot exceed School Fees balance of ' + fmt(currentLookup.schoolFeesBalance) + '.'; errEl.style.display = 'block'; return; }
 
     var method     = document.getElementById('payMethod').value;
     var date       = document.getElementById('payDate').value || new Date().toISOString().split('T')[0];
@@ -660,7 +769,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         payment_date: date,
         payment_method: method,
         reference: receiptNo,
-        status: (currentLookup.amount_paid + amount) >= currentLookup.grand_total ? 'paid' : 'partial'
+        status: (currentLookup.schoolFeesPaid + amount) >= currentLookup.schoolFeesTotal ? 'paid' : 'partial'
       }
     }).then(function() {
       document.getElementById('savePaymentBtn').disabled = false;
@@ -674,7 +783,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         method:        method,
         receipt_no:    receiptNo,
         parent_name:   parentName,
-        status: (currentLookup.amount_paid + amount) >= currentLookup.grand_total ? 'paid' : 'partial'
+        status: (currentLookup.schoolFeesPaid + amount) >= currentLookup.schoolFeesTotal ? 'paid' : 'partial'
       });
 
       sessionStorage.setItem('rca_last_receipt', JSON.stringify({
@@ -707,6 +816,72 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('lookupResult').classList.remove('visible');
     document.getElementById('lookupAdmNo').value = '';
     document.getElementById('lookupError').style.display = 'none';
+  });
+
+  /* ── Record ICT Fee Payment (kept entirely separate from the main
+     School Fees payment above — fee_type 'ict_fee' is excluded from
+     Finance Reports/Debtors on the backend) ── */
+  function openIctFeeModal() {
+    if (!currentLookup) return;
+    document.getElementById('ictFeeModalStudentName').textContent =
+      currentLookup.full_name + ' — ' + TERM_LABELS[currentTerm];
+    var balance = currentLookup.ict_fee_balance != null
+      ? currentLookup.ict_fee_balance
+      : Math.max((currentLookup.ict_fee_amount || 0) - (currentLookup.ict_fee_paid || 0), 0);
+    document.getElementById('ictFeeAmount').value   = balance;
+    document.getElementById('ictFeeMethod').value   = 'Cash';
+    document.getElementById('ictFeeDate').value     = new Date().toISOString().split('T')[0];
+    document.getElementById('ictFeeReceipt').value  = '';
+    document.getElementById('ictFeeAlert').style.display = 'none';
+    document.getElementById('ictFeePayModal').style.display = 'flex';
+  }
+  function closeIctFeeModal() { document.getElementById('ictFeePayModal').style.display = 'none'; }
+
+  document.getElementById('recordIctFeeBtn').addEventListener('click', openIctFeeModal);
+  document.getElementById('closeIctFeeModal').addEventListener('click', closeIctFeeModal);
+  document.getElementById('closeIctFeeModal2').addEventListener('click', closeIctFeeModal);
+
+  document.getElementById('saveIctFeeBtn').addEventListener('click', function () {
+    var amount  = parseFloat(document.getElementById('ictFeeAmount').value);
+    var alertEl = document.getElementById('ictFeeAlert');
+    alertEl.style.display = 'none';
+
+    if (!currentLookup) return;
+    if (!amount || amount <= 0) { alertEl.textContent = 'Please enter a valid amount.'; alertEl.style.display = 'block'; return; }
+
+    var method = document.getElementById('ictFeeMethod').value;
+    var date   = document.getElementById('ictFeeDate').value || new Date().toISOString().split('T')[0];
+    var customReceipt = document.getElementById('ictFeeReceipt').value.trim();
+    var receiptNo = customReceipt || ('RCA-RCP-' + Date.now().toString().slice(-6));
+
+    var btn = document.getElementById('saveIctFeeBtn');
+    btn.disabled = true;
+
+    var ictPaidSoFar = currentLookup.ict_fee_paid || 0;
+    var ictTotal     = currentLookup.ict_fee_amount || 0;
+
+    window.RCA_API.call('/payments', {
+      method: 'POST',
+      body: {
+        admission_no: currentAdmNo,
+        amount: amount,
+        fee_type: 'ict_fee',
+        term: currentTerm,
+        session: currentLookup.session,
+        payment_date: date,
+        payment_method: method,
+        reference: receiptNo,
+        status: (ictPaidSoFar + amount) >= ictTotal ? 'paid' : 'partial'
+      }
+    }).then(function() {
+      btn.disabled = false;
+      closeIctFeeModal();
+      doLookup(currentAdmNo, currentTerm);
+    }).catch(function(e) {
+      btn.disabled = false;
+      alertEl.textContent = 'Could not save payment: ' + e.message;
+      alertEl.style.display = 'block';
+    });
   });
 
   function renderRecentPayments() {

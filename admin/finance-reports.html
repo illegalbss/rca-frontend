@@ -129,7 +129,7 @@
         <div style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
           <div class="form-group" style="margin:0;flex:1;min-width:160px">
             <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Search by Name</label>
-            <input type="text" id="debtorSearch" class="form-control" placeholder="Type student name…" style="padding:7px 10px;font-size:0.82rem" autocomplete="off">
+            <input type="text" id="debtorSearch" class="form-control" placeholder="Type student name…" style="padding:7px 10px;font-size:0.82rem" autocomplete="new-password">
           </div>
           <div class="form-group" style="margin:0;min-width:140px">
             <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Class</label>
@@ -196,7 +196,7 @@
         <div class="no-print" style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
           <div class="form-group" style="margin:0;flex:1;min-width:160px">
             <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Search by Name</label>
-            <input type="text" id="discountSearch" class="form-control" placeholder="Type student name…" style="padding:7px 10px;font-size:0.82rem" autocomplete="off">
+            <input type="text" id="discountSearch" class="form-control" placeholder="Type student name…" style="padding:7px 10px;font-size:0.82rem" autocomplete="new-password">
           </div>
           <div class="form-group" style="margin:0;min-width:140px">
             <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Class</label>
@@ -655,6 +655,25 @@ document.addEventListener('DOMContentLoaded', () => {
   async function initDiscountSection() {
     discountCache = await fetchDiscountManagement();
     renderDiscountTable();
+
+    // Deep link from Record Payment ("Fee Structure" / "Discount" links
+    // next to a looked-up pupil) — jump straight to that pupil's modal
+    // instead of making the admin hunt for them in this table.
+    const params = new URLSearchParams(window.location.search);
+    const focusAdm = params.get('admission_no');
+    const openWhat = params.get('open');
+    if (focusAdm) {
+      const match = discountCache.find(r => r.admission_no === focusAdm);
+      if (match) {
+        document.getElementById('discountSearch').value = match.full_name;
+        renderDiscountTable();
+        if (openWhat === 'discount') {
+          openFeeAdjustmentModal(match.admission_no, match.full_name);
+        } else {
+          openFeeCategoryModal(match.admission_no, match.full_name, match.fee_category);
+        }
+      }
+    }
   }
 
   let discountSearchDebounce;
