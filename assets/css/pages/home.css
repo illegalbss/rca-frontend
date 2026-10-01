@@ -42,6 +42,10 @@
   transition: opacity 0.8s ease;
   display: flex;
   align-items: center;
+  /* Reserves a dead zone at the bottom that the centered content can
+     never grow into, so the dots below are guaranteed clear of the
+     "Our Story" / "Apply for Admission" buttons on every slide. */
+  padding-bottom: 110px;
 }
 
 /* Ensure active slide is always visible */
@@ -150,7 +154,7 @@
 
 .hero-dots {
   position: absolute;
-  bottom: 90px;
+  bottom: 34px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -792,6 +796,8 @@
   .hero-title { font-size: 1.8rem; }
   .hero-badge { font-size: 0.65rem; }
   .hero-actions .btn { font-size: var(--fs-xs); padding: 10px 20px; }
+  .hero-slide { padding-bottom: 80px; }
+  .hero-dots { bottom: 24px; }
 
   .stats-grid { grid-template-columns: 1fr 1fr; gap: var(--space-md); }
 
