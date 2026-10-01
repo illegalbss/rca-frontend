@@ -383,8 +383,19 @@
     margin: 0.4cm;
   }
 
-  /* Report card container */
+  /* Report card container — lifted out of the dashboard's layout flow
+     entirely (position:fixed, pinned to the page edges) instead of
+     trying to zero out every ancestor's margin/padding/flex behavior
+     one at a time. The admission form never has this problem because
+     it's a standalone page with no surrounding dashboard chrome to
+     fight; this makes the report card behave the same way for print
+     regardless of what .report-card-wrap/.admin-content/.admin-main
+     are doing on screen. */
   .report-card {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     box-shadow: none;
     border: none;
     max-width: 100%;
