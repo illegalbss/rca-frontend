@@ -392,8 +392,11 @@
        even when the content itself is short (e.g. a Pre-Nursery pupil
        with one subject) — a pure-CSS floor that doesn't depend on JS
        measuring the right height before printing. box-sizing:border-box
-       (set globally) means this includes the padding above. */
-    min-height: calc(297mm - 1.6cm);
+       (set globally) means this includes the padding above. A few mm
+       are shaved off the exact page height as a safety margin — sitting
+       flush against the printable boundary risked tipping a near-empty
+       second page into existence on sub-pixel rounding in some browsers. */
+    min-height: calc(297mm - 1.6cm - 4mm);
     /* Safety-net shrink-to-fit for unusually long content (e.g. a long
        Head Teacher's comment) — see fitReportCardToOnePage() in
        report-card.js, which sets this custom property before printing. */
