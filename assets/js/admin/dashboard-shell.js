@@ -193,8 +193,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const avatar      = document.getElementById('userAvatar');
   const welcomeMsg  = document.getElementById('welcomeMessage');
 
+  // A staff member's job_title (e.g. "Proprietor", "Form Teacher — Basic 3")
+  // is who they ARE to the school; primary_role (e.g. ict_admin) is only
+  // the permission level the system grants them — those two intentionally
+  // don't have to match (a Proprietor runs the system as an ICT
+  // Administrator, permission-wise, but should see their own title, not
+  // "ICT Administrator", when greeted). Fall back to the role label when
+  // no job_title has been set.
   let roleLabel;
-  if (userRoles.includes('class_teacher') && userRoles.includes('subject_teacher')) {
+  if (currentUser.job_title && currentUser.job_title.trim()) {
+    roleLabel = currentUser.job_title.trim();
+  } else if (userRoles.includes('class_teacher') && userRoles.includes('subject_teacher')) {
     roleLabel = 'Form & Subject Teacher';
   } else {
     roleLabel = roleLabels[currentUser.primary_role || currentRole] || currentRole;
