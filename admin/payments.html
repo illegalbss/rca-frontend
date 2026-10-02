@@ -674,7 +674,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             }).join(' · ')
           : '';
 
-        var FEE_CAT_LABELS = { standard: 'Standard', new_intake: 'New Intake', custom: 'Custom' };
+        var FEE_CAT_LABELS = { standard: 'Standard', new_intake: 'New Intake', custom: 'Custom', scholarship: 'Scholarship' };
         var feeCat = data.fee_category || 'standard';
         document.getElementById('lookupFeeCategory').textContent = '(' + (FEE_CAT_LABELS[feeCat] || feeCat) + ')';
         document.getElementById('lookupFeeCatLink').href = 'finance-reports.html?admission_no=' + encodeURIComponent(data.admission_no) + '&open=category';

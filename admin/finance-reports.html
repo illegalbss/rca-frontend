@@ -250,12 +250,16 @@
               <option value="standard">Standard</option>
               <option value="new_intake">New Intake</option>
               <option value="custom">Custom Amount</option>
+              <option value="scholarship">Scholarship (No School Fees)</option>
             </select>
           </div>
           <div class="form-group" id="feeCatCustomGroup" style="margin-bottom:16px;display:none">
             <label class="form-label">Custom Total Fee (₦)</label>
             <input type="number" id="feeCatCustomAmount" class="form-control" placeholder="e.g. 60000">
             <div style="font-size:0.73rem;color:#6b7280;margin-top:4px">This is the pupil's complete fee for the term — it replaces School Fees/Utility Bill/Lesson Fee/Levy entirely, it is not added on top of them. The ICT/Portal Fee is still tracked separately as usual.</div>
+          </div>
+          <div id="feeCatScholarshipNote" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.78rem">
+            This pupil will owe ₦0 in school fees every term, automatically, until this is changed back — no need to re-approve each term. The ICT/Portal Fee still applies separately unless also waived.
           </div>
           <div id="feeCatAlert" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:0.78rem"></div>
           <div style="display:flex;gap:10px">
@@ -595,7 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
     discountClassSel.appendChild(o);
   });
 
-  const FEE_CAT_LABELS = { standard: 'Standard', new_intake: 'New Intake', custom: 'Custom' };
+  const FEE_CAT_LABELS = { standard: 'Standard', new_intake: 'New Intake', custom: 'Custom', scholarship: 'Scholarship' };
   let discountCache = [];
 
   async function fetchDiscountManagement() {
@@ -631,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td style="font-size:0.78rem">${r.admission_no}</td>
           <td style="font-weight:600">${r.full_name}</td>
           <td>${r.class_name}</td>
-          <td>${FEE_CAT_LABELS[r.fee_category] || r.fee_category}</td>
+          <td>${r.fee_category === 'scholarship' ? '<span class="badge-paid">🎓 Scholarship</span>' : (FEE_CAT_LABELS[r.fee_category] || r.fee_category)}</td>
           <td>${r.sibling_count} ${r.sibling_count === 1 ? 'child' : 'children'} on file${r.sibling_count >= 3 ? ' ⚠' : ''}</td>
           <td><span class="${r.has_approved_discount ? 'badge-paid' : 'badge-unpaid'}">${r.has_approved_discount ? 'Yes' : 'No'}</span></td>
           <td class="no-print" style="display:flex;gap:6px;flex-wrap:wrap">
@@ -694,6 +698,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('feeCatSelect').value = currentCategory || 'standard';
     document.getElementById('feeCatCustomAmount').value = '';
     document.getElementById('feeCatCustomGroup').style.display = currentCategory === 'custom' ? 'block' : 'none';
+    document.getElementById('feeCatScholarshipNote').style.display = currentCategory === 'scholarship' ? 'block' : 'none';
     document.getElementById('feeCatAlert').style.display = 'none';
   }
   function closeFeeCategoryModal() { document.getElementById('feeCategoryModal').style.display = 'none'; }
@@ -701,6 +706,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeFeeCatModal2').addEventListener('click', closeFeeCategoryModal);
   document.getElementById('feeCatSelect').addEventListener('change', (e) => {
     document.getElementById('feeCatCustomGroup').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    document.getElementById('feeCatScholarshipNote').style.display = e.target.value === 'scholarship' ? 'block' : 'none';
   });
   document.getElementById('saveFeeCatBtn').addEventListener('click', async () => {
     const admissionNo = document.getElementById('feeCategoryModal').dataset.admission;
