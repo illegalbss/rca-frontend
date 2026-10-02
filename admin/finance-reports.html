@@ -258,6 +258,15 @@
             <input type="number" id="feeCatCustomAmount" class="form-control" placeholder="e.g. 60000">
             <div style="font-size:0.73rem;color:#6b7280;margin-top:4px">This is the pupil's complete fee for the term — it replaces School Fees/Utility Bill/Lesson Fee/Levy entirely, it is not added on top of them. The ICT/Portal Fee is still tracked separately as usual.</div>
           </div>
+          <div class="form-group" id="feeCatNewIntakeGroup" style="margin-bottom:16px;display:none">
+            <label class="form-label">Which term is this admission for?</label>
+            <select id="feeCatNewIntakeTerm" class="form-control">
+              <option value="term1">First Term</option>
+              <option value="term2">Second Term</option>
+              <option value="term3">Third Term</option>
+            </select>
+            <div style="font-size:0.73rem;color:#6b7280;margin-top:4px">The bundled New Intake total only applies to this one term. Every other term, this pupil is automatically billed the normal standard fee like everyone else — no need to switch them back manually.</div>
+          </div>
           <div id="feeCatScholarshipNote" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.78rem">
             This pupil will owe ₦0 in school fees every term, automatically, until this is changed back — no need to re-approve each term. The ICT/Portal Fee still applies separately unless also waived.
           </div>
@@ -640,7 +649,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td><span class="${r.has_approved_discount ? 'badge-paid' : 'badge-unpaid'}">${r.has_approved_discount ? 'Yes' : 'No'}</span></td>
           <td class="no-print" style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm fin-profile-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" style="font-size:0.72rem;padding:4px 10px">📄 Profile</button>
-            <button class="btn btn-outline btn-sm fee-cat-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" data-category="${r.fee_category}" style="font-size:0.72rem;padding:4px 10px">💰 Fee Structure</button>
+            <button class="btn btn-outline btn-sm fee-cat-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" data-category="${r.fee_category}" data-new-intake-term="${r.new_intake_term || ''}" style="font-size:0.72rem;padding:4px 10px">💰 Fee Structure</button>
             <button class="btn btn-outline btn-sm fee-adj-btn" data-admission="${r.admission_no}" data-name="${r.full_name}" style="font-size:0.72rem;padding:4px 10px">🏷 Discount</button>
           </td>
         </tr>
@@ -650,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', () => openFinancialProfile(btn.dataset.admission));
     });
     document.querySelectorAll('.fee-cat-btn').forEach(btn => {
-      btn.addEventListener('click', () => openFeeCategoryModal(btn.dataset.admission, btn.dataset.name, btn.dataset.category));
+      btn.addEventListener('click', () => openFeeCategoryModal(btn.dataset.admission, btn.dataset.name, btn.dataset.category, btn.dataset.newIntakeTerm));
     });
     document.querySelectorAll('.fee-adj-btn').forEach(btn => {
       btn.addEventListener('click', () => openFeeAdjustmentModal(btn.dataset.admission, btn.dataset.name));
@@ -675,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (openWhat === 'discount') {
           openFeeAdjustmentModal(match.admission_no, match.full_name);
         } else {
-          openFeeCategoryModal(match.admission_no, match.full_name, match.fee_category);
+          openFeeCategoryModal(match.admission_no, match.full_name, match.fee_category, match.new_intake_term);
         }
       }
     }
@@ -691,13 +700,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ── Fee Category modal ── */
-  function openFeeCategoryModal(admissionNo, name, currentCategory) {
+  function openFeeCategoryModal(admissionNo, name, currentCategory, currentNewIntakeTerm) {
     document.getElementById('feeCategoryModal').style.display = 'flex';
     document.getElementById('feeCategoryModal').dataset.admission = admissionNo;
     document.getElementById('feeCatStudentName').textContent = name;
     document.getElementById('feeCatSelect').value = currentCategory || 'standard';
     document.getElementById('feeCatCustomAmount').value = '';
+    document.getElementById('feeCatNewIntakeTerm').value = currentNewIntakeTerm || 'term1';
     document.getElementById('feeCatCustomGroup').style.display = currentCategory === 'custom' ? 'block' : 'none';
+    document.getElementById('feeCatNewIntakeGroup').style.display = currentCategory === 'new_intake' ? 'block' : 'none';
     document.getElementById('feeCatScholarshipNote').style.display = currentCategory === 'scholarship' ? 'block' : 'none';
     document.getElementById('feeCatAlert').style.display = 'none';
   }
@@ -706,12 +717,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeFeeCatModal2').addEventListener('click', closeFeeCategoryModal);
   document.getElementById('feeCatSelect').addEventListener('change', (e) => {
     document.getElementById('feeCatCustomGroup').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    document.getElementById('feeCatNewIntakeGroup').style.display = e.target.value === 'new_intake' ? 'block' : 'none';
     document.getElementById('feeCatScholarshipNote').style.display = e.target.value === 'scholarship' ? 'block' : 'none';
   });
   document.getElementById('saveFeeCatBtn').addEventListener('click', async () => {
     const admissionNo = document.getElementById('feeCategoryModal').dataset.admission;
     const fee_category = document.getElementById('feeCatSelect').value;
     const customAmount = document.getElementById('feeCatCustomAmount').value;
+    const newIntakeTerm = document.getElementById('feeCatNewIntakeTerm').value;
     const alertEl = document.getElementById('feeCatAlert');
     alertEl.style.display = 'none';
 
@@ -724,7 +737,11 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.disabled = true;
     try {
       await window.RCA_API.call(`/payments/fee-category/${encodeURIComponent(admissionNo)}`, {
-        method: 'PUT', body: { fee_category, custom_fee_amount: fee_category === 'custom' ? Number(customAmount) : undefined }
+        method: 'PUT', body: {
+          fee_category,
+          custom_fee_amount: fee_category === 'custom' ? Number(customAmount) : undefined,
+          new_intake_term: fee_category === 'new_intake' ? newIntakeTerm : undefined
+        }
       });
       closeFeeCategoryModal();
       discountCache = await fetchDiscountManagement();
@@ -904,7 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('finProfileBody').innerHTML = `
       <div style="margin-bottom:16px">
         <div style="font-weight:700;font-size:1rem;color:#111827">${s.full_name}</div>
-        <div style="font-size:0.8rem;color:#6b7280">${s.admission_no} · ${s.class_name} · ${FEE_CAT_LABELS[s.fee_category] || s.fee_category} fee structure${s.fee_category === 'custom' && s.custom_fee_amount ? ' (' + fmt(s.custom_fee_amount) + ')' : ''}</div>
+        <div style="font-size:0.8rem;color:#6b7280">${s.admission_no} · ${s.class_name} · ${FEE_CAT_LABELS[s.fee_category] || s.fee_category} fee structure${s.fee_category === 'custom' && s.custom_fee_amount ? ' (' + fmt(s.custom_fee_amount) + ')' : ''}${s.fee_category === 'new_intake' && s.new_intake_term ? ' (' + TERM_LABELS[s.new_intake_term] + ' only — standard fee applies every other term)' : ''}</div>
         <div style="font-size:0.75rem;color:#9ca3af;margin-top:2px">Session: ${data.session}</div>
       </div>
       <div style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px">Fee Breakdown by Term</div>
