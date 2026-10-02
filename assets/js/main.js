@@ -238,25 +238,26 @@ document.querySelectorAll('.gallery-filter-btn').forEach(btn => {
 
 
 /* ============================================
-   HOMEPAGE — Dynamic Events & Announcements
-   Loads from localStorage (set by admin)
+   HOMEPAGE — Dynamic Events
+   Loads from the real database via GET /api/public/events
+   (events the ICT Administrator/Head Teacher creates with
+   audience "Everyone" in the admin Announcements → Events tab) —
+   previously read from a localStorage key nothing ever wrote to,
+   so an admin-created event never actually appeared here.
    ============================================ */
-(function loadHomepageEvents() {
+(async function loadHomepageEvents() {
   const eventsList = document.getElementById('homepageEventsList');
   if (!eventsList) return;
 
   try {
-    const events = JSON.parse(localStorage.getItem('rca_events') || '[]');
-    const today = new Date();
-
-    // Show upcoming events only (today + future), visible to all/parents
-    const upcoming = events
-      .filter(e => new Date(e.event_date) >= today && e.audience !== 'staff')
-      .sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
-      .slice(0, 5);
+    const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
+    const res = await fetch(`${apiUrl}/public/events`);
+    if (!res.ok) throw new Error('Request failed');
+    const data = await res.json();
+    const upcoming = (data.events || []).slice(0, 5);
 
     if (upcoming.length === 0) {
-      eventsList.innerHTML = '<p style="color:rgba(255,255,255,0.5);font-size:0.88rem;text-align:center;padding:24px">No upcoming events at this time.</p>';
+      eventsList.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:0.9rem;text-align:center;padding:20px">No upcoming events at this time.</p>';
       return;
     }
 
@@ -277,6 +278,6 @@ document.querySelectorAll('.gallery-filter-btn').forEach(btn => {
         </div>`;
     }).join('');
   } catch(e) {
-    eventsList.innerHTML = '<p style="color:rgba(255,255,255,0.5);font-size:0.88rem;text-align:center;padding:24px">Check back for upcoming events.</p>';
+    eventsList.innerHTML = '<p style="color:rgba(255,255,255,0.6);font-size:0.9rem;text-align:center;padding:20px">Check back for upcoming events.</p>';
   }
 })();

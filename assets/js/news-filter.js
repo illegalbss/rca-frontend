@@ -15,7 +15,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   const filterBtns = document.querySelectorAll('.filter-btn');
-  const newsCards  = document.querySelectorAll('.news-card-item');
   const noResults  = document.getElementById('noResults');
 
   filterBtns.forEach(btn => {
@@ -31,8 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const filter = btn.getAttribute('data-filter'); // "all", "news", "event", "achievement"
 
-      // 2. Show / hide cards
+      // 2. Show / hide cards — queried fresh on every click (not cached
+      // once at page load) so cards added later by the dynamic
+      // news/events loader are included too.
       let visibleCount = 0;
+      const newsCards = document.querySelectorAll('.news-card-item');
 
       newsCards.forEach(card => {
         const category = card.getAttribute('data-category');
