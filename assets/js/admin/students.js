@@ -28,6 +28,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allStudents = [];
   const allClasses = window.SCHOOL_CLASSES || [];
 
+  // admission_no -> { full_name, email, phone } of the parent ACCOUNT
+  // (a real portal login) linked to that pupil, not just the
+  // parent_name/parent_phone contact fields recorded on the pupil's own
+  // record. Populated from GET /users/parents (ict_admin only — this
+  // silently stays empty for any other role, so the global search below
+  // just won't show a "Parent:" line for them, no error shown).
+  let parentByAdmNo = {};
+
   // Track which class is currently being viewed in detail (null = none)
   let currentClass = null;
 
@@ -338,10 +346,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const matches = allStudents.filter(s =>
-      s.full_name.toLowerCase().includes(term) ||
-      s.admission_no.toLowerCase().includes(term)
-    );
+    // Matches by the pupil's own name/admission number, OR by the name
+    // of the parent account linked to them — so searching a parent's
+    // name finds their children too, not just searching a pupil's name.
+    const matches = allStudents.filter(s => {
+      const parent = parentByAdmNo[s.admission_no];
+      return s.full_name.toLowerCase().includes(term) ||
+        s.admission_no.toLowerCase().includes(term) ||
+        (parent && parent.full_name.toLowerCase().includes(term));
+    });
 
     searchResultsCard.style.display = 'block';
 
@@ -354,15 +367,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     // the screen if someone searches a very common letter
     const limitedMatches = matches.slice(0, 10);
 
-    searchResultsList.innerHTML = limitedMatches.map(student => `
+    searchResultsList.innerHTML = limitedMatches.map(student => {
+      const parent = parentByAdmNo[student.admission_no];
+      const parentLine = parent
+        ? `<div class="search-result-parent">👤 Parent: <strong>${parent.full_name}</strong> &middot; ${parent.phone || parent.email || '—'}</div>`
+        : `<div class="search-result-parent search-result-parent-none">No parent account linked yet</div>`;
+      return `
       <div class="search-result-item">
         <div>
           <div class="search-result-name">${student.full_name}</div>
           <div class="search-result-meta">${student.class_name} &middot; ${student.admission_no}</div>
+          ${parentLine}
         </div>
         <button class="row-action-btn" data-jump-class="${student.class_name}">Go to class</button>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     // Wire up "Go to class" buttons to jump straight into that class's detail view
     searchResultsList.querySelectorAll('[data-jump-class]').forEach(btn => {
@@ -644,6 +663,21 @@ This will archive the record. You can restore it from User Management if needed.
   // the shared global — this page itself no longer treats it as a
   // data source.
   window.SAMPLE_STUDENTS = allStudents;
+
+  // Best-effort: lets the global search below show which parent
+  // ACCOUNT (portal login) a pupil is linked to. ict_admin only on the
+  // backend — any other role just gets an empty map here, silently, so
+  // the search still works, it just won't show a "Parent:" line.
+  if (window.RCA_API) {
+    try {
+      const parentsData = await window.RCA_API.call('/users/parents');
+      (parentsData.parents || []).forEach(p => {
+        (p.children || []).forEach(c => {
+          parentByAdmNo[c.admission_no] = { full_name: p.full_name, email: p.email, phone: p.phone };
+        });
+      });
+    } catch (e) { /* not ict_admin, or offline — search just omits parent info */ }
+  }
 
   renderClassCards();
 

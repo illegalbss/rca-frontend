@@ -23,6 +23,14 @@
   --color-muted:   #9B8FA0;
   --color-text:    #2C2420;
   --color-text-light: #6B5E58;
+  /* Referenced (var(--color-text-muted)) in 17 stylesheets across both
+     admin and public pages, but never actually defined anywhere — an
+     undefined custom property makes an inherited one like `color`
+     fall back to whatever ambient color surrounds it, which is how
+     captions/meta text in a few places (e.g. the Students page's
+     student/parent search results) ended up looking unpredictably
+     faded instead of a deliberate, readable muted tone. */
+  --color-text-muted: #6b7280;
   --color-dark:    #1A0F0D;
 
   /* ---- Admin Colors (keep for admin pages) ---- */

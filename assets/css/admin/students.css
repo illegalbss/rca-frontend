@@ -54,7 +54,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-sm) 0;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -63,12 +64,26 @@
 }
 
 .search-result-name {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-text);
 }
 
 .search-result-meta {
-  font-size: var(--fs-sm);
+  font-size: 0.85rem;
   color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.search-result-parent {
+  font-size: 0.85rem;
+  color: var(--color-text);
+  margin-top: 4px;
+}
+
+.search-result-parent-none {
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 /* --- Section group labels (Pre-Nursery vs Primary headers) --- */
