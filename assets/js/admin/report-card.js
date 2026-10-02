@@ -523,30 +523,33 @@ document.addEventListener('DOMContentLoaded', async () => {
      @media print CSS rules (in report-card.css) handle hiding the
      sidebar/toolbar, compressing the layout, and — via min-height on
      .report-card — filling the page even when content is short (e.g.
-     a Pre-Nursery pupil with one subject). That part needs no JS at
-     all, which avoids depending on scrollHeight being measured at the
-     exact right moment relative to the print stylesheet being applied.
-     The only thing JS still needs to handle is the opposite case:
-     content long enough (many subjects/behaviour traits, a long Head
-     Teacher's comment) to overflow one sheet, which min-height can't
-     prevent since it's only a floor — so on 'beforeprint' we measure
-     the natural height and shrink the whole card down if needed.
+     a Pre-Nursery pupil with one subject). On 'beforeprint' we measure
+     the actual rendered height as a safety net on top of that CSS
+     floor and go one of two ways:
+       - too tall  -> shrink the whole card down (transform: scale)
+       - too short -> force an explicit inline min-height (in case the
+                      CSS min-height ever fails to take effect — this
+                      bit it once already, silently, after an unrelated
+                      change, leaving a large blank gap at the bottom)
   */
   function fitReportCardToOnePage() {
     const el = document.getElementById('reportCard');
     if (!el) return;
 
-    // Reset before measuring — a scale from a PREVIOUS print would
+    // Reset before measuring — leftovers from a PREVIOUS print would
     // otherwise distort this measurement.
     document.documentElement.style.setProperty('--rc-print-scale', '1');
+    el.style.minHeight = '';
     void el.offsetHeight; // force reflow
 
-    const A4_PRINTABLE_HEIGHT_PX = 1060; // ~297mm minus 0.8cm top/bottom margins, at 96dpi
+    const A4_PRINTABLE_HEIGHT_PX = 1075; // ~297mm minus 0.4cm top/bottom margins, at 96dpi, with a small safety margin
     const contentHeight = el.scrollHeight;
 
     if (contentHeight > A4_PRINTABLE_HEIGHT_PX) {
       const scale = Math.max(0.65, A4_PRINTABLE_HEIGHT_PX / contentHeight);
       document.documentElement.style.setProperty('--rc-print-scale', scale.toFixed(3));
+    } else {
+      el.style.minHeight = A4_PRINTABLE_HEIGHT_PX + 'px';
     }
   }
   window.addEventListener('beforeprint', fitReportCardToOnePage);
