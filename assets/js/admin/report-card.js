@@ -581,30 +581,47 @@ document.addEventListener('DOMContentLoaded', async () => {
                       bit it once already, silently, after an unrelated
                       change, leaving a large blank gap at the bottom)
   */
+  // Measures the card in its PRINT layout (.rc-printing: printed width
+  // and spacing — see report-card.css), at its natural height (min-height
+  // released), then zooms it to fit exactly one A4 page. A full card —
+  // every subject, every trait, long comments — typically lands around
+  // 0.7–0.8; the 0.5 floor only guards against absurd content.
   function fitReportCardToOnePage() {
     const el = document.getElementById('reportCard');
     if (!el) return;
 
-    // Reset before measuring — leftovers from a PREVIOUS print would
-    // otherwise distort this measurement.
-    document.documentElement.style.setProperty('--rc-print-scale', '1');
-    el.style.minHeight = '';
-    void el.offsetHeight; // force reflow
-
     const A4_PRINTABLE_HEIGHT_PX = 1073; // 297mm minus 5mm top/bottom @page margins, minus a 3mm safety margin, at 96dpi
-    const contentHeight = el.scrollHeight;
+    const root = document.documentElement;
 
-    if (contentHeight > A4_PRINTABLE_HEIGHT_PX) {
-      const scale = Math.max(0.65, A4_PRINTABLE_HEIGHT_PX / contentHeight);
-      document.documentElement.style.setProperty('--rc-print-scale', scale.toFixed(3));
-      el.style.minHeight = Math.floor(A4_PRINTABLE_HEIGHT_PX / scale) + 'px';
-    } else {
-      el.style.minHeight = A4_PRINTABLE_HEIGHT_PX + 'px';
-    }
+    root.style.setProperty('--rc-print-scale', '1');
+    el.classList.add('rc-printing');
+    el.style.minHeight = '0px';
+    const contentHeight = el.getBoundingClientRect().height;
+
+    const scale = contentHeight > A4_PRINTABLE_HEIGHT_PX
+      ? Math.max(0.5, Math.floor((A4_PRINTABLE_HEIGHT_PX / contentHeight) * 1000) / 1000)
+      : 1;
+    root.style.setProperty('--rc-print-scale', String(scale));
+    // min-height is in the card's own (zoomed) px, so divide by the scale
+    // to make the shrunken card still reach the bottom of the page.
+    el.style.minHeight = Math.floor(A4_PRINTABLE_HEIGHT_PX / scale) + 'px';
   }
+
+  function resetAfterPrint() {
+    const el = document.getElementById('reportCard');
+    if (!el) return;
+    el.classList.remove('rc-printing');
+    el.style.minHeight = '';
+    document.documentElement.style.setProperty('--rc-print-scale', '1');
+  }
+
   window.addEventListener('beforeprint', fitReportCardToOnePage);
+  window.addEventListener('afterprint', resetAfterPrint);
 
   printBtn.addEventListener('click', () => {
+    // Fit first (also runs on 'beforeprint', e.g. for Ctrl+P) so the
+    // layout is settled before the browser builds the print preview.
+    fitReportCardToOnePage();
     window.print();
   });
 

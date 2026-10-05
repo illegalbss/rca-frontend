@@ -501,8 +501,17 @@
     display: block;
   }
 
+  /* !important is required: dashboard-shell.css sets
+     `.admin-main { padding: 28px 24px !important }` for every admin page,
+     which silently beat a plain `padding: 0` here — adding 56px of height
+     (pushing the card's bottom onto a 2nd page) and narrowing the card
+     by 48px versus what fitReportCardToOnePage() measured. */
   .admin-main {
-    padding: 0;
+    padding: 0 !important;
+  }
+
+  .report-card-wrap {
+    display: block;
   }
 
   body {
@@ -523,37 +532,16 @@
   }
 
   /* NOTE: position:fixed was tried here once and broke min-height's
-     ability to stretch the card to fill the page — keep normal flow. */
+     ability to stretch the card to fill the page — keep normal flow.
+     Size, spacing and zoom come from .rc-printing (below), which
+     report-card.js switches on before printing. This min-height is only
+     the fallback if that script didn't run: fill a full A4 page even
+     when content is short, with a few mm of safety margin so sub-pixel
+     rounding never tips a blank second page into existence. */
   .report-card {
     box-shadow: none;
-    max-width: 100%;
-    padding: 18px 22px;
-    /* Fill a full A4 page even when content is short (e.g. Pre-Nursery
-       with one subject), with a few mm of safety margin so sub-pixel
-       rounding never tips a blank second page into existence. */
     min-height: calc(297mm - 10mm - 3mm);
-    /* zoom (not transform: scale) so the layout box shrinks too —
-       a transformed card still occupies its full height and pushes a
-       blank second page out. */
-    zoom: var(--rc-print-scale, 1);
   }
-
-  .rc-header { padding-bottom: 6px; margin-bottom: 10px; }
-  .rc-header img { margin-bottom: 4px; }
-  .rc-title { margin-top: 5px; }
-
-  .rc-section,
-  .rc-info-grid,
-  .rc-summary-grid,
-  .rc-remarks-grid { margin-bottom: 8px; }
-
-  .rc-info-item { padding: 4px 10px; }
-  .rc-table td { padding: 2px 4px; }
-  .rc-table th { padding: 4px; }
-  .rc-summary-box { padding: 4px; }
-  .rc-remark-box { min-height: 44px; padding: 4px 8px; }
-  .rc-trait-grid { gap: 3px 20px; }
-  .rc-grade-legend { margin-bottom: 12px; }
 
   /* Every letter prints black for crisp, legible text on any printer
      (borders and light fills keep the maroon/gold look). The two
@@ -578,6 +566,45 @@
     page-break-inside: avoid;
   }
 }
+
+/* ============================================
+   PRINT LAYOUT — .rc-printing
+   ============================================
+   Switched on by fitReportCardToOnePage() in report-card.js just before
+   printing and off again afterwards. It lives OUTSIDE @media print on
+   purpose: the script first applies it on screen to measure the card at
+   exactly its printed width (200mm = A4 minus the 5mm @page margins)
+   and printed spacing, then works out the zoom needed to fit one page.
+   Measuring the normal on-screen card instead (wider, roomier) made long
+   cards come out taller in print than predicted → a second page.
+
+   zoom (not transform: scale) so the layout box shrinks too; the width
+   is divided by the zoom so the shrunken card still spans the page. */
+.report-card.rc-printing {
+  width: calc(200mm / var(--rc-print-scale, 1));
+  max-width: none;
+  padding: 18px 22px;
+  box-shadow: none;
+  zoom: var(--rc-print-scale, 1);
+}
+
+.rc-printing .rc-header { padding-bottom: 6px; margin-bottom: 10px; }
+.rc-printing .rc-header img { margin-bottom: 4px; }
+.rc-printing .rc-title { margin-top: 5px; }
+
+.rc-printing .rc-section,
+.rc-printing .rc-info-grid,
+.rc-printing .rc-summary-grid,
+.rc-printing .rc-remarks-grid { margin-bottom: 8px; }
+
+.rc-printing .rc-info-item { padding: 4px 10px; }
+.rc-printing .rc-table td { padding: 2px 4px; }
+.rc-printing .rc-table th { padding: 4px; }
+.rc-printing .rc-summary-box { padding: 4px; }
+.rc-printing .rc-remark-box { min-height: 44px; padding: 4px 8px; }
+.rc-printing .rc-trait-grid { gap: 3px 20px; }
+.rc-printing .rc-grade-legend { margin-bottom: 12px; }
+.rc-printing .rc-signature-line { height: 56px; }
 
 @media (max-width: 700px) {
   .picker-toolbar {
