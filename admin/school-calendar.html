@@ -98,7 +98,10 @@
           <div class="cal-card">
             <div class="cal-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
               <span class="cal-title">Academic Term Overview — 2025/2026</span>
-              <button id="addCalEventBtn" onclick="showCalendarEventModal()" class="btn btn-primary btn-sm" style="display:none;font-size:0.8rem">+ Add Entry</button>
+              <span style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" onclick="RCA_CALENDAR_PRINT.open()" class="btn btn-outline btn-sm" style="font-size:0.8rem">&#128424; Print Calendar (A4)</button>
+                <button id="addCalEventBtn" onclick="showCalendarEventModal()" class="btn btn-primary btn-sm" style="display:none;font-size:0.8rem">+ Add Entry</button>
+              </span>
             </div>
             <div style="padding:14px">
               <div id="termOverview"></div>
@@ -159,6 +162,7 @@
 <script src="../assets/js/admin/sample-users.js"></script>
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
+<script src="../assets/js/calendar-print.js"></script>
 <script src="../assets/js/admin/school-calendar.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {

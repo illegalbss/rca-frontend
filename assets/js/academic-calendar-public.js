@@ -29,6 +29,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   let events = [];
+
+  // "Download Calendar (PDF)" — opens the one-page A4 branded calendar
+  // (calendar-print.js) built from these same published dates; the print
+  // dialog's "Save as PDF" gives parents a file, with nothing to keep in
+  // sync. Wired up before the fetch so it still works (fetching the dates
+  // itself) if the load below fails.
+  document.getElementById('downloadCalendarBtn')?.addEventListener('click', () => {
+    window.RCA_CALENDAR_PRINT.open(events.length ? { events } : {});
+  });
+
   try {
     const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
     const res = await fetch(`${apiUrl}/public/calendar`);
@@ -76,12 +86,5 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? holidays.map(h => `<tr><td>${formatRange(h.event_date, h.end_date)}</td><td>${h.title}</td></tr>`).join('')
       : '<tr><td colspan="2" style="text-align:center;color:var(--color-text-light)">No holidays published yet.</td></tr>';
   }
-
-  // "Download Calendar (PDF)" — the browser's native print dialog offers
-  // "Save as PDF" as a destination, so this always reflects whatever
-  // dates are currently published, with no separate file to keep in sync.
-  document.getElementById('downloadCalendarBtn')?.addEventListener('click', () => {
-    window.print();
-  });
 
 });
