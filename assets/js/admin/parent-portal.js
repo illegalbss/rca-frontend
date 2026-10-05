@@ -1231,6 +1231,106 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ============================================
+     CONTACT ICT ADMIN — correction requests
+     ============================================
+     POST /contact/parent sends one; GET /contact/mine lists this
+     parent's own requests with their status. The ICT Admin reads them
+     in Contact Messages, and marking one "Replied" there means "done"
+     (the parent also gets a bell notification).
+  */
+  const CA_CATEGORIES = {
+    name: 'Name / Spelling Correction', result: 'Result / Score Correction',
+    fees: 'Fees / Payment Correction', details: 'Personal Details Correction', other: 'Other'
+  };
+  const CA_STATUS = {
+    unread:  { label: 'Sent',          bg: '#fef3c7', color: '#92400e' },
+    read:    { label: 'Seen by Admin', bg: '#eff6ff', color: '#1d4ed8' },
+    replied: { label: 'Resolved',      bg: '#d1fae5', color: '#065f46' }
+  };
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, ch =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+  async function renderContactHistory() {
+    const box = document.getElementById('caHistory');
+    if (!box) return;
+    let messages = [];
+    try {
+      messages = (await window.RCA_API.call('/contact/mine')).messages || [];
+    } catch (e) {
+      box.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Could not load your requests.</p>';
+      return;
+    }
+    if (!messages.length) {
+      box.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">You haven\'t sent any requests yet.</p>';
+      return;
+    }
+    box.innerHTML = messages.map(m => {
+      const st = CA_STATUS[m.status] || CA_STATUS.unread;
+      const cat = CA_CATEGORIES[(m.subject || '').replace('parent:', '')] || 'Request';
+      const sent = new Date(m.sent_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      return `
+        <div style="border:1px solid #eef0f3;border-radius:10px;padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+            <div>
+              <div style="font-weight:700;font-size:0.85rem;color:#111827">${cat}</div>
+              <div style="font-size:0.72rem;color:#6b7280">Sent ${sent}</div>
+            </div>
+            <span style="background:${st.bg};color:${st.color};padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap;align-self:flex-start">${st.label}</span>
+          </div>
+          <div style="font-size:0.8rem;color:#374151;white-space:pre-line;line-height:1.5">${escapeHtml(m.message)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderContactAdminPage() {
+    const childSel = document.getElementById('caChild');
+    if (!childSel) return;
+    childSel.innerHTML = myChildren.length
+      ? myChildren.map(c => `<option value="${c.admission_no}">${escapeHtml(c.full_name)} — ${escapeHtml(c.class_name)}</option>`).join('')
+        + '<option value="">Not about a specific child</option>'
+      : '<option value="">No children linked to your account</option>';
+    document.getElementById('caPhone').value = user.phone || '';
+    renderContactHistory();
+  }
+
+  document.getElementById('caSendBtn')?.addEventListener('click', async () => {
+    const alertEl  = document.getElementById('caAlert');
+    const category = document.getElementById('caCategory').value;
+    const message  = document.getElementById('caMessage').value.trim();
+    const showAlert = (text, ok) => {
+      alertEl.textContent = text;
+      alertEl.style.background = ok ? '#f0fdf4' : '#fef2f2';
+      alertEl.style.color = ok ? '#166534' : '#dc2626';
+      alertEl.style.display = 'block';
+    };
+
+    if (!category) return showAlert('Please choose what needs correcting.');
+    if (!message)  return showAlert('Please describe the correction needed.');
+
+    const btn = document.getElementById('caSendBtn');
+    btn.disabled = true;
+    try {
+      await window.RCA_API.call('/contact/parent', {
+        method: 'POST',
+        body: {
+          category,
+          message,
+          admission_no: document.getElementById('caChild').value || undefined,
+          phone: document.getElementById('caPhone').value.trim() || undefined
+        }
+      });
+      document.getElementById('caCategory').value = '';
+      document.getElementById('caMessage').value = '';
+      showAlert('✔ Sent! The ICT Administrator will look into it. You can follow its status below.', true);
+      renderContactHistory();
+    } catch (e) {
+      showAlert(e.message || 'Could not send your request. Please try again.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  /* ============================================
      INIT
      ============================================ */
   renderDashboardHeader();
@@ -1248,4 +1348,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderNewsletterPage();
   renderSchoolInfoPage();
   renderProfilePage();
+  renderContactAdminPage();
 });

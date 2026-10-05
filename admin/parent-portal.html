@@ -46,6 +46,9 @@
       <a class="pp-nav-link" data-page="school-info" onclick="showPage('school-info',this)">
         <span class="pp-nav-icon">&#8505;</span> School Information
       </a>
+      <a class="pp-nav-link" data-page="contact-admin" onclick="showPage('contact-admin',this)">
+        <span class="pp-nav-icon">&#9993;</span> Contact ICT Admin
+      </a>
     </nav>
 
     <div class="pp-sidebar-footer">
@@ -129,6 +132,7 @@
                 <button class="pp-quick-link" onclick="showPage('results', document.querySelector('[data-page=results]'))">&#128220; View Results</button>
                 <button class="pp-quick-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">&#129534; Download Receipts</button>
                 <button class="pp-quick-link" onclick="showPage('profile', document.querySelector('[data-page=profile]'))">&#9999; Update Profile</button>
+                <button class="pp-quick-link" onclick="showPage('contact-admin', document.querySelector('[data-page=contact-admin]'))">&#9993; Request a Correction</button>
               </div>
             </div>
           </div>
@@ -296,6 +300,47 @@
           <p>Important details every parent should know — timings, uniform, and termly requirements.</p>
         </div>
         <div id="schoolInfoContent"></div>
+      </section>
+
+      <!-- ===== CONTACT ICT ADMIN PAGE ===== -->
+      <section class="pp-page" id="page-contact-admin">
+        <div class="pp-welcome">
+          <h2>Contact ICT Admin</h2>
+          <p>Spotted a mistake? Send a correction request straight to the school's ICT Administrator.</p>
+        </div>
+
+        <div class="pp-table-card">
+          <div class="pp-table-card-header">New Correction Request</div>
+          <div class="pp-card-body" style="padding:18px;max-width:560px">
+            <div id="caAlert" style="display:none;padding:8px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:12px"></div>
+
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Which child is this about?</label>
+            <select id="caChild" class="form-control" style="margin-bottom:12px;width:100%;box-sizing:border-box"></select>
+
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">What needs correcting?</label>
+            <select id="caCategory" class="form-control" style="margin-bottom:12px;width:100%;box-sizing:border-box">
+              <option value="">— Choose one —</option>
+              <option value="name">Name / Spelling Correction</option>
+              <option value="result">Result / Score Correction</option>
+              <option value="fees">Fees / Payment Correction</option>
+              <option value="details">Personal Details Correction</option>
+              <option value="other">Other</option>
+            </select>
+
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Details</label>
+            <textarea id="caMessage" class="form-control" rows="5" placeholder="e.g. My child's surname is spelt 'Okafor', not 'Okafur'." style="margin-bottom:12px;width:100%;box-sizing:border-box;font-family:inherit"></textarea>
+
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Phone number to reach you (optional)</label>
+            <input type="tel" id="caPhone" class="form-control" style="margin-bottom:16px;width:100%;box-sizing:border-box">
+
+            <button id="caSendBtn" class="btn btn-primary">&#9993; Send to ICT Admin</button>
+          </div>
+        </div>
+
+        <div class="pp-table-card">
+          <div class="pp-table-card-header">My Requests</div>
+          <div class="pp-card-body" id="caHistory" style="padding:18px"></div>
+        </div>
       </section>
 
       <!-- ===== PROFILE PAGE ===== -->

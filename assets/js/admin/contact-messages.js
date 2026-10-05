@@ -15,14 +15,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
   const SUBJECT_LABELS = {
     admissions: 'Admissions Inquiry', fees: 'Fee Information',
-    ict: 'ICT Department', complaint: 'Complaint / Feedback', general: 'General Inquiry'
+    ict: 'ICT Department', complaint: 'Complaint / Feedback', general: 'General Inquiry',
+    // Parent correction requests from the Parent Portal (POST /contact/parent)
+    'parent:name': 'Correction — Name / Spelling', 'parent:result': 'Correction — Result / Score',
+    'parent:fees': 'Correction — Fees / Payment', 'parent:details': 'Correction — Personal Details',
+    'parent:other': 'Correction — Other'
   };
+  const isParentMsg = m => (m.subject || '').startsWith('parent:');
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, ch =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
   let messages = [];
   let filterStatus = '';
+  let filterSource = '';   // '' | 'parent' | 'public'
 
   async function loadAll() {
-    const data = await window.RCA_API.call('/contact' + (filterStatus ? `?status=${filterStatus}` : ''));
+    const params = new URLSearchParams();
+    if (filterStatus) params.set('status', filterStatus);
+    if (filterSource) params.set('source', filterSource);
+    const data = await window.RCA_API.call('/contact' + (params.toString() ? '?' + params.toString() : ''));
     messages = data.messages || [];
     updateBadge(data.unread_count || 0);
   }
@@ -43,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div style="border:1px solid #eef0f3;border-radius:12px;padding:16px 18px;margin-bottom:12px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px">
           <div>
-            <div style="font-weight:700;font-size:0.92rem;color:#111827">${m.name}</div>
+            <div style="font-weight:700;font-size:0.92rem;color:#111827">${escapeHtml(m.name)}${isParentMsg(m) ? ' <span style="background:#f5e6e8;color:#6b0f1a;padding:2px 8px;border-radius:20px;font-size:0.65rem;font-weight:700;vertical-align:middle">PARENT</span>' : ''}</div>
             <div style="font-size:0.75rem;color:#6b7280">${subjectLabel} · ${sent}</div>
           </div>
           <span style="background:${sc.bg};color:${sc.color};padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap">${sc.label}</span>
@@ -52,11 +63,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div style="font-size:0.8rem;color:#374151;margin-bottom:10px">
           <a href="mailto:${m.email}" style="color:var(--color-primary,#6b0f1a)">${m.email}</a>${m.phone ? ` · ${m.phone}` : ''}
         </div>
-        <div style="font-size:0.83rem;color:#374151;background:#f9fafb;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6">${m.message}</div>
+        <div style="font-size:0.83rem;color:#374151;background:#f9fafb;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6;white-space:pre-line">${escapeHtml(m.message)}</div>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:12px">
           ${m.status === 'unread' ? `<button class="btn btn-sm btn-outline" style="font-size:0.72rem" onclick="window._msgUpdate(${m.id},'read')">Mark Read</button>` : ''}
-          ${m.status !== 'replied' ? `<button class="btn btn-sm btn-primary" style="font-size:0.72rem" onclick="window._msgUpdate(${m.id},'replied')">Mark Replied</button>` : ''}
+          ${m.status !== 'replied' ? `<button class="btn btn-sm btn-primary" style="font-size:0.72rem" onclick="window._msgUpdate(${m.id},'replied')">${isParentMsg(m) ? 'Mark Resolved (notifies parent)' : 'Mark Replied'}</button>` : ''}
           <button class="btn btn-sm btn-outline" style="font-size:0.72rem;color:#dc2626;margin-left:auto" onclick="window._msgDelete(${m.id},'${m.name.replace(/'/g, "\\'")}')">Delete</button>
         </div>
       </div>`;
@@ -92,6 +103,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             <button data-status="${s}" class="btn btn-sm ${filterStatus === s ? 'btn-primary' : 'btn-outline'}" style="font-size:0.72rem">
               ${s === '' ? 'All' : STATUS_COLORS[s].label}
             </button>`).join('')}
+          <span style="width:1px;background:#e5e7eb;margin:0 4px"></span>
+          ${[['', 'All Sources'], ['parent', 'From Parents'], ['public', 'Website Form']].map(([v, label]) => `
+            <button data-source="${v}" class="btn btn-sm ${filterSource === v ? 'btn-primary' : 'btn-outline'}" style="font-size:0.72rem">${label}</button>`).join('')}
         </div>
 
         <div>
@@ -101,6 +115,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
       </div>
     `;
+
+    document.querySelectorAll('#msgFilterTabs [data-source]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        filterSource = btn.dataset.source;
+        await loadAll();
+        render();
+      });
+    });
 
     document.querySelectorAll('#msgFilterTabs [data-status]').forEach(btn => {
       btn.addEventListener('click', async () => {
