@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${ev.time ? `<p style="font-size:0.78rem;color:#6b7280;margin-bottom:4px">🕐 ${ev.time}</p>` : ''}
             ${ev.location ? `<p style="font-size:0.78rem;color:#6b7280;margin-bottom:4px">📍 ${ev.location}</p>` : ''}
             ${ev.description ? `<p style="font-size:0.82rem;color:#374151;margin-top:6px">${ev.description}</p>` : ''}
-            <p style="font-size:0.72rem;color:#9ca3af;margin-top:6px">👥 ${ev.audience === 'all' ? 'Everyone' : ev.audience === 'parents' ? 'Parents' : 'Staff only'}</p>
+            <p style="font-size:0.72rem;color:#9ca3af;margin-top:6px">👥 ${ev.audience === 'all' ? 'Everyone · shown on homepage' : ev.audience === 'parents' ? 'Parents' : 'Staff only'}</p>
           </div>
           ${canManage ? `
             <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
@@ -354,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="form-group" style="margin-bottom:20px">
             <label class="form-label">Visible To *</label>
             <select id="evt_audience" class="form-control">
-              <option value="all" ${existing?.audience==='all'?'selected':''}>Everyone (Staff + Parents)</option>
+              <option value="all" ${existing?.audience==='all'?'selected':''}>Everyone — Staff, Parents &amp; Homepage</option>
               <option value="staff" ${existing?.audience==='staff'?'selected':''}>Staff Only</option>
               <option value="parents" ${existing?.audience==='parents'?'selected':''}>Parents Only</option>
             </select>
