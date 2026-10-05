@@ -19,6 +19,7 @@
   const SCHOOL = {
     name: 'Royal Crystal Academy',
     tagline: 'Nursery & Primary School',
+    motto: 'Moral, Excellence & Greatness',
     address: '20/21 Amaigbo Lane, Uwani, Enugu State',
     phones: '08036721390 / 09080061094',
     email: 'royalcrystalacademy12@gmail.com',
@@ -101,6 +102,7 @@
     .head img { width:66px; height:66px; object-fit:contain; }
     .brand-name { font-family:Georgia,'Times New Roman',serif; font-size:25px; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:.03em; line-height:1.05; }
     .brand-sub { font-size:10.5px; font-weight:700; color:var(--gold); letter-spacing:.14em; text-transform:uppercase; margin-top:3px; }
+    .brand-motto { font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:12px; color:var(--navy); margin-top:2px; }
     .contact { display:flex; flex-wrap:wrap; gap:3px 12px; margin-top:5px; font-size:9px; }
     .contact span { display:inline-flex; align-items:center; gap:4px; } .contact svg { color:var(--gold); }
 
@@ -222,6 +224,7 @@
           <img src="${LOGO_URL}" alt="Royal Crystal Academy badge">
           <div style="flex:1">
             <div class="brand-name">${SCHOOL.name}</div>
+            <div class="brand-motto">${SCHOOL.motto}</div>
             <div class="brand-sub">${SCHOOL.tagline}</div>
             <div class="contact">
               <span>${icon('pin', 10)}${SCHOOL.address}</span>
