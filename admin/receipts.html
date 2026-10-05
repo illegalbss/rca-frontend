@@ -119,16 +119,14 @@
             <table class="finance-table">
               <thead>
                 <tr>
-                  <th>Receipt No.</th>
-                  <th>Date</th>
-                  <th>Admission No.</th>
-                  <th>Student Name</th>
+                  <th>Receipt / Date</th>
+                  <th>Student</th>
                   <th>Class</th>
                   <th>Term</th>
                   <th>Amount</th>
                   <th>Method</th>
                   <th>Recorded By</th>
-                  <th class="no-print sticky-action">Action</th>
+                  <th class="no-print">Action</th>
                 </tr>
               </thead>
               <tbody id="receiptTableBody"></tbody>
@@ -196,29 +194,37 @@ document.addEventListener('DOMContentLoaded', () => {
       `Payment Records — ${searchTerm ? '"' + searchTerm + '" · ' : ''}${TERM_LABELS[term] || 'All Terms'}`;
 
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:2rem">No payment records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--color-text-muted);padding:2rem">No payment records found.</td></tr>';
       return;
     }
 
+    // Receipt+date and name+admission no. share a cell each, so the table
+    // stays narrow enough for the Action buttons to fit without scrolling.
     tbody.innerHTML = rows.map(r => `
       <tr style="${r.voided ? 'opacity:0.55' : ''}">
-        <td style="font-size:0.75rem;font-weight:600;${r.voided ? 'text-decoration:line-through' : ''}">${r.reference || '—'}</td>
-        <td style="${r.voided ? 'text-decoration:line-through' : ''}">${r.payment_date ? String(r.payment_date).substring(0, 10) : '—'}</td>
-        <td>${r.admission_no}</td>
-        <td>${r.full_name}</td>
-        <td>${r.class_name}</td>
+        <td style="white-space:nowrap;${r.voided ? 'text-decoration:line-through' : ''}">
+          <div style="font-size:0.8rem;font-weight:600">${r.reference || '—'}</div>
+          <div style="font-size:0.72rem;color:#6b7280">${r.payment_date ? String(r.payment_date).substring(0, 10) : '—'}</div>
+        </td>
+        <td>
+          <div style="font-weight:600">${r.full_name}</div>
+          <div style="font-size:0.72rem;color:#6b7280">${r.admission_no}</div>
+        </td>
+        <td style="white-space:nowrap">${r.class_name}</td>
         <td style="white-space:nowrap">${TERM_LABELS[r.term] || r.term || '—'}${r.fee_type === 'ict_fee' ? ' <span style="font-size:0.65rem;color:#6b7280">(ICT)</span>' : ''}</td>
         <td class="amount-col" style="${r.voided ? 'text-decoration:line-through' : ''}">${fmt(r.amount)}</td>
         <td>${r.payment_method || '—'}${r.voided ? ' <span style="font-size:0.65rem;font-weight:700;color:#dc2626;border:1px solid #fca5a5;border-radius:20px;padding:1px 6px">VOIDED</span>' : ''}</td>
         <td style="font-size:0.75rem">${r.recorded_by_name || '—'}</td>
-        <td class="no-print sticky-action">
-          <button class="btn btn-outline btn-sm" onclick="showReceiptById(${r.id})">View</button>
-          ${r.voided
-            ? `<span style="font-size:0.72rem;color:#9ca3af" title="${r.void_reason || ''}">Voided${r.voided_by_name ? ' by ' + r.voided_by_name : ''}</span>`
-            : canManagePayments
-              ? `<button class="btn btn-outline btn-sm" onclick="changePaymentTerm(${r.id})">Change Term</button>
-                 <button class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fca5a5" onclick="deletePayment(${r.id})">Void</button>`
-              : ''}
+        <td class="no-print">
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            <button class="btn btn-outline btn-sm" style="font-size:0.7rem;padding:3px 10px" onclick="showReceiptById(${r.id})">View</button>
+            ${r.voided
+              ? `<span style="font-size:0.72rem;color:#9ca3af" title="${r.void_reason || ''}">Voided${r.voided_by_name ? ' by ' + r.voided_by_name : ''}</span>`
+              : canManagePayments
+                ? `<button class="btn btn-outline btn-sm" style="font-size:0.7rem;padding:3px 10px" onclick="changePaymentTerm(${r.id})">Change Term</button>
+                   <button class="btn btn-outline btn-sm" style="font-size:0.7rem;padding:3px 10px;color:#dc2626;border-color:#fca5a5" onclick="deletePayment(${r.id})">Void</button>`
+                : ''}
+          </div>
         </td>
       </tr>
     `).join('');
@@ -405,23 +411,50 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('receiptListSection').style.display  = 'block';
   });
 
-  document.getElementById('receiptSearchBtn').addEventListener('click', async () => {
-    const term = document.getElementById('receiptTerm').value;
-    const searchText = document.getElementById('receiptSearch').value.trim().toLowerCase();
+  // Fetch everything for the selected term (or all terms) once, then filter
+  // on our side as the user types — the backend only supports an exact
+  // admission_no match, which is too strict for a search box. Every word
+  // typed must appear (in any order) in the name, admission no. or receipt
+  // no., so "david iloh" finds "ILOH DAVID MUNACHI".
+  let loadedTerm = null;
+  let loadedRows = [];
 
-    // Fetch everything for the selected term (or all terms), then filter
-    // by name OR admission number on our side — the backend only supports
-    // an exact admission_no match, which is too strict for a search box.
-    const allRows = await fetchPayments(term, '');
-    const rows = searchText
-      ? allRows.filter(r =>
-          r.full_name.toLowerCase().includes(searchText) ||
-          r.admission_no.toLowerCase().includes(searchText))
-      : allRows;
-
-    renderTable(rows, term, searchText);
+  function applySearch() {
+    const term  = document.getElementById('receiptTerm').value;
+    const raw   = document.getElementById('receiptSearch').value.trim();
+    const words = raw.toLowerCase().split(/\s+/).filter(Boolean);
+    const rows  = words.length
+      ? loadedRows.filter(r => {
+          const hay = `${r.full_name || ''} ${r.admission_no || ''} ${r.reference || ''}`.toLowerCase();
+          return words.every(w => hay.includes(w));
+        })
+      : loadedRows;
+    renderTable(rows, term, raw);
     document.getElementById('receiptPrintSection').style.display = 'none';
     document.getElementById('receiptListSection').style.display  = 'block';
+  }
+
+  async function reloadAndSearch() {
+    const term = document.getElementById('receiptTerm').value;
+    loadedRows = await fetchPayments(term, '');
+    loadedTerm = term;
+    applySearch();
+  }
+
+  document.getElementById('receiptSearchBtn').addEventListener('click', reloadAndSearch);
+  document.getElementById('receiptTerm').addEventListener('change', reloadAndSearch);
+
+  let receiptSearchDebounce;
+  const receiptSearchInput = document.getElementById('receiptSearch');
+  receiptSearchInput.addEventListener('input', () => {
+    clearTimeout(receiptSearchDebounce);
+    receiptSearchDebounce = setTimeout(() => {
+      if (loadedTerm === document.getElementById('receiptTerm').value) applySearch();
+      else reloadAndSearch();
+    }, 250);
+  });
+  receiptSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); reloadAndSearch(); }
   });
 
   /* ---- Initial load ---- */
@@ -439,8 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       } catch(e) { /* fall through to default load */ }
     }
-    const rows = await fetchPayments('', '');
-    renderTable(rows, '', '');
+    await reloadAndSearch();
   })();
 });
 </script>
