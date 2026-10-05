@@ -158,6 +158,7 @@
             <input type="checkbox" id="debtorGroupByClass">
             Group by class (for printing)
           </label>
+          <button class="btn btn-outline btn-sm" id="printDebtorsReport" style="flex-shrink:0">&#128424; Print Report</button>
           <button class="btn btn-outline btn-sm" id="exportDebtorsCSV" style="flex-shrink:0">&#8595; Export CSV</button>
         </div>
 
@@ -223,7 +224,7 @@
               <option value="term3">Third Term</option>
             </select>
           </div>
-          <button class="btn btn-outline btn-sm" id="printPaidList" style="flex-shrink:0">&#128424; Print List</button>
+          <button class="btn btn-outline btn-sm" id="printPaidList" style="flex-shrink:0">&#128424; Print Report</button>
           <button class="btn btn-outline btn-sm" id="exportPaidCSV" style="flex-shrink:0">&#8595; Export CSV</button>
         </div>
 
@@ -423,6 +424,7 @@
 <script src="../assets/js/admin/sample-teachers.js"></script>
 <script src="../assets/js/admin/sample-users.js"></script>
 <script src="../assets/js/admin/finance-data.js"></script>
+<script src="../assets/js/admin/finance-print.js"></script>
 <script src="../assets/js/admin/localstorage.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
@@ -764,12 +766,55 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById(id).addEventListener('change', renderPaidList);
   });
 
-  // Prints only this list (the page's main Print button prints everything)
-  document.getElementById('printPaidList').addEventListener('click', () => {
-    document.body.classList.add('print-paid-only');
-    window.print();
+  /* ── Branded A4 printouts (see finance-print.js) ── */
+  let sessionLabel = null;
+  async function getSessionLabel() {
+    if (sessionLabel) return sessionLabel;
+    try {
+      const fs = await window.RCA_API.call('/payments/fee-schedule');
+      sessionLabel = fs.terms?.[0]?.session_label || null;
+    } catch (e) { /* fall through */ }
+    return sessionLabel || '2025/2026';
+  }
+
+  document.getElementById('printPaidList').addEventListener('click', async () => {
+    const win = window.RCA_PRINT.prepare();
+    if (!win) return;
+    const isIct = document.getElementById('paidFeeType').value === 'ict';
+    const show  = document.getElementById('paidStatus').value;
+    const cls   = document.getElementById('paidClass').value;
+    const what  = isIct ? 'ICT / Portal Fee' : 'School Fees';
+    const titles = {
+      paid:    [`Paid ${what} Report`, `Pupils Who Have Completely Paid Their ${what}`],
+      partial: [`Part-Payment Report — ${what}`, `Pupils Who Have Paid Part of Their ${what}`],
+      any:     [`${what} Payments Report`, `Pupils Who Have Made a Payment Towards Their ${what}`],
+      '':      [`${what} Payment Status Report`, `Payment Status of Every Pupil`]
+    };
+    const [title, subtitle] = titles[show] || titles[''];
+    window.RCA_PRINT.paid({
+      title,
+      subtitle: subtitle + (cls ? ` — ${cls}` : ''),
+      termLabel: TERM_LABELS[document.getElementById('paidTerm').value],
+      session: await getSessionLabel(),
+      rows: paidCache,
+      win
+    });
   });
-  window.addEventListener('afterprint', () => document.body.classList.remove('print-paid-only'));
+
+  document.getElementById('printDebtorsReport').addEventListener('click', async () => {
+    const win = window.RCA_PRINT.prepare();
+    if (!win) return;
+    const term = document.getElementById('debtorTerm').value;
+    // Same order as the on-screen list when grouped, otherwise class then name
+    const rows = [...debtorsCache].sort((a, b) =>
+      a.class_name.localeCompare(b.class_name) || a.full_name.localeCompare(b.full_name));
+    window.RCA_PRINT.outstanding({
+      termLabel: TERM_LABELS[term] || 'All Terms',
+      session: await getSessionLabel(),
+      rows,
+      win
+    });
+  });
 
   document.getElementById('exportPaidCSV').addEventListener('click', () => {
     const isIct  = document.getElementById('paidFeeType').value === 'ict';
@@ -1035,6 +1080,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let profileAdmissionNo = null;
   let profileHistory = [];
+  let profileData = null;
 
   async function openFinancialProfile(admissionNo) {
     profileAdmissionNo = admissionNo;
@@ -1055,6 +1101,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // endpoints as the Receipts page; afterwards the profile and the page's
   // totals are reloaded so the corrected balance shows straight away.
   document.getElementById('finProfileBody').addEventListener('click', async (e) => {
+    const printBtn = e.target.closest('[data-print-statement]');
+    if (printBtn && profileData) { printProfileStatement(profileData, printBtn.dataset.printStatement); return; }
+
     const btn = e.target.closest('[data-pay-action]');
     if (!btn) return;
     const p = profileHistory.find(x => String(x.id) === btn.dataset.id);
@@ -1085,8 +1134,44 @@ document.addEventListener('DOMContentLoaded', () => {
     render();
   });
 
+  // One term of a Financial Profile → an Individual Payment Statement.
+  // School fees and the ICT/Portal fee are combined on the statement (the
+  // profile tracks them separately), matching what the parent portal shows.
+  function printProfileStatement(data, term) {
+    const b = data.breakdown[term];
+    if (!b) return;
+    const lines = [...(b.lines || [])];
+    if (b.ict_fee_amount) lines.push({ label: 'ICT / Portal Fee', amount: b.ict_fee_amount });
+    const totalDue  = Number(b.net_total || 0) + Number(b.ict_fee_amount || 0);
+    const totalPaid = Number(b.amount_paid || 0) + Number(b.ict_fee_paid || 0);
+    const balance   = Math.max(totalDue - totalPaid, 0);
+    window.RCA_PRINT.statement({
+      pupil: data.student,
+      session: data.session,
+      termLabel: TERM_LABELS[term],
+      lines,
+      adjustments: (b.adjustments || []).map(a => ({
+        label: a.description || a.adjustment_type.replace('_', ' '),
+        amount: a.amount,
+        isCharge: a.adjustment_type === 'additional_charge'
+      })),
+      totalDue, totalPaid, balance,
+      status: totalPaid >= totalDue && totalDue > 0 ? 'paid' : totalPaid > 0 ? 'partial' : 'unpaid',
+      payments: (data.payment_history || [])
+        .filter(p => p.term === term && !p.voided)
+        .sort((x, y) => new Date(x.payment_date) - new Date(y.payment_date))
+        .map(p => ({
+          date: p.payment_date,
+          description: p.fee_type === 'ict_fee' ? 'ICT / Portal Fee Payment' : 'School Fee Payment',
+          category: p.fee_type === 'ict_fee' ? 'ICT Fee' : 'School Fees',
+          amount: p.amount, method: p.payment_method, reference: p.reference
+        }))
+    });
+  }
+
   function renderFinancialProfile(data) {
     const s = data.student;
+    profileData = data;
 
     const termCards = ['term1', 'term2', 'term3'].map(term => {
       const b = data.breakdown[term];
@@ -1112,7 +1197,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <span style="font-weight:700;font-size:0.85rem">${TERM_LABELS[term]}</span>
-            <span class="${BADGE[b.status]}">${STATUS_LABEL[b.status]}</span>
+            <span style="display:flex;gap:6px;align-items:center">
+              <button class="btn btn-outline btn-sm" data-print-statement="${term}" style="font-size:0.7rem;padding:3px 10px">&#128424; Print Statement</button>
+              <span class="${BADGE[b.status]}">${STATUS_LABEL[b.status]}</span>
+            </span>
           </div>
           ${lineRows}
           <div style="border-top:1px dashed #e5e7eb;margin:6px 0"></div>

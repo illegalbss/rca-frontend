@@ -659,7 +659,51 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   /* ---- Action buttons ---- */
-  document.getElementById('downloadStatementBtn')?.addEventListener('click', () => window.print());
+  // Branded Individual Payment Statement (finance-print.js) for the
+  // selected child and term — /payments/lookup already combines school
+  // fees and the ICT/Portal fee, the same totals shown on this page.
+  document.getElementById('downloadStatementBtn')?.addEventListener('click', async () => {
+    const child = selectedChild || myChildren[0];
+    if (!child) { alert('No child is linked to your account yet.'); return; }
+    const term = document.getElementById('statementTerm')?.value || 'term2';
+    const win = window.RCA_PRINT.prepare();
+    if (!win) return;
+    const btn = document.getElementById('downloadStatementBtn');
+    btn.disabled = true;
+    try {
+      const feeData = await loadChildFullFeeData(child);
+      const t = feeData.terms[term];
+      if (!t) { win.close(); alert(`No fee record is available for ${TERM_LABELS[term]} yet.`); return; }
+      const hist = await window.RCA_API.call(`/payments?admission_no=${encodeURIComponent(child.admission_no)}&term=${term}`);
+      window.RCA_PRINT.statement({
+        pupil: { ...child, parent_name: child.parent_name || user.full_name },
+        session: t.session || SESSION,
+        termLabel: TERM_LABELS[term],
+        lines: t.lines || [],
+        adjustments: (t.adjustments || []).map(a => ({
+          label: a.description || a.adjustment_type.replace('_', ' '),
+          amount: a.amount,
+          isCharge: a.adjustment_type === 'additional_charge'
+        })),
+        totalDue: t.grand_total, totalPaid: t.amount_paid, balance: t.balance, status: t.status,
+        payments: (hist.payments || [])
+          .filter(p => !p.voided)
+          .sort((x, y) => new Date(x.payment_date) - new Date(y.payment_date))
+          .map(p => ({
+            date: p.payment_date,
+            description: p.fee_type === 'ict_fee' ? 'ICT / Portal Fee Payment' : 'School Fee Payment',
+            category: p.fee_type === 'ict_fee' ? 'ICT Fee' : 'School Fees',
+            amount: p.amount, method: p.payment_method, reference: p.reference
+          })),
+        win
+      });
+    } catch (e) {
+      win.close();
+      alert('Could not prepare the statement: ' + e.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
   document.getElementById('makePaymentBtn')?.addEventListener('click', () => {
     alert('Fees are currently paid at the school office or by bank transfer — the accountant will record your payment and it will appear here.\n\nFor payment details, please contact the school office.');
   });

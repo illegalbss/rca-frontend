@@ -694,9 +694,6 @@
   .receipt-physical-hash { color: #1a3a6b !important; }
   @page { margin: 1cm; }
 
-  /* Finance Reports "Who Has Paid?" → Print List: only that card */
-  body.print-paid-only .admin-main > :not(#paidCard) { display: none !important; }
-  body.print-paid-only #paidCard { box-shadow: none; border: none; }
 }
 
 @media (max-width: 700px) {
