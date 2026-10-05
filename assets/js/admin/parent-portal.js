@@ -1278,6 +1278,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span style="background:${st.bg};color:${st.color};padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap;align-self:flex-start">${st.label}</span>
           </div>
           <div style="font-size:0.8rem;color:#374151;white-space:pre-line;line-height:1.5">${escapeHtml(m.message)}</div>
+          ${m.admin_reply ? `
+          <div style="margin-top:10px;font-size:0.8rem;color:#065f46;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;white-space:pre-line;line-height:1.5"><strong>Reply from ICT Admin:</strong> ${escapeHtml(m.admin_reply)}</div>` : ''}
         </div>`;
     }).join('');
   }

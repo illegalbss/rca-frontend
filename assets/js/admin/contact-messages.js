@@ -65,6 +65,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div style="font-size:0.83rem;color:#374151;background:#f9fafb;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6;white-space:pre-line">${escapeHtml(m.message)}</div>
 
+        ${m.admin_reply ? `
+        <div style="font-size:0.83rem;color:#065f46;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;margin-bottom:12px;line-height:1.6;white-space:pre-line"><strong>Your reply:</strong> ${escapeHtml(m.admin_reply)}</div>` : ''}
+
+        ${isParentMsg(m) ? `
+        <div style="margin-bottom:12px">
+          <textarea id="reply-${m.id}" rows="2" placeholder="${m.admin_reply ? 'Update your reply…' : 'Write a reply the parent will see, e.g. “Corrected — the surname now reads Okafor.”'}" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:0.82rem;font-family:inherit"></textarea>
+          <button class="btn btn-sm btn-primary" style="font-size:0.72rem;margin-top:6px" onclick="window._msgReply(${m.id})">&#9993; Send Reply &amp; Resolve</button>
+        </div>` : ''}
+
         <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:12px">
           ${m.status === 'unread' ? `<button class="btn btn-sm btn-outline" style="font-size:0.72rem" onclick="window._msgUpdate(${m.id},'read')">Mark Read</button>` : ''}
           ${m.status !== 'replied' ? `<button class="btn btn-sm btn-primary" style="font-size:0.72rem" onclick="window._msgUpdate(${m.id},'replied')">${isParentMsg(m) ? 'Mark Resolved (notifies parent)' : 'Mark Replied'}</button>` : ''}
@@ -138,6 +147,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       await window.RCA_API.call(`/contact/${id}`, { method: 'PATCH', body: { status } });
     } catch (e) {
       alert('Could not update message: ' + e.message);
+      return;
+    }
+    await loadAll();
+    render();
+  };
+
+  // Parent correction requests only: saves a written reply the parent
+  // sees under their request, marks it resolved and notifies them.
+  window._msgReply = async function(id) {
+    const reply = (document.getElementById(`reply-${id}`)?.value || '').trim();
+    if (!reply) { alert('Please write a reply first.'); return; }
+    try {
+      await window.RCA_API.call(`/contact/${id}`, { method: 'PATCH', body: { admin_reply: reply } });
+    } catch (e) {
+      alert('Could not send reply: ' + e.message);
       return;
     }
     await loadAll();
