@@ -128,7 +128,7 @@
                   <th>Amount</th>
                   <th>Method</th>
                   <th>Recorded By</th>
-                  <th class="no-print">Action</th>
+                  <th class="no-print sticky-action">Action</th>
                 </tr>
               </thead>
               <tbody id="receiptTableBody"></tbody>
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td class="amount-col" style="${r.voided ? 'text-decoration:line-through' : ''}">${fmt(r.amount)}</td>
         <td>${r.payment_method || '—'}${r.voided ? ' <span style="font-size:0.65rem;font-weight:700;color:#dc2626;border:1px solid #fca5a5;border-radius:20px;padding:1px 6px">VOIDED</span>' : ''}</td>
         <td style="font-size:0.75rem">${r.recorded_by_name || '—'}</td>
-        <td class="no-print">
+        <td class="no-print sticky-action">
           <button class="btn btn-outline btn-sm" onclick="showReceiptById(${r.id})">View</button>
           ${r.voided
             ? `<span style="font-size:0.72rem;color:#9ca3af" title="${r.void_reason || ''}">Voided${r.voided_by_name ? ' by ' + r.voided_by_name : ''}</span>`

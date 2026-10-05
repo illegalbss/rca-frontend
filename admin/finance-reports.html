@@ -1033,7 +1033,11 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── Student Financial Profile modal ── */
   const STATUS_LABEL = { paid: 'Fully Paid', partial: 'Partially Paid', unpaid: 'Unpaid' };
 
+  let profileAdmissionNo = null;
+  let profileHistory = [];
+
   async function openFinancialProfile(admissionNo) {
+    profileAdmissionNo = admissionNo;
     document.getElementById('finProfileModal').style.display = 'flex';
     const body = document.getElementById('finProfileBody');
     body.innerHTML = '<p style="font-size:0.85rem;color:#9ca3af">Loading…</p>';
@@ -1046,6 +1050,40 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function closeFinancialProfile() { document.getElementById('finProfileModal').style.display = 'none'; }
   document.getElementById('closeFinProfileModal').addEventListener('click', closeFinancialProfile);
+
+  // Payment History actions: move a wrong-term payment, or void it. Same
+  // endpoints as the Receipts page; afterwards the profile and the page's
+  // totals are reloaded so the corrected balance shows straight away.
+  document.getElementById('finProfileBody').addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-pay-action]');
+    if (!btn) return;
+    const p = profileHistory.find(x => String(x.id) === btn.dataset.id);
+    if (!p) return;
+    const summary = `${fmt(p.amount)} — ${TERM_LABELS[p.term] || p.term}${p.reference ? ' — ' + p.reference : ''}`;
+
+    try {
+      if (btn.dataset.payAction === 'move') {
+        const options = Object.entries(TERM_LABELS).filter(([t]) => t !== p.term);
+        const choice = prompt(`Move this payment to which term?\n\n${summary}\n\n` +
+          options.map(([, label], i) => `${i + 1} = ${label}`).join('\n') + '\n\nType 1 or 2:');
+        if (choice === null) return;
+        const picked = options[Number(choice.trim()) - 1];
+        if (!picked) { alert('Please type 1 or 2.'); return; }
+        const reason = prompt(`Reason for moving it to ${picked[1]}?`, 'Recorded against the wrong term by mistake');
+        if (!reason || !reason.trim()) return;
+        await window.RCA_API.call(`/payments/${p.id}/term`, { method: 'PATCH', body: { term: picked[0], reason: reason.trim() } });
+      } else {
+        const reason = prompt(`Reason for voiding this payment?\n\n${summary}\n\nThe record stays in the history, crossed out — it just stops counting toward what they've paid.`);
+        if (!reason || !reason.trim()) return;
+        await window.RCA_API.call(`/payments/${p.id}`, { method: 'DELETE', body: { reason: reason.trim() } });
+      }
+    } catch (err) {
+      alert('Could not update payment: ' + err.message);
+      return;
+    }
+    openFinancialProfile(profileAdmissionNo);
+    render();
+  });
 
   function renderFinancialProfile(data) {
     const s = data.student;
@@ -1096,14 +1134,18 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>`;
     }).join('');
 
-    const historyRows = (data.payment_history || []).map(p => `
-      <tr style="${p.voided ? 'opacity:0.5;text-decoration:line-through' : ''}">
-        <td style="font-size:0.75rem">${new Date(p.payment_date).toLocaleDateString()}</td>
-        <td style="font-size:0.75rem">${TERM_LABELS[p.term] || p.term}</td>
+    profileHistory = data.payment_history || [];
+    const historyRows = profileHistory.map(p => `
+      <tr style="${p.voided ? 'opacity:0.5' : ''}">
+        <td style="font-size:0.75rem;${p.voided ? 'text-decoration:line-through' : ''}">${new Date(p.payment_date).toLocaleDateString()}</td>
+        <td style="font-size:0.75rem;font-weight:600">${TERM_LABELS[p.term] || p.term}</td>
         <td style="font-size:0.75rem">${p.fee_type || '—'}</td>
-        <td style="font-size:0.75rem">${fmt(p.amount)}</td>
+        <td style="font-size:0.75rem;${p.voided ? 'text-decoration:line-through' : ''}">${fmt(p.amount)}</td>
         <td style="font-size:0.75rem">${p.payment_method || ''}</td>
-        <td style="font-size:0.75rem">${p.voided ? 'VOIDED' + (p.void_reason ? ' — ' + p.void_reason : '') : ''}</td>
+        <td style="font-size:0.75rem;white-space:nowrap">${p.voided
+          ? 'VOIDED' + (p.void_reason ? ' — ' + p.void_reason : '')
+          : `<button class="btn btn-outline btn-sm" data-pay-action="move" data-id="${p.id}" style="font-size:0.7rem;padding:3px 8px">Change Term</button>
+             <button class="btn btn-outline btn-sm" data-pay-action="void" data-id="${p.id}" style="font-size:0.7rem;padding:3px 8px;color:#dc2626;border-color:#fca5a5">Void</button>`}</td>
       </tr>`).join('');
 
     document.getElementById('finProfileBody').innerHTML = `
@@ -1117,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="font-size:0.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin:16px 0 8px">Payment History</div>
       <div style="overflow-x:auto">
         <table class="finance-table" style="width:100%">
-          <thead><tr><th>Date</th><th>Term</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+          <thead><tr><th>Date</th><th>Term</th><th>Type</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead>
           <tbody>${historyRows || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:1rem">No payments recorded.</td></tr>'}</tbody>
         </table>
       </div>

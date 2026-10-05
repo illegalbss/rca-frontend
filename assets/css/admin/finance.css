@@ -118,6 +118,17 @@
 
 .finance-table tr:last-child td { border-bottom: none; }
 
+/* Action column pinned to the right edge of a wide, horizontally
+   scrolling table, so its buttons are never hidden off-screen. */
+.finance-table .sticky-action {
+  position: sticky;
+  right: 0;
+  background: var(--color-bg-card, #fff);
+  box-shadow: -6px 0 8px -6px rgba(0, 0, 0, 0.18);
+  white-space: nowrap;
+}
+.finance-table th.sticky-action { background: var(--color-bg); }
+
 .debtor-class-header td {
   background: #f3f4f6;
   font-weight: 700;
