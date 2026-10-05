@@ -124,6 +124,7 @@
                   <th>Admission No.</th>
                   <th>Student Name</th>
                   <th>Class</th>
+                  <th>Term</th>
                   <th>Amount</th>
                   <th>Method</th>
                   <th>Recorded By</th>
@@ -166,6 +167,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentRows = []; // last set of payments loaded from the API
 
+  // Void / Change Term are finance-staff actions (the backend enforces the
+  // same FINANCE_ROLES) — parents also use this page, so hide them there.
+  const cu = window.CURRENT_USER;
+  const canManagePayments = !!cu && (cu.roles || [cu.primary_role || cu.role])
+    .some(r => ['ict_admin', 'head_teacher', 'accountant'].includes(r));
+
   /* ---- Fetch real payments from the backend ---- */
   async function fetchPayments(term, admFilter) {
     if (!window.RCA_API) return [];
@@ -189,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `Payment Records — ${searchTerm ? '"' + searchTerm + '" · ' : ''}${TERM_LABELS[term] || 'All Terms'}`;
 
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--color-text-muted);padding:2rem">No payment records found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-text-muted);padding:2rem">No payment records found.</td></tr>';
       return;
     }
 
@@ -200,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <td>${r.admission_no}</td>
         <td>${r.full_name}</td>
         <td>${r.class_name}</td>
+        <td style="white-space:nowrap">${TERM_LABELS[r.term] || r.term || '—'}${r.fee_type === 'ict_fee' ? ' <span style="font-size:0.65rem;color:#6b7280">(ICT)</span>' : ''}</td>
         <td class="amount-col" style="${r.voided ? 'text-decoration:line-through' : ''}">${fmt(r.amount)}</td>
         <td>${r.payment_method || '—'}${r.voided ? ' <span style="font-size:0.65rem;font-weight:700;color:#dc2626;border:1px solid #fca5a5;border-radius:20px;padding:1px 6px">VOIDED</span>' : ''}</td>
         <td style="font-size:0.75rem">${r.recorded_by_name || '—'}</td>
@@ -207,7 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
           <button class="btn btn-outline btn-sm" onclick="showReceiptById(${r.id})">View</button>
           ${r.voided
             ? `<span style="font-size:0.72rem;color:#9ca3af" title="${r.void_reason || ''}">Voided${r.voided_by_name ? ' by ' + r.voided_by_name : ''}</span>`
-            : `<button class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fca5a5" onclick="deletePayment(${r.id})">Void</button>`}
+            : canManagePayments
+              ? `<button class="btn btn-outline btn-sm" onclick="changePaymentTerm(${r.id})">Change Term</button>
+                 <button class="btn btn-outline btn-sm" style="color:#dc2626;border-color:#fca5a5" onclick="deletePayment(${r.id})">Void</button>`
+              : ''}
         </td>
       </tr>
     `).join('');
@@ -361,6 +372,31 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('receiptSearchBtn').click();
     } catch (e) {
       alert('Could not void payment: ' + e.message);
+    }
+  };
+
+  /* ---- Move a payment recorded against the wrong term ---- */
+  window.changePaymentTerm = async function(id) {
+    const payment = currentRows.find(r => r.id === id);
+    if (!payment) return;
+
+    const options = Object.entries(TERM_LABELS).filter(([t]) => t !== payment.term);
+    const choice = prompt(
+      `Move this payment to which term?\n\n${payment.full_name} — ${fmt(payment.amount)} — currently ${TERM_LABELS[payment.term] || payment.term}\n\n` +
+      options.map(([, label], i) => `${i + 1} = ${label}`).join('\n') + '\n\nType 1 or 2:'
+    );
+    if (choice === null) return;
+    const picked = options[Number(choice.trim()) - 1];
+    if (!picked) { alert('Please type 1 or 2.'); return; }
+
+    const reason = prompt(`Reason for moving it to ${picked[1]}?`, 'Recorded against the wrong term by mistake');
+    if (!reason || !reason.trim()) return;
+
+    try {
+      await window.RCA_API.call(`/payments/${id}/term`, { method: 'PATCH', body: { term: picked[0], reason: reason.trim() } });
+      document.getElementById('receiptSearchBtn').click();
+    } catch (e) {
+      alert('Could not move payment: ' + e.message);
     }
   };
 
