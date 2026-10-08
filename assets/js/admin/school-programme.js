@@ -654,62 +654,134 @@
   /* ============================================================
      PRINT
   ============================================================ */
+  /* ------------------------------------------------------------
+     Branded A4 printout (badge, navy/gold, motto) that always fits on
+     at most TWO pages. A full term (≈13 weeks × 5 days ≈ 65 rows) is
+     laid out compactly; if it's still taller than two pages, the whole
+     document is zoomed down just enough to fit (zoom, not transform, so
+     page breaks follow the shrunken size). Each week is its own <tbody>
+     that never splits across the page break.
+  ------------------------------------------------------------ */
   window._spPrint = (id) => {
     const prog = getPrograms().find(p => String(p.id) === String(id)) || _activeProg;
     if (!prog) return;
 
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, ch =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const logoUrl = new URL('../assets/images/logo.png', location.href).href;
     const weeks = prog.weeks || [];
     let sn = 1;
 
-    const tableRows = weeks.map(week => {
-      return week.rows.map((row, ri) => {
-        const isHoliday = row.type === 'holiday';
-        const isExam    = row.type === 'exam';
-        const isSports  = row.type === 'sports';
-        const isSpecial = row.type === 'special' || row.type === 'closing' || row.type === 'meeting';
-        const color = isHoliday ? '#dc2626' : isExam ? '#1d4ed8' : isSports ? '#059669' : isSpecial ? '#7c3aed' : '#111';
-
+    const weekBodies = weeks.map(week => {
+      const rows = week.rows.map((row, ri) => {
+        const t = ACTIVITY_TYPES[row.type] || ACTIVITY_TYPES.normal;
+        const strong = ['holiday', 'exam', 'closing'].includes(row.type);
+        const tinted = row.type && row.type !== 'normal';
         const snCell = ri === 0
-          ? `<td rowspan="${week.rows.length}" style="border:1px solid #374151;padding:6px 8px;text-align:center;vertical-align:top;font-weight:700">${sn++}.</td>
-             <td rowspan="${week.rows.length}" style="border:1px solid #374151;padding:6px 8px;text-align:center;vertical-align:top;font-weight:700">WEEK ${week.week_no}</td>`
+          ? `<td rowspan="${week.rows.length}" class="c wk">${sn++}.</td>
+             <td rowspan="${week.rows.length}" class="c wk">WEEK<br>${esc(week.week_no)}</td>`
           : '';
-        return `<tr style="${ri===0?'border-top:2px solid #555':''}">
+        return `<tr${tinted ? ` style="background:${t.color}12"` : ''}>
           ${snCell}
-          <td style="border:1px solid #374151;padding:6px 8px">${row.date||''}</td>
-          <td style="border:1px solid #374151;padding:6px 8px;font-weight:600">${row.day||''}</td>
-          <td style="border:1px solid #374151;padding:6px 8px;color:${color};font-weight:${isHoliday||isExam?'700':'400'}">${row.activity||''}</td>
-          <td style="border:1px solid #374151;padding:6px 8px;text-align:center;white-space:nowrap">${row.time||''}</td>
+          <td class="c nw">${esc(row.date)}</td>
+          <td class="day">${esc(row.day)}</td>
+          <td style="color:${t.color};font-weight:${strong ? 700 : tinted ? 600 : 400}">${esc(row.activity)}</td>
+          <td class="c nw">${esc(row.time)}</td>
         </tr>`;
       }).join('');
+      return `<tbody class="week">${rows}</tbody>`;
     }).join('');
 
-    const printWin = window.open('', '_blank', 'width=900,height=700');
+    const legend = Object.values(ACTIVITY_TYPES)
+      .map(t => `<span><i style="background:${t.color}"></i>${t.label}</span>`).join('');
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) { alert('Please allow pop-ups for this site to print the programme.'); return; }
     printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-      <title>School Programme — ${TERM_LABELS[prog.term]} ${prog.session}</title>
+      <title>School Programme — ${TERM_LABELS[prog.term]} ${esc(prog.session)}</title>
       <style>
-        body { font-family: Arial, sans-serif; margin: 20px; color: #111; }
-        h1   { text-align:center; font-size:1.4rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
-        h2   { text-align:center; font-size:0.95rem; text-transform:uppercase; letter-spacing:0.5px; margin:0 0 2px; font-weight:600; }
-        table{ width:100%; border-collapse:collapse; margin-top:16px; }
-        th   { background:#1a3a5c; color:#fff; padding:8px 10px; border:1px solid #374151; text-align:center; font-size:0.82rem; }
-        td   { font-size:0.82rem; vertical-align:middle; }
-        @media print { body { margin:10mm; } }
+        * { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        @page { size:A4 portrait; margin:8mm; }
+        html, body { margin:0; background:#e5e7eb; }
+        body { font-family:Arial, Helvetica, sans-serif; color:#111827; }
+        .doc { width:194mm; margin:12px auto; background:#fff; padding:6mm 6mm 4mm; zoom:var(--fit, 1); }
+        @media print { html, body { background:#fff; } .doc { margin:0; padding:0; width:calc(194mm / var(--fit, 1)); } .toolbar { display:none !important; } }
+        .toolbar { position:sticky; top:0; z-index:5; display:flex; gap:8px; justify-content:center; padding:10px; background:#111827; }
+        .toolbar button { font:600 13px Arial; padding:8px 18px; border-radius:6px; border:0; cursor:pointer; background:#c9960c; color:#fff; }
+        .toolbar button.alt { background:#374151; }
+
+        .head { display:flex; align-items:center; gap:12px; padding-bottom:6px; border-bottom:3px solid #c9960c; }
+        .head img { width:64px; height:64px; object-fit:contain; }
+        .name { font-family:Georgia,'Times New Roman',serif; font-size:23px; font-weight:700; color:#13306b; text-transform:uppercase; letter-spacing:.03em; line-height:1.05; }
+        .motto { font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:12px; color:#13306b; margin-top:2px; }
+        .sub { font-size:9.5px; color:#374151; margin-top:3px; }
+        .banner { margin-top:7px; background:linear-gradient(90deg,#13306b,#1d4690); color:#fff; text-align:center; padding:7px 10px; border-radius:4px; }
+        .banner h1 { margin:0; font-size:16px; letter-spacing:.06em; text-transform:uppercase; }
+        .banner p { margin:2px 0 0; font-size:11px; color:#f3d98b; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+
+        table { width:100%; border-collapse:collapse; margin-top:7px; font-size:10.5px; }
+        thead { display:table-header-group; }
+        th { background:#13306b; color:#fff; padding:5px 6px; border:1px solid #13306b; font-size:9.5px; letter-spacing:.04em; }
+        td { border:1px solid #b8c3d6; padding:3px 6px; vertical-align:middle; line-height:1.25; }
+        tbody.week { break-inside:avoid; page-break-inside:avoid; border-top:2px solid #13306b; }
+        .c { text-align:center; } .nw { white-space:nowrap; }
+        .wk { font-weight:700; color:#13306b; background:#eef3fb; vertical-align:middle; font-size:9.5px; }
+        .day { font-weight:700; font-size:9.5px; }
+
+        .foot { margin-top:7px; display:flex; justify-content:space-between; align-items:flex-end; gap:12px; break-inside:avoid; }
+        .legend { display:flex; flex-wrap:wrap; gap:3px 12px; font-size:9px; color:#374151; }
+        .legend i { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+        .sign { font-size:9.5px; text-align:center; min-width:150px; }
+        .sign div { border-top:1.5px solid #111827; padding-top:3px; margin-top:26px; font-weight:700; }
+        .meta { font-size:8.5px; color:#6b7280; margin-top:4px; }
       </style></head><body>
-      <h1>Royal Crystal Academy</h1>
-      <h2>${TERM_LABELS[prog.term]} ${prog.session} Academic Session</h2>
-      <h2>School Programme of Events</h2>
-      <table>
-        <thead><tr>
-          <th style="width:40px">S/N</th>
-          <th style="width:60px">WEEK</th>
-          <th style="width:100px">DATE</th>
-          <th style="width:100px">DAYS</th>
-          <th>ACTIVITIES</th>
-          <th style="width:110px">TIME</th>
-        </tr></thead>
-        <tbody>${tableRows}</tbody>
-      </table>
-      <script>window.onload=()=>{ window.print(); }<\/script>
+      <div class="toolbar"><button onclick="window.print()">🖨 Print / Save as PDF</button><button class="alt" onclick="window.close()">Close</button></div>
+      <div class="doc">
+        <div class="head">
+          <img src="${logoUrl}" alt="Royal Crystal Academy badge">
+          <div>
+            <div class="name">Royal Crystal Academy</div>
+            <div class="motto">Moral, Excellence &amp; Greatness</div>
+            <div class="sub">20/21 Amaigbo Lane, Uwani, Enugu State &nbsp;·&nbsp; 08036721390 / 09080061094</div>
+          </div>
+        </div>
+        <div class="banner">
+          <h1>School Programme of Events</h1>
+          <p>${TERM_LABELS[prog.term]} — ${esc(prog.session)} Academic Session</p>
+        </div>
+        <table>
+          <thead><tr>
+            <th style="width:6%">S/N</th><th style="width:9%">WEEK</th><th style="width:13%">DATE</th>
+            <th style="width:13%">DAY</th><th>ACTIVITIES</th><th style="width:15%">TIME</th>
+          </tr></thead>
+          ${weekBodies || '<tbody><tr><td colspan="6" class="c" style="padding:16px;color:#6b7280">No weeks in this programme yet.</td></tr></tbody>'}
+        </table>
+        <div class="foot">
+          <div>
+            <div class="legend">${legend}</div>
+            <div class="meta">Created by ${esc(prog.created_by || 'Administration')} · Printed ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          </div>
+          <div class="sign"><div>Head Teacher</div></div>
+        </div>
+      </div>
+      <script>
+        // Fit to at most two A4 pages: printable height per page is
+        // 297mm − 2×8mm margins = 281mm ≈ 1062px. Budget a little under
+        // two pages for the repeated table header and for whole weeks
+        // being pushed to page 2 rather than split.
+        function fit() {
+          var root = document.documentElement, doc = document.querySelector('.doc');
+          root.style.setProperty('--fit', '1');
+          doc.style.padding = '0'; doc.style.width = '194mm';
+          var h = doc.getBoundingClientRect().height;
+          doc.style.padding = ''; doc.style.width = '';
+          var BUDGET = 2 * 1062 - 170;
+          var s = h > BUDGET ? Math.max(0.55, Math.floor(BUDGET / h * 1000) / 1000) : 1;
+          root.style.setProperty('--fit', String(s));
+        }
+        window.addEventListener('beforeprint', fit);
+        window.addEventListener('load', function () { fit(); setTimeout(function () { window.print(); }, 300); });
+      <\/script>
     </body></html>`);
     printWin.document.close();
   };
