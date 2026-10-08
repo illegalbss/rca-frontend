@@ -56,6 +56,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     else badge.style.display = 'none';
   }
 
+  // A pupil's own Practical Programme price (custom_fee) if one is set,
+  // otherwise the standard fee — mirrors feeFor() in the backend.
+  const pupilFee = a => (a && a.custom_fee != null ? Number(a.custom_fee) : fee);
+
   function applicationCardHtml(a) {
     const ec = ENROLL_COLORS[a.enrollment_status] || ENROLL_COLORS.pending_approval;
     const pc = PAY_COLORS[a.payment_status] || PAY_COLORS.pending;
@@ -77,6 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div style="font-size:0.8rem;color:#374151;margin-bottom:14px;line-height:1.6">
           <strong>${a.parent_name}</strong> · ${a.parent_phone}${a.parent_email ? ' · ' + a.parent_email : ''}
           ${a.notes ? `<div style="color:#9ca3af;font-size:0.75rem;margin-top:4px">"${a.notes}"</div>` : ''}
+          <div style="margin-top:6px;font-size:0.78rem">Price: <strong>${fmt(pupilFee(a))}</strong>${a.custom_fee != null ? ' <span style="background:#ede9fe;color:#6d28d9;padding:1px 8px;border-radius:20px;font-size:0.68rem;font-weight:700">CUSTOM</span>' : ' <span style="color:#9ca3af">(standard)</span>'}</div>
         </div>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:12px">
@@ -87,6 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           ${a.enrollment_status === 'approved' && a.payment_status !== 'paid' ? `
             <button class="btn btn-sm btn-outline" style="font-size:0.72rem" onclick="window._ictPracticalOpenPayModal(${a.id},'${a.pupil_full_name.replace(/'/g, "\\'")}')">Record Payment</button>
           ` : ''}
+          <button class="btn btn-sm btn-outline" style="font-size:0.72rem" onclick="window._ictSetPrice(${a.id})">✏️ Set Price</button>
           <button class="btn btn-sm btn-outline" style="font-size:0.72rem;color:#dc2626;margin-left:auto" onclick="window._ictEnrollDelete(${a.id},'${a.pupil_full_name.replace(/'/g, "\\'")}')">Delete</button>
         </div>
       </div>`;
@@ -133,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div id="ictPracticalReportStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px"></div>
         <input type="text" id="ictPracticalReportSearch" class="form-control" placeholder="Search name or class…" style="margin-bottom:12px">
         <div id="ictPracticalReportList" style="max-height:240px;overflow-y:auto;margin-bottom:16px"></div>
-        <div style="font-size:0.82rem;font-weight:700;color:#111827;margin-bottom:8px;padding-top:8px;border-top:1px solid #f3f4f6">Recorded Payments <span style="font-weight:400;color:#9ca3af">(delete a wrongly-recorded one here)</span></div>
+        <div style="font-size:0.82rem;font-weight:700;color:#111827;margin-bottom:8px;padding-top:8px;border-top:1px solid #f3f4f6">Recorded Payments <span style="font-weight:400;color:#9ca3af">(edit or delete a wrongly-recorded one here)</span></div>
         <div id="ictPracticalReportTransactions" style="max-height:240px;overflow-y:auto"></div>
       </div>
 
@@ -242,6 +248,115 @@ document.addEventListener('DOMContentLoaded', async () => {
      raw transaction list for deleting a wrongly-recorded payment.
      ============================================ */
   let ictPracticalReportSearch = '';
+  let practicalTransactions = [];
+
+  // Small shared modal shell for the Set Price / Edit Payment dialogs.
+  function openSmallModal(innerHtml) {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = `<div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">${innerHtml}</div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+    modal.querySelector('[data-cancel]')?.addEventListener('click', () => modal.remove());
+    return modal;
+  }
+
+  /* ---- Set a pupil's own Practical Programme price ---- */
+  window._ictSetPrice = function(enrollmentId) {
+    const a = applications.find(x => x.id === enrollmentId);
+    if (!a) return;
+    const modal = openSmallModal(`
+      <h3 style="margin-bottom:4px;color:var(--color-primary);font-size:1rem">Set Practical Programme Price</h3>
+      <p style="font-size:0.8rem;color:#6b7280;margin-bottom:16px">${a.pupil_full_name} — standard fee is ${fmt(fee)}</p>
+      <div class="form-group">
+        <label>Custom price for this pupil (₦)</label>
+        <input type="number" id="ictCustomFeeInput" class="form-control" min="0" step="500" value="${a.custom_fee != null ? Number(a.custom_fee) : ''}" placeholder="e.g. 15000">
+      </div>
+      <div id="ictCustomFeeError" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:8px 12px;font-size:0.8rem;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline" style="flex:1" data-cancel>Cancel</button>
+        ${a.custom_fee != null ? '<button class="btn btn-outline" style="flex:1" id="ictCustomFeeReset">Use Standard Fee</button>' : ''}
+        <button class="btn btn-primary" style="flex:1" id="ictCustomFeeSave">Save Price</button>
+      </div>`);
+
+    async function save(value) {
+      const errorBox = modal.querySelector('#ictCustomFeeError');
+      try {
+        await window.RCA_API.call(`/ict-enrollments/${enrollmentId}/fee`, { method: 'PATCH', body: { custom_fee: value } });
+      } catch (e) {
+        errorBox.textContent = e.message;
+        errorBox.style.display = 'block';
+        return;
+      }
+      modal.remove();
+      await loadAll();
+      render();
+    }
+    modal.querySelector('#ictCustomFeeSave').addEventListener('click', () => {
+      const v = modal.querySelector('#ictCustomFeeInput').value.trim();
+      if (v === '' || Number(v) < 0) {
+        const errorBox = modal.querySelector('#ictCustomFeeError');
+        errorBox.textContent = 'Enter a price, or use "Use Standard Fee" to remove a custom price.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      save(Number(v));
+    });
+    modal.querySelector('#ictCustomFeeReset')?.addEventListener('click', () => save(null));
+  };
+
+  /* ---- Edit a recorded Practical Programme payment ---- */
+  window._ictPracticalPaymentEdit = function(paymentId) {
+    const t = practicalTransactions.find(x => x.id === paymentId);
+    if (!t) return;
+    const methods = ['Cash', 'Bank Transfer', 'POS', 'Online'];
+    const modal = openSmallModal(`
+      <h3 style="margin-bottom:4px;color:var(--color-primary);font-size:1rem">Edit Payment</h3>
+      <p style="font-size:0.8rem;color:#6b7280;margin-bottom:16px">${t.pupil_full_name} — Practical Programme</p>
+      <div class="form-group"><label>Amount (₦)</label>
+        <input type="number" id="ictEditPayAmount" class="form-control" min="0" value="${Number(t.amount)}"></div>
+      <div class="form-group"><label>Payment Date</label>
+        <input type="date" id="ictEditPayDate" class="form-control" value="${String(t.payment_date || '').slice(0, 10)}"></div>
+      <div class="form-group"><label>Payment Method</label>
+        <select id="ictEditPayMethod" class="form-control">
+          ${methods.map(m => `<option value="${m}" ${t.payment_method === m ? 'selected' : ''}>${m}</option>`).join('')}
+        </select></div>
+      <div class="form-group"><label>Reference (optional)</label>
+        <input type="text" id="ictEditPayRef" class="form-control" value="${t.reference || ''}"></div>
+      <div id="ictEditPayError" style="display:none;background:#fef2f2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:8px 12px;font-size:0.8rem;margin-bottom:12px"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" style="flex:1" data-cancel>Cancel</button>
+        <button class="btn btn-primary" style="flex:1" id="ictEditPaySave">Save Changes</button>
+      </div>`);
+
+    modal.querySelector('#ictEditPaySave').addEventListener('click', async () => {
+      const errorBox = modal.querySelector('#ictEditPayError');
+      const amount = Number(modal.querySelector('#ictEditPayAmount').value);
+      if (!amount || amount <= 0) {
+        errorBox.textContent = 'Please enter a valid amount.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      try {
+        await window.RCA_API.call(`/ict-enrollments/payments/${paymentId}`, {
+          method: 'PUT',
+          body: {
+            amount,
+            payment_date: modal.querySelector('#ictEditPayDate').value || undefined,
+            payment_method: modal.querySelector('#ictEditPayMethod').value,
+            reference: modal.querySelector('#ictEditPayRef').value.trim()
+          }
+        });
+      } catch (e) {
+        errorBox.textContent = 'Could not save: ' + e.message;
+        errorBox.style.display = 'block';
+        return;
+      }
+      modal.remove();
+      await loadAll();
+      render();
+    });
+  };
 
   async function loadAndRenderIctPracticalReport() {
     const statsBox = document.getElementById('ictPracticalReportStats');
@@ -283,13 +398,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6">
               <div style="min-width:0">
                 <div style="font-size:0.82rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.pupil_full_name}</div>
-                <div style="font-size:0.72rem;color:#9ca3af">${p.class_name} · ${fmt(p.amount_paid)} of ${fmt(data.fee_amount)}</div>
+                <div style="font-size:0.72rem;color:#9ca3af">${p.class_name} · ${fmt(p.amount_paid)} of ${fmt(p.fee_amount ?? data.fee_amount)}${p.custom_fee ? ' <span style="color:#6d28d9;font-weight:700">(custom price)</span>' : ''}</div>
               </div>
               <span style="background:${c.bg};color:${c.color};padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap">${c.label}</span>
             </div>`;
         }).join('')
       : '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">No applications found.</p>';
 
+    practicalTransactions = data.transactions || [];
     if (txBox) {
       txBox.innerHTML = data.transactions.length
         ? data.transactions.map(t => `
@@ -298,7 +414,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div style="font-size:0.82rem;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.pupil_full_name} — ${fmt(t.amount)}</div>
                 <div style="font-size:0.72rem;color:#9ca3af">${t.class_name} · ${new Date(t.payment_date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}${t.payment_method ? ' · ' + t.payment_method : ''}</div>
               </div>
-              <button class="btn btn-sm btn-outline" style="font-size:0.7rem;color:#dc2626;flex-shrink:0" onclick="window._ictPracticalPaymentDelete(${t.id},'${t.pupil_full_name.replace(/'/g, "\\'")}')">Delete</button>
+              <span style="display:flex;gap:6px;flex-shrink:0">
+                <button class="btn btn-sm btn-outline" style="font-size:0.7rem" onclick="window._ictPracticalPaymentEdit(${t.id})">Edit</button>
+                <button class="btn btn-sm btn-outline" style="font-size:0.7rem;color:#dc2626" onclick="window._ictPracticalPaymentDelete(${t.id},'${t.pupil_full_name.replace(/'/g, "\\'")}')">Delete</button>
+              </span>
             </div>`).join('')
         : '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.85rem">No payments recorded yet.</p>';
     }
@@ -338,6 +457,8 @@ document.addEventListener('DOMContentLoaded', async () => {
      card's "Record Payment" button.
      ============================================ */
   window._ictPracticalOpenPayModal = function(enrollmentId, pupilName) {
+    const enrollment = applications.find(x => x.id === enrollmentId);
+    const fee = pupilFee(enrollment); // this pupil's price (custom or standard)
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
     modal.innerHTML = `
