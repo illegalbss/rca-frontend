@@ -62,9 +62,9 @@ document.addEventListener('DOMContentLoaded', () => {
       notes:           document.getElementById('ictNotes').value.trim()
     };
 
-    if (!payload.pupil_full_name || !payload.class_name || !payload.parent_name || !payload.parent_phone) {
+    if (!payload.pupil_full_name || !payload.class_name || !payload.parent_phone) {
       if (errorBox) {
-        errorBox.textContent = 'Please fill in the pupil\'s name, class, and parent/guardian name and phone.';
+        errorBox.textContent = 'Please fill in the pupil\'s name, class and parent/guardian phone.';
         errorBox.style.display = 'block';
       }
       return;

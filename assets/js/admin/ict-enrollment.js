@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
 
         <div style="font-size:0.8rem;color:#374151;margin-bottom:14px;line-height:1.6">
-          <strong>${a.parent_name}</strong> · ${a.parent_phone}${a.parent_email ? ' · ' + a.parent_email : ''}
+          <strong>${a.parent_name || 'Parent/Guardian'}</strong> · ${a.parent_phone}${a.parent_email ? ' · ' + a.parent_email : ''}
           ${a.notes ? `<div style="color:#9ca3af;font-size:0.75rem;margin-top:4px">"${a.notes}"</div>` : ''}
           <div style="margin-top:6px;font-size:0.78rem">Price: <strong>${fmt(pupilFee(a))}</strong>${a.custom_fee != null ? ' <span style="background:#ede9fe;color:#6d28d9;padding:1px 8px;border-radius:20px;font-size:0.68rem;font-weight:700">CUSTOM</span>' : ' <span style="color:#9ca3af">(standard)</span>'}</div>
         </div>
@@ -749,7 +749,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           </select>
         </div>
         <div class="form-group">
-          <label>Parent/Guardian Name *</label>
+          <label>Parent/Guardian Name</label>
           <input type="text" id="ictAddParentName" class="form-control">
         </div>
         <div class="form-group">
@@ -785,8 +785,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
       const errorBox = document.getElementById('ictAddError');
 
-      if (!payload.pupil_full_name || !payload.class_name || !payload.parent_name || !payload.parent_phone) {
-        errorBox.textContent = 'Pupil name, class, parent/guardian name and phone are required.';
+      if (!payload.pupil_full_name || !payload.class_name || !payload.parent_phone) {
+        errorBox.textContent = 'Pupil name, class and parent/guardian phone are required.';
         errorBox.style.display = 'block';
         return;
       }
