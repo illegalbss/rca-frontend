@@ -740,6 +740,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           <label>Class *</label>
           <select id="ictAddClass" class="form-control">
             <option value="">Select class…</option>
+            <option value="Basic 1">Basic 1</option>
+            <option value="Basic 2">Basic 2</option>
             <option value="Basic 3">Basic 3</option>
             <option value="Basic 4">Basic 4</option>
             <option value="Basic 5">Basic 5</option>
