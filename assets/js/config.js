@@ -22,7 +22,11 @@
     SCHOOL_NAME:   'Royal Crystal Academy',
     SCHOOL_DOMAIN: 'royalcrystalacademy.com.ng',
     SESSION:       '2025/2026',
-    CURRENT_TERM:  'term2',
+    // Worked out from today's date (Sept–Dec = First, Jan–Apr = Second,
+    // May–Aug = Third) instead of a hardcoded 'term2', which left every
+    // term picker on Second Term all year — e.g. the Report Card showing
+    // an empty Second Term card while First Term results were entered.
+    CURRENT_TERM:  (() => { const m = new Date().getMonth(); return m >= 8 ? 'term1' : m <= 3 ? 'term2' : 'term3'; })(),
 
     async fetch(endpoint, options = {}) {
       const token = sessionStorage.getItem('rca_token');
@@ -46,6 +50,18 @@
     clearToken()     { sessionStorage.removeItem('rca_token'); },
     isLoggedIn()     { return !!sessionStorage.getItem('rca_token'); }
   };
+
+  // Every term picker that was written with Second Term pre-selected now
+  // opens on the current term instead. config.js loads before each
+  // page's own script, so this listener runs first and those scripts
+  // read the corrected value. "All Terms" pickers are left alone.
+  document.addEventListener('DOMContentLoaded', () => {
+    const term = window.RCA_CONFIG.CURRENT_TERM;
+    document.querySelectorAll('select').forEach(sel => {
+      const opt = sel.querySelector('option[value="term2"]');
+      if (opt && opt.defaultSelected && sel.querySelector(`option[value="${term}"]`)) sel.value = term;
+    });
+  });
 
   console.log('RCA Config loaded');
 

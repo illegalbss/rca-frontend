@@ -25,6 +25,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allStudents       = await window.RCA_API.getStudents();
   let allStaff          = [];
   try { allStaff = await window.RCA_API.getStaffDirectory(); } catch (e) { allStaff = []; }
+
+  // The session the results are actually stored under (the server's
+  // current academic session), shown in the card title — not a
+  // hardcoded year that goes stale every September.
+  let sessionLabel = window.RCA_CONFIG?.SESSION || '';
+  try {
+    const fs = await window.RCA_API.call('/payments/fee-schedule');
+    sessionLabel = fs.terms?.[0]?.session_label || sessionLabel;
+  } catch (e) { /* keep the config fallback */ }
   const allClasses      = window.SCHOOL_CLASSES   || [];
   const traits           = window.BEHAVIOR_TRAITS  || [];
   const scoreToGrade    = window.scoreToGrade;
@@ -419,7 +428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="rc-school-name">Royal Crystal Academy</div>
         <div class="rc-school-meta">20/21 Amaigbo Lane, Uwani, Enugu State</div>
         <div class="rc-school-meta">Tel: 08036721390 / 09080061094</div>
-        <div class="rc-title">${termLabel} Report Card &bull; 2025/2026 Session</div>
+        <div class="rc-title">${termLabel} Report Card &bull; ${sessionLabel} Session</div>
       </div>
 
       <div class="rc-info-grid">

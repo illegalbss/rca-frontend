@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allStudents = [];
   let feeSchedule = [];
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+  const CUR_TERM = window.RCA_CONFIG?.CURRENT_TERM || 'term1';
 
   async function loadAll() {
     const [appsData, feeData, studentsData, scheduleData] = await Promise.all([
@@ -155,9 +156,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="form-group">
             <label>Term</label>
             <select id="ictPayTerm" class="form-control">
-              <option value="term1">First Term</option>
-              <option value="term2" selected>Second Term</option>
-              <option value="term3">Third Term</option>
+              <option value="term1" ${CUR_TERM === 'term1' ? 'selected' : ''}>First Term</option>
+              <option value="term2" ${CUR_TERM === 'term2' ? 'selected' : ''}>Second Term</option>
+              <option value="term3" ${CUR_TERM === 'term3' ? 'selected' : ''}>Third Term</option>
             </select>
           </div>
           <div class="form-group">
@@ -183,9 +184,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px">
           <span style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#111827">ICT / Portal Fee Report</span>
           <select id="ictReportTerm" class="form-control" style="width:auto">
-            <option value="term1">First Term</option>
-            <option value="term2" selected>Second Term</option>
-            <option value="term3">Third Term</option>
+            <option value="term1" ${CUR_TERM === 'term1' ? 'selected' : ''}>First Term</option>
+            <option value="term2" ${CUR_TERM === 'term2' ? 'selected' : ''}>Second Term</option>
+            <option value="term3" ${CUR_TERM === 'term3' ? 'selected' : ''}>Third Term</option>
           </select>
         </div>
         <p style="font-size:0.78rem;color:#6b7280;margin-bottom:14px">Who has and hasn't paid the ICT/Portal Fee this term — this money doesn't go through the school account, so it's kept separate from Finance Reports.</p>
@@ -517,7 +518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ============================================
      ICT / PORTAL FEE REPORT — who's paid, who hasn't
      ============================================ */
-  let ictReportTerm = 'term2';
+  let ictReportTerm = CUR_TERM;
   let ictReportSearch = '';
 
   async function loadAndRenderIctFeeReport() {
