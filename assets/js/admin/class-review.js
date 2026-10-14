@@ -173,7 +173,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nurseryRecord = data?.nursery_record || {};
 
     const ratingsMap = {};
-    (data?.behavior || []).forEach(b => { ratingsMap[b.trait_code] = b.rating; });
+    // Number(): the database may return the rating as text ("4"), which
+    // never === the circle's numeric value, so saved ratings looked unset.
+    (data?.behavior || []).forEach(b => { ratingsMap[b.trait_code] = Number(b.rating); });
     const ratingRecord = { ratings: ratingsMap, comment: data?.comment || '' };
 
     /* --- Academic summary --- */
@@ -328,10 +330,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // Keep the cache in sync so the pupil list's "reviewed" tick
-      // reflects this save without a refetch.
-      const key = `${admissionNo}|${term}`;
-      if (reviewCache[key]) reviewCache[key].comment = comment;
+      // Drop this pupil's cached copy so the next time they're opened (and
+      // the pupil list's "reviewed" tick) reads what was actually saved.
+      // Previously only `comment` was patched into the cache, so behaviour
+      // ratings and Nursery records reappeared blank after switching
+      // pupils — they HAD saved, but the page showed the stale copy.
+      delete reviewCache[`${admissionNo}|${term}`];
 
       saveBtn.disabled = false;
       const now = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });

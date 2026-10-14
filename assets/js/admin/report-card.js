@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isNursery = isNurseryClass(className);
 
     const behaviorMap = {};
-    (summary.behavior || []).forEach(b => { behaviorMap[b.trait_code] = b.rating; });
+    (summary.behavior || []).forEach(b => { behaviorMap[b.trait_code] = Number(b.rating); });
 
     // The school's paper card shows CA as two tests. Our CA is four
     // 10-mark components (test/assessment/project/midterm — see
