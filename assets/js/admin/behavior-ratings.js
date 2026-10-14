@@ -35,6 +35,10 @@
     1: 'Poor'
   };
 
+  // [{ value, label }] for 1–5, used by Class Review for the word shown
+  // beside each trait (was referenced but never defined, so it stayed blank).
+  window.RATING_SCALE = [1, 2, 3, 4, 5].map(v => ({ value: v, label: window.RATING_LABELS[v] }));
+
   // 1–5 → "Poor" … "Excellent". Used by the Report Card and Student
   // Portal; it was referenced there but never defined, so any pupil WITH
   // behaviour ratings crashed the report card (stuck on "Loading…").

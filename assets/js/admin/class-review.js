@@ -299,6 +299,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           <span>4 — Very Good</span><span>5 — Excellent</span>
         </div>
         <div class="traits-grid">${traitsHTML}</div>
+        <p style="font-size:0.75rem;color:#6b7280;margin:8px 0 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <span>Tip: click a selected number again to clear that trait.</span>
+          <button type="button" id="clearRatingsBtn" class="btn btn-sm btn-outline" style="font-size:0.72rem;color:#dc2626;border-color:#fca5a5">Clear All Ratings</button>
+        </p>
       </div>
       `}
 
@@ -315,18 +319,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     reviewPanel.querySelectorAll('.rating-circle').forEach(btn => {
       btn.addEventListener('click', () => {
         const traitId = btn.getAttribute('data-trait');
-        const val = parseInt(btn.getAttribute('data-val'));
+        // Clicking the already-selected number clears that trait (0 =
+        // cleared; the server deletes it on save).
+        const val = btn.classList.contains('active') ? 0 : parseInt(btn.getAttribute('data-val'));
 
         /* Clear active state for this trait */
         reviewPanel.querySelectorAll(`[data-trait="${traitId}"]`).forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        if (val) btn.classList.add('active');
 
         const labelEl = document.getElementById(`traitLabel-${traitId}`);
-        if (labelEl) labelEl.textContent = ratingScale.find(r => r.value === val)?.label || '';
+        if (labelEl) labelEl.textContent = val ? (ratingScale.find(r => r.value === val)?.label || '') : '—';
 
         ratingRecord.ratings[traitId] = val;
         saveStatus_set('Unsaved changes', 'unsaved');
       });
+    });
+
+    // Clears every trait for this pupil (each set to 0, which the server
+    // deletes on save) — for ratings entered by mistake or while testing.
+    document.getElementById('clearRatingsBtn')?.addEventListener('click', () => {
+      if (!confirm(`Clear all behaviour ratings for ${student.full_name}? Click "Save This Pupil" afterwards to remove them.`)) return;
+      traits.forEach(t => {
+        ratingRecord.ratings[t.id] = 0;
+        const labelEl = document.getElementById(`traitLabel-${t.id}`);
+        if (labelEl) labelEl.textContent = '—';
+      });
+      // Also clear any rating stored under a code not in the current list.
+      Object.keys(ratingRecord.ratings).forEach(k => { ratingRecord.ratings[k] = 0; });
+      reviewPanel.querySelectorAll('.rating-circle.active').forEach(b => b.classList.remove('active'));
+      saveStatus_set('Unsaved changes — click Save This Pupil', 'unsaved');
     });
 
     reviewPanel.querySelectorAll('.nursery-field-input').forEach(el => {
