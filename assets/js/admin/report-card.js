@@ -66,26 +66,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   // refetch a classmate's results more than once.
   let resultsCache = {};
 
+  function summarize(data) {
+    const scores = data?.scores || [];
+    const totalScore = scores.reduce((sum, r) => sum + Number(r.final_score || 0), 0);
+    const average = scores.length ? totalScore / scores.length : 0;
+    return {
+      scores,
+      behavior: data?.behavior || [],
+      comment: data?.comment || null,
+      ht_comment: data?.ht_comment || null,
+      nursery_record: data?.nursery_record || null,
+      average,
+      totalScore,
+      overallGrade: scoreToGrade(average),
+      subjectsCount: scores.length
+    };
+  }
+
   async function getResults(admissionNo, term) {
     const key = `${admissionNo}|${term}`;
     if (!resultsCache[key]) {
-      const data = await window.RCA_API.getStudentResults(admissionNo, term);
-      const scores = data?.scores || [];
-      const totalScore = scores.reduce((sum, r) => sum + Number(r.final_score || 0), 0);
-      const average = scores.length ? totalScore / scores.length : 0;
-      resultsCache[key] = {
-        scores,
-        behavior: data?.behavior || [],
-        comment: data?.comment || null,
-        ht_comment: data?.ht_comment || null,
-        nursery_record: data?.nursery_record || null,
-        average,
-        totalScore,
-        overallGrade: scoreToGrade(average),
-        subjectsCount: scores.length
-      };
+      resultsCache[key] = summarize(await window.RCA_API.getStudentResults(admissionNo, term));
     }
     return resultsCache[key];
+  }
+
+  // Refreshes the whole class in ONE request (GET /students/class-results)
+  // each time a card is opened — so it always shows what was last saved
+  // in Class Review, and class position doesn't need one request per
+  // classmate. Falls back to per-pupil loading if it fails.
+  async function prefetchClass(className, term) {
+    try {
+      const data = await window.RCA_API.getClassResults(className, term);
+      Object.entries(data.results || {}).forEach(([adm, r]) => { resultsCache[`${adm}|${term}`] = summarize(r); });
+    } catch (e) {
+      console.warn('Class results load failed, loading pupils individually:', e.message);
+    }
   }
 
   /* --------------------------------------------
@@ -387,8 +403,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     reportCardEl.innerHTML = '<p style="text-align:center;color:#777;padding:2rem;">Loading…</p>';
 
     const student = allStudents.find(s => s.admission_no === admissionNo);
-    const summary = await getResults(admissionNo, term);
-    const { position, classSize } = await computeClassPosition(admissionNo, className, term);
+    let summary, position, classSize;
+    try {
+      await prefetchClass(className, term);
+      summary = await getResults(admissionNo, term);
+      ({ position, classSize } = await computeClassPosition(admissionNo, className, term));
+    } catch (e) {
+      reportCardEl.innerHTML = `<p style="text-align:center;color:#dc2626;padding:2rem;">Could not load this report card: ${e.message}<br>Nothing has been lost — please wait a moment and select the pupil again.</p>`;
+      return;
+    }
     const isNursery = isNurseryClass(className);
 
     const behaviorMap = {};

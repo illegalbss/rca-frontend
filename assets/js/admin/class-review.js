@@ -44,6 +44,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     return reviewCache[key];
   }
 
+  // Loads the whole class in ONE request (GET /students/class-results)
+  // and fills the cache, instead of one request per pupil. If that fails
+  // (e.g. the backend hasn't been updated yet) pupils are loaded one by
+  // one as before.
+  async function prefetchClass(className, term) {
+    try {
+      const data = await window.RCA_API.getClassResults(className, term);
+      Object.entries(data.results || {}).forEach(([adm, r]) => { reviewCache[`${adm}|${term}`] = r; });
+    } catch (e) {
+      console.warn('Class results load failed, loading pupils individually:', e.message);
+    }
+  }
+
   const classSelect  = document.getElementById('classSelect');
   const termSelect    = document.getElementById('termSelect');
   const pupilList      = document.getElementById('pupilList');
@@ -135,10 +148,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       .filter(s => s.class_name === className)
       .sort((a, b) => a.full_name.localeCompare(b.full_name));
 
-    const flags = await Promise.all(studentsInClass.map(async s => {
-      const data = await getReview(s.admission_no, term);
-      return { admissionNo: s.admission_no, hasComment: !!(data?.comment && data.comment.length > 0) };
-    }));
+    pupilList.innerHTML = '<p style="padding:16px;color:#9ca3af;font-size:0.85rem">Loading pupils…</p>';
+    if (studentsInClass.some(s => !reviewCache[`${s.admission_no}|${term}`])) {
+      await prefetchClass(className, term);
+    }
+
+    let flags;
+    try {
+      flags = await Promise.all(studentsInClass.map(async s => {
+        const data = await getReview(s.admission_no, term);
+        return { admissionNo: s.admission_no, hasComment: !!(data?.comment && data.comment.length > 0) };
+      }));
+    } catch (e) {
+      pupilList.innerHTML = `<p style="padding:16px;color:#dc2626;font-size:0.85rem">Could not load this class's results: ${e.message}<br>Please wait a moment and refresh the page.</p>`;
+      return;
+    }
     const reviewed = new Set(flags.filter(f => f.hasComment).map(f => f.admissionNo));
 
     const total = studentsInClass.length;
@@ -167,7 +191,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentPupilAdmNo = admissionNo;
     const term = termSelect.value;
     const student = allStudents.find(s => s.admission_no === admissionNo);
-    const data = await getReview(admissionNo, term);
+    let data;
+    try {
+      data = await getReview(admissionNo, term);
+    } catch (e) {
+      reviewPanel.innerHTML = `<p class="review-empty-state" style="color:#dc2626">Could not load ${student?.full_name || 'this pupil'}'s results: ${e.message}<br>Nothing has been lost — please wait a moment and click the pupil again.</p>`;
+      return;
+    }
     const scores = data?.scores || [];
     const isNursery = isNurseryClass(student.class_name);
     const nurseryRecord = data?.nursery_record || {};

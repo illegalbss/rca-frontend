@@ -63,17 +63,17 @@
     }
   }
 
+  // Throws on failure instead of quietly returning sample/empty data — a
+  // failed load (e.g. "Too many requests") used to look exactly like a
+  // pupil with nothing recorded. Callers show the error instead.
   async function getStudentResults(studentId, term = 'term2') {
-    try {
-      return await apiCall(`/students/${encodeURIComponent(studentId)}/results?term=${term}`);
-    } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
-      const student = (window.SAMPLE_STUDENTS || []).find(s => s.id == studentId || s.admission_no == studentId);
-      if (!student) return { scores: [], behavior: [] };
-      return { scores: Object.entries(window.SAMPLE_RESULTS?.[student.admission_no] || {}).map(([subId, data]) => ({
-        subject_code: subId, ...data
-      })), behavior: [] };
-    }
+    return apiCall(`/students/${encodeURIComponent(studentId)}/results?term=${term}`);
+  }
+
+  // Whole class in one request: { session, results: { [admission_no]: {...} } }
+  // with the same per-pupil shape as getStudentResults().
+  async function getClassResults(className, term) {
+    return apiCall(`/students/class-results?class_name=${encodeURIComponent(className)}&term=${term}`);
   }
 
   async function saveClassReview(studentId, term, ratings, comment, nursery_record) {
@@ -441,6 +441,7 @@
     getStudents,
     getStudentResults,
     saveClassReview,
+    getClassResults,
 
     // Scores
     getScores,
