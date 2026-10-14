@@ -389,7 +389,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* --------------------------------------------
      BUILD THE FULL REPORT CARD HTML
      -------------------------------------------- */
+  // Any error while building the card is shown in place of it, instead
+  // of leaving the card stuck on "Loading…" (which is what a missing
+  // helper once did to every pupil who had behaviour ratings).
   async function renderReportCard() {
+    try {
+      await renderReportCardInner();
+    } catch (e) {
+      console.error('Report card failed to render:', e);
+      reportCardEl.innerHTML = `<p style="text-align:center;color:#dc2626;padding:2rem;">This report card couldn't be displayed: ${e.message}<br>Please send this message to the ICT Administrator.</p>`;
+    }
+  }
+
+  async function renderReportCardInner() {
     const admissionNo = pupilSelect.value;
     const className = classSelect.value;
     const term = termSelect.value;

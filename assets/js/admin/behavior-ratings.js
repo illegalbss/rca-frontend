@@ -35,6 +35,14 @@
     1: 'Poor'
   };
 
+  // 1–5 → "Poor" … "Excellent". Used by the Report Card and Student
+  // Portal; it was referenced there but never defined, so any pupil WITH
+  // behaviour ratings crashed the report card (stuck on "Loading…").
+  // Number() also accepts ratings the database returns as text ("4").
+  window.ratingValueToLabel = function (value) {
+    return window.RATING_LABELS[Number(value)] || '';
+  };
+
   // Empty ratings — real data comes from API/localStorage
   if (!window.BEHAVIOR_RATINGS) {
     window.BEHAVIOR_RATINGS = {};
