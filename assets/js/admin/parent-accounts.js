@@ -94,6 +94,7 @@
           <option value="">All statuses</option>
           ${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${filter.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
         </select>
+        <button class="btn btn-primary btn-sm" id="paAddParent" style="white-space:nowrap">+ Add Parent</button>
       </div>
       <div style="font-size:0.78rem;color:#6b7280;margin-bottom:10px">${rows.length} parent account${rows.length !== 1 ? 's' : ''}</div>
       <div style="overflow-x:auto">
@@ -133,6 +134,7 @@
     const s = document.getElementById('paSearch');
     let t; s.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { filter.q = s.value; renderAccounts(); document.getElementById('paSearch').focus(); }, 250); });
     document.getElementById('paStatus').addEventListener('change', e => { filter.status = e.target.value; renderAccounts(); });
+    document.getElementById('paAddParent').addEventListener('click', showAddParentModal);
 
     const tab = document.getElementById('paTab');
     tab.querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => issueCode(b.dataset.code)));
@@ -150,6 +152,73 @@
       try { await window.RCA_API.call(`/parent-accounts/${id}/link/${encodeURIComponent(adm)}`, { method: 'DELETE' }); } catch (err) { alert(err.message); return; }
       await reload();
     }));
+  }
+
+  /* ---- + Add Parent: one new family, through the same /import checks as
+     the CSV (duplicate detection, review queue, child-link verification),
+     so a single registration can't bypass them. Creates a Prepared account;
+     then issue a code from the same window. ---- */
+  function showAddParentModal() {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin:0 0 4px;color:var(--color-primary);font-size:1rem">Add a Parent</h3>
+        <p style="font-size:0.8rem;color:#6b7280;margin:0 0 14px">Creates a <strong>Prepared</strong> account. The parent activates it with a code you give them and sets their own password.</p>
+        <div class="form-group"><label>Parent / Guardian Full Name *</label><input id="apName" class="form-control"></div>
+        <div class="form-group"><label>Phone Number *</label><input id="apPhone" class="form-control" placeholder="0803 123 4567"></div>
+        <div class="form-group"><label>Email (optional)</label><input id="apEmail" type="email" class="form-control"></div>
+        <div class="form-group"><label>Child's Admission Number(s) *</label><input id="apKids" class="form-control" placeholder="RCA/2026/001, RCA/2026/002">
+          <small style="color:#6b7280;font-size:0.72rem">Separate several children with commas. The pupil must already be registered on the Students page.</small></div>
+        <div id="apResult" style="font-size:0.8rem;margin-bottom:12px"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-outline" style="flex:1" id="apCancel">Cancel</button>
+          <button class="btn btn-outline" style="flex:1" id="apCheck">Check</button>
+          <button class="btn btn-primary" style="flex:1;display:none" id="apSave">Add Parent</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    const $ = id => m.querySelector('#' + id);
+    const RES = { create: '#065f46', link: '#1d4ed8', link_pending: '#92400e', review: '#7c2d12', unchanged: '#374151', error: '#991b1b' };
+
+    function rows() {
+      const kids = $('apKids').value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
+      return kids.map(k => ({ full_name: $('apName').value.trim(), phone: $('apPhone').value.trim(), email: $('apEmail').value.trim(), admission_no: k }));
+    }
+    function show(res, saved) {
+      $('apResult').innerHTML = res.rows.map(r => `<div style="color:${RES[r.result] || '#374151'};margin-bottom:4px">• <strong>${esc(r.admission_no)}</strong>: ${esc(r.message || r.result)}</div>`).join('');
+      const ok = res.rows.some(r => ['create', 'link', 'link_pending'].includes(r.result));
+      $('apSave').style.display = !saved && ok ? '' : 'none';
+      return ok;
+    }
+    // Any edit means the preview no longer matches — make them check again.
+    ['apName', 'apPhone', 'apEmail', 'apKids'].forEach(id => $(id).addEventListener('input', () => { $('apSave').style.display = 'none'; }));
+
+    $('apCancel').onclick = () => m.remove();
+    $('apCheck').onclick = async () => {
+      const r = rows();
+      if (!r.length || !r[0].full_name || !r[0].phone) { $('apResult').innerHTML = '<span style="color:#dc2626">Enter the name, phone number and at least one admission number.</span>'; return; }
+      try { show(await api('/import', { method: 'POST', body: { rows: r, dry_run: true } }), false); }
+      catch (e) { $('apResult').innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`; }
+    };
+    $('apSave').onclick = async () => {
+      let res;
+      try { res = await api('/import', { method: 'POST', body: { rows: rows(), dry_run: false } }); }
+      catch (e) { $('apResult').innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`; return; }
+      show(res, true);
+      await reload();
+      // Offer the activation code straight away for the account just added.
+      const digits = $('apPhone').value.replace(/\D/g, '').slice(-10);
+      const p = data.parents.find(x => (x.phone || '').replace(/\D/g, '').slice(-10) === digits && (x.status === 'prepared' || x.status === 'pending'));
+      $('apCheck').style.display = 'none';
+      $('apCancel').textContent = 'Close';
+      if (p) {
+        const b = document.createElement('button');
+        b.className = 'btn btn-primary'; b.style.flex = '1'; b.textContent = 'Issue Activation Code';
+        b.onclick = () => { m.remove(); issueCode(p.id); };
+        $('apCancel').parentNode.appendChild(b);
+      }
+    };
   }
 
   async function act(path, body, confirmMsg) {
