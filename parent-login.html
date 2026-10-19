@@ -324,11 +324,13 @@
 
     <div class="error-box" id="parentError"></div>
 
+    <div class="success-box" id="parentSuccess" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:8px;padding:10px 14px;font-size:0.85rem;margin-bottom:14px"></div>
+
     <form id="parentLoginForm" novalidate>
       <div class="form-group">
-        <label for="parent_email">Email Address</label>
-        <input type="email" id="parent_email" class="form-control"
-               placeholder="your@email.com" autocomplete="email" required>
+        <label for="parent_email">Email or Phone Number</label>
+        <input type="text" id="parent_email" class="form-control"
+               placeholder="your@email.com or 0803 123 4567" autocomplete="username" required>
       </div>
       <div class="form-group">
         <label for="parent_password">Password</label>
@@ -338,7 +340,49 @@
       <button type="submit" class="parent-login-btn" id="parentLoginBtn">
         Sign In to Parent Portal →
       </button>
+      <p style="text-align:center;font-size:0.85rem;margin-top:14px">
+        First time here? <a href="#" id="showActivateLink" style="color:#1d4ed8;font-weight:600">Activate my account</a>
+      </p>
     </form>
+
+    <!-- Activation: phone + school-issued code, then choose a password -->
+    <div id="activatePanel" style="display:none">
+      <form id="activateStep1" novalidate>
+        <p style="font-size:0.85rem;color:#374151;margin-bottom:14px">Enter the phone number the school has for you and the <strong>activation code</strong> the school gave you.</p>
+        <div class="form-group">
+          <label for="act_phone">Phone Number</label>
+          <input type="tel" id="act_phone" class="form-control" placeholder="0803 123 4567" autocomplete="tel" required>
+        </div>
+        <div class="form-group">
+          <label for="act_code">Activation Code</label>
+          <input type="text" id="act_code" class="form-control" placeholder="ABCDE-23456" autocomplete="one-time-code" style="text-transform:uppercase;letter-spacing:0.1em" required>
+        </div>
+        <button type="submit" class="parent-login-btn" id="actVerifyBtn">Continue →</button>
+      </form>
+
+      <form id="activateStep2" novalidate style="display:none">
+        <p style="font-size:0.85rem;color:#374151;margin-bottom:14px" id="actWelcome">Code accepted. Now choose your password.</p>
+        <div class="form-group">
+          <label for="act_password">New Password</label>
+          <input type="password" id="act_password" class="form-control" autocomplete="new-password" required>
+          <small style="color:#6b7280;font-size:0.75rem">At least 8 characters, with a letter and a number.</small>
+        </div>
+        <div class="form-group">
+          <label for="act_password2">Confirm Password</label>
+          <input type="password" id="act_password2" class="form-control" autocomplete="new-password" required>
+        </div>
+        <div class="form-group" id="actEmailGroup">
+          <label for="act_email">Email Address (optional)</label>
+          <input type="email" id="act_email" class="form-control" placeholder="your@email.com" autocomplete="email">
+        </div>
+        <button type="submit" class="parent-login-btn" id="actCompleteBtn">Activate My Account</button>
+      </form>
+
+      <p style="text-align:center;font-size:0.85rem;margin-top:14px">
+        <a href="#" id="backToLoginLink" style="color:#1d4ed8">← Back to Sign In</a>
+      </p>
+      <p style="text-align:center;font-size:0.75rem;color:#9ca3af;margin-top:6px">No activation code? Contact the school office to get one.</p>
+    </div>
 
     <div class="divider"><span>Are you a staff member?</span></div>
     <a href="admin/login.html" class="staff-link">🏫 Go to Staff Portal</a>
@@ -355,79 +399,132 @@
 </div>
 
 <script src="assets/js/config.js"></script>
-<script src="assets/js/admin/sample-users.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const form     = document.getElementById('parentLoginForm');
-  const errorBox = document.getElementById('parentError');
-  const btn      = document.getElementById('parentLoginBtn');
+  const apiUrl     = window.RCA_CONFIG?.API_URL;
+  const form       = document.getElementById('parentLoginForm');
+  const errorBox   = document.getElementById('parentError');
+  const successBox = document.getElementById('parentSuccess');
+  const btn        = document.getElementById('parentLoginBtn');
+  const actPanel   = document.getElementById('activatePanel');
+  const step1      = document.getElementById('activateStep1');
+  const step2      = document.getElementById('activateStep2');
+  let activationToken = null;
 
   function showError(msg) {
+    successBox.style.display = 'none';
     errorBox.textContent = msg;
     errorBox.style.display = 'block';
   }
+  function clearMessages() {
+    errorBox.style.display = 'none';
+    successBox.style.display = 'none';
+  }
+  async function post(path, body) {
+    const res = await fetch(apiUrl + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+  }
 
+  /* ---- Sign in (email or phone) — the server is the only authority:
+     there is no offline / browser-stored fallback login. ---- */
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    errorBox.style.display = 'none';
+    clearMessages();
 
-    const email = document.getElementById('parent_email').value.trim().toLowerCase();
-    const pwd   = document.getElementById('parent_password').value;
-
-    if (!email || !pwd) { showError('Please enter your email and password.'); return; }
+    const identifier = document.getElementById('parent_email').value.trim();
+    const pwd        = document.getElementById('parent_password').value;
+    if (!identifier || !pwd) { showError('Please enter your email or phone number and your password.'); return; }
 
     btn.textContent = 'Signing in...';
     btn.disabled = true;
-
-    // Try real API
     try {
-      const apiUrl = window.RCA_CONFIG?.API_URL || 'https://rca-backend-3r1c.onrender.com/api';
-      const res = await fetch(`${apiUrl}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pwd })
-      });
-      const data = await res.json();
-      if (res.ok && (data.user?.role === 'parent' || data.user?.primary_role === 'parent')) {
+      const { ok, data } = await post('/auth/login', { email: identifier, password: pwd });
+      if (ok && (data.user?.role === 'parent' || data.user?.primary_role === 'parent')) {
         sessionStorage.setItem('rca_token', data.token || '');
         sessionStorage.setItem('rca_user_data', JSON.stringify(data.user));
         sessionStorage.setItem('rca_demo_role', 'parent');
         sessionStorage.setItem('rca_demo_name', data.user.full_name);
         window.location.href = 'admin/parent-portal.html';
         return;
-      } else if (res.ok) {
-        showError('This account is not a parent account. Staff should use the Staff Portal.');
-        btn.textContent = 'Sign In to Parent Portal →';
-        btn.disabled = false;
-        return;
       }
-    } catch(e) {
-      // Fall through to localStorage
+      showError(ok ? 'This account is not a parent account. Staff should use the Staff Portal.'
+                   : (data.error || 'Could not sign in. Please try again.'));
+    } catch (err) {
+      showError('Could not reach the school server. Please check your internet connection and try again.');
     }
+    btn.textContent = 'Sign In to Parent Portal →';
+    btn.disabled = false;
+  });
 
-    // Fallback: check localStorage parents
-    const parents = JSON.parse(localStorage.getItem('rca_parents') || '[]');
-    const parent = parents.find(p => p.email.toLowerCase() === email);
+  /* ---- Activation ---- */
+  function showActivation(show) {
+    clearMessages();
+    form.style.display = show ? 'none' : '';
+    actPanel.style.display = show ? '' : 'none';
+    step1.style.display = '';
+    step2.style.display = 'none';
+    activationToken = null;
+    document.querySelector('.parent-card-header h2').textContent = show ? 'Activate Your Account' : 'Parent Login';
+    document.querySelector('.parent-card-header p').textContent = show ? 'Set up your parent portal account' : "Sign in to monitor your child's progress";
+  }
+  document.getElementById('showActivateLink').addEventListener('click', e => { e.preventDefault(); showActivation(true); });
+  document.getElementById('backToLoginLink').addEventListener('click', e => { e.preventDefault(); showActivation(false); });
 
-    if (!parent) {
-      showError('No parent account found with that email. Contact the school to set up your account.');
-      btn.textContent = 'Sign In to Parent Portal →';
-      btn.disabled = false;
-      return;
+  step1.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMessages();
+    const phone = document.getElementById('act_phone').value.trim();
+    const code  = document.getElementById('act_code').value.trim();
+    if (!phone || !code) { showError('Enter your phone number and activation code.'); return; }
+    const b = document.getElementById('actVerifyBtn');
+    b.disabled = true;
+    try {
+      const { ok, data } = await post('/parent-activation/verify', { phone, code });
+      if (!ok) { showError(data.error || 'Could not verify. Please try again.'); return; }
+      activationToken = data.token;
+      document.getElementById('actWelcome').textContent =
+        `Welcome${data.first_name ? ', ' + data.first_name : ''}! Your code is accepted — now choose your own password.`;
+      document.getElementById('actEmailGroup').style.display = data.has_email ? 'none' : '';
+      step1.style.display = 'none';
+      step2.style.display = '';
+    } catch (err) {
+      showError('Could not reach the school server. Please try again.');
+    } finally {
+      b.disabled = false;
     }
+  });
 
-    if (pwd !== parent.password && pwd !== 'RCA@2026!') {
-      showError('Incorrect password. Contact the ICT Administrator to reset your password.');
-      btn.textContent = 'Sign In to Parent Portal →';
-      btn.disabled = false;
-      return;
+  step2.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMessages();
+    const p1 = document.getElementById('act_password').value;
+    const p2 = document.getElementById('act_password2').value;
+    const email = document.getElementById('act_email').value.trim();
+    if (p1.length < 8 || !/[A-Za-z]/.test(p1) || !/\d/.test(p1)) { showError('Choose a password of at least 8 characters with at least one letter and one number.'); return; }
+    if (p1 !== p2) { showError('The two passwords do not match.'); return; }
+    const b = document.getElementById('actCompleteBtn');
+    b.disabled = true;
+    try {
+      const { ok, data } = await post('/parent-activation/complete', { token: activationToken, password: p1, email });
+      if (!ok) { showError(data.error || 'Could not activate the account.'); return; }
+      const phone = document.getElementById('act_phone').value.trim();
+      showActivation(false);
+      document.getElementById('parent_email').value = phone;
+      document.getElementById('parent_password').focus();
+      successBox.textContent = '✔ Your account is active. Sign in with your phone number (or email) and your new password.';
+      successBox.style.display = 'block';
+    } catch (err) {
+      showError('Could not reach the school server. Please try again.');
+    } finally {
+      b.disabled = false;
+      document.getElementById('act_password').value = '';
+      document.getElementById('act_password2').value = '';
     }
-
-    // Success
-    sessionStorage.setItem('rca_user_data', JSON.stringify({...parent, role: 'parent', primary_role: 'parent'}));
-    sessionStorage.setItem('rca_demo_role', 'parent');
-    sessionStorage.setItem('rca_demo_name', parent.full_name);
-    window.location.href = 'admin/parent-portal.html';
   });
 });
 </script>
