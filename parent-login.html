@@ -220,6 +220,10 @@
       align-items: center;
       gap: 12px;
       margin: 20px 0;
+      /* style.css also uses .divider for its short gold bar — undo that here */
+      width: auto;
+      height: auto;
+      background: none;
     }
 
     .divider::before, .divider::after {
@@ -275,8 +279,24 @@
       .parent-brand h1 { font-size: 1.2rem; }
       .parent-brand img { width: 80px; height: 80px; }
       .parent-card { padding: 24px 20px; }
+      /* Phones: back link sits above the badge instead of on top of it */
+      .parent-brand .back-link { position: static; align-self: flex-start; margin-bottom: 12px; padding: 6px 0; }
+      /* 16px stops iPhone Safari zooming in when a field is tapped */
+      .form-control { font-size: 16px; padding: 13px 14px; }
+      .parent-login-btn { min-height: 50px; font-size: 1rem; }
+      #showActivateLink, #backToLoginLink { display: inline-block; padding: 6px 2px; }
     }
   </style>
+  <!-- School app (PWA) -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#6B0F1A">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="RCA School">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <script src="/assets/js/pwa.js" defer></script>
 </head>
 <body>
 

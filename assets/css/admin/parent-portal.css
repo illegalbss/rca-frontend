@@ -1052,3 +1052,28 @@
   .pp-children-row { flex-direction: column; }
   .pp-child-dash-card { max-width: 100%; }
 }
+
+/* ============================================
+   PHONES — stacked tables
+   ============================================
+   On a narrow screen a table whose cells carry data-label="…" turns
+   into one block per row (label on the left, value on the right), so
+   columns like Outstanding and Status are never cut off the edge.
+*/
+@media (max-width: 600px) {
+  .pp-table.pp-stack thead { display: none; }
+  .pp-table.pp-stack, .pp-table.pp-stack tbody, .pp-table.pp-stack tfoot,
+  .pp-table.pp-stack tr, .pp-table.pp-stack td { display: block; width: 100%; }
+  .pp-table.pp-stack tr { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
+  .pp-table.pp-stack td { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+                          padding: 5px 0; border: 0; text-align: right; font-size: 0.92rem; }
+  .pp-table.pp-stack td::before { content: attr(data-label); font-weight: 600; color: #6b7280; text-align: left; font-size: 0.85rem; }
+  .pp-table.pp-stack td[data-label=""]::before { content: none; }
+  .pp-table.pp-stack td.pp-stack-title { font-weight: 700; font-size: 1rem; color: #111827; justify-content: flex-start; }
+  .pp-table.pp-stack td.pp-stack-title::before { content: none; }
+  .pp-table.pp-stack tfoot tr { background: #f9fafb; }
+  /* comfortable tap targets throughout the portal */
+  .pp-nav-link { min-height: 48px; display: flex; align-items: center; }
+  .pp-main .btn, .pp-main button, .pp-quick-link { min-height: 44px; }
+  .pp-main input, .pp-main select, .pp-main textarea { font-size: 16px; }
+}

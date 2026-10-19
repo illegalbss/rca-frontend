@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentUserId = sessionStorage.getItem('rca_user_id');
   const user = allUsers.find(u => u.id === currentUserId);
 
-  document.getElementById('portalLogoutBtn').addEventListener('click', () => sessionStorage.clear());
+  document.getElementById('portalLogoutBtn').addEventListener('click', () => { sessionStorage.clear(); window.RCA_CONFIG?.clearSession?.(); });
 
   if (!user || !user.admission_no) {
     document.getElementById('portalContent').innerHTML = '<p class="portal-empty">Account not linked to a student record. Please contact the school.</p>';

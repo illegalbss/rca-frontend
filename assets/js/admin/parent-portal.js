@@ -28,11 +28,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (target) target.style.display = 'block';
 
     document.querySelectorAll('[data-page]').forEach(l => l.classList.remove('active'));
-    if (linkEl) linkEl.classList.add('active');
-    else {
-      const matching = document.querySelector(`[data-page="${pageId}"]`);
-      if (matching) matching.classList.add('active');
-    }
+    const navLink = linkEl || document.querySelector(`[data-page="${pageId}"]`);
+    if (navLink) navLink.classList.add('active');
+
+    // Top bar shows where you are (it used to say "Dashboard" everywhere).
+    const titleEl = document.getElementById('ppPageTitle');
+    if (titleEl && navLink) titleEl.textContent = navLink.textContent.replace(/\s+/g, ' ').trim();
+    window.scrollTo(0, 0);
   };
 
   /* ============================================
@@ -42,6 +44,20 @@ document.addEventListener('DOMContentLoaded', async () => {
      nothing was ever wiring the hamburger button to add it, so on
      mobile the nav was completely unreachable beyond the Dashboard.
      ============================================ */
+  /* ============================================
+     LOGOUT — the link used to just open the login page, leaving the
+     parent's login token in this window (in the installed app that's one
+     long-lived window). Now: tell the server, clear the session and any
+     locally kept pupil data, then go to the login page.
+     ============================================ */
+  document.getElementById('ppLogout')?.addEventListener('click', () => {
+    const token = sessionStorage.getItem('rca_token');
+    if (token && window.RCA_CONFIG) {
+      fetch(window.RCA_CONFIG.API_URL + '/auth/logout', { method: 'POST', keepalive: true, headers: { 'Authorization': 'Bearer ' + token } }).catch(() => {});
+    }
+    if (window.RCA_CONFIG?.clearSession) window.RCA_CONFIG.clearSession(); else sessionStorage.clear();
+  });
+
   const ppSidebar = document.getElementById('ppSidebar');
   const ppOverlay = document.getElementById('ppOverlay');
   function closeSidebar() {
@@ -561,24 +577,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     body.innerHTML = TERMS_ORDER.map(term => {
       const t = feeData.terms[term];
-      if (!t) return `<tr><td>${TERM_LABELS[term]}</td><td colspan="4" style="color:#9ca3af">Not available</td></tr>`;
+      // data-label: shown beside each value when the table stacks on phones
+      if (!t) return `<tr><td class="pp-stack-title">${TERM_LABELS[term]}</td><td colspan="4" data-label="" style="color:#9ca3af">Not available</td></tr>`;
       return `
         <tr>
-          <td>${TERM_LABELS[term]}</td>
-          <td>${fmt(t.grand_total)}</td>
-          <td>${fmt(t.amount_paid)}</td>
-          <td>${fmt(t.balance)}</td>
-          <td>${statusBadgeHtml(t.status)}</td>
+          <td class="pp-stack-title">${TERM_LABELS[term]}</td>
+          <td data-label="Total Fees">${fmt(t.grand_total)}</td>
+          <td data-label="Amount Paid">${fmt(t.amount_paid)}</td>
+          <td data-label="Outstanding">${fmt(t.balance)}</td>
+          <td data-label="Status">${statusBadgeHtml(t.status)}</td>
         </tr>`;
     }).join('');
 
     foot.innerHTML = `
       <tr style="font-weight:700">
-        <td>Total</td>
-        <td>${fmt(feeData.totalFees)}</td>
-        <td>${fmt(feeData.totalPaid)}</td>
-        <td>${fmt(feeData.totalOutstanding)}</td>
-        <td></td>
+        <td class="pp-stack-title">Total (Session)</td>
+        <td data-label="Total Fees">${fmt(feeData.totalFees)}</td>
+        <td data-label="Amount Paid">${fmt(feeData.totalPaid)}</td>
+        <td data-label="Outstanding">${fmt(feeData.totalOutstanding)}</td>
+        <td data-label=""></td>
       </tr>`;
   }
 

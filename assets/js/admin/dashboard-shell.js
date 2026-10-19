@@ -400,20 +400,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      sessionStorage.removeItem('rca_user_id');
-      sessionStorage.removeItem('rca_demo_role');
-      sessionStorage.removeItem('rca_demo_email');
-      sessionStorage.removeItem('rca_demo_name');
-      sessionStorage.removeItem('rca_user_data');
-      sessionStorage.removeItem('rca_token');
-      // Call logout API if token exists
+      // Tell the server first — the token used to be removed before it
+      // was read here, so this call never actually happened.
       const token = sessionStorage.getItem('rca_token');
       if (token && window.RCA_CONFIG) {
         fetch(window.RCA_CONFIG.API_URL + '/auth/logout', {
           method: 'POST',
+          keepalive: true,
           headers: { 'Authorization': 'Bearer ' + token }
         }).catch(() => {});
       }
+      if (window.RCA_CONFIG?.clearSession) window.RCA_CONFIG.clearSession();
+      else ['rca_user_id', 'rca_demo_role', 'rca_demo_email', 'rca_demo_name', 'rca_user_data', 'rca_token']
+        .forEach(k => sessionStorage.removeItem(k));
     });
   }
 

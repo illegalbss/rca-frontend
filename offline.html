@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6B0F1A">
+  <title>You're offline | Royal Crystal Academy</title>
+  <link rel="icon" href="/assets/icons/favicon-32.png" sizes="32x32">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
+           font-family: Arial, Helvetica, sans-serif; background: #f5eef0; color: #1f2937; }
+    .card { background: #fff; border-radius: 18px; padding: 32px 24px; max-width: 420px; width: 100%; text-align: center;
+            box-shadow: 0 8px 30px rgba(107, 15, 26, 0.12); }
+    img { width: 96px; height: 96px; object-fit: contain; }
+    h1 { font-size: 1.35rem; color: #6B0F1A; margin: 14px 0 8px; }
+    p { font-size: 1rem; line-height: 1.55; color: #4b5563; margin: 0 0 14px; }
+    .note { font-size: 0.85rem; background: #fffbeb; border: 1px solid #fde68a; color: #92400e; border-radius: 10px; padding: 10px 12px; }
+    button { margin-top: 10px; width: 100%; min-height: 52px; font-size: 1.05rem; font-weight: 700; border: 0; border-radius: 12px;
+             background: #6B0F1A; color: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="/assets/images/logo.png" alt="Royal Crystal Academy badge">
+    <h1>You're offline</h1>
+    <p>Your phone isn't connected to the internet right now. Please check your mobile data or Wi-Fi, then try again.</p>
+    <p class="note">Results, fees, receipts and signing in always need an internet connection, so you only ever see up-to-date information.</p>
+    <button onclick="location.reload()">Try Again</button>
+  </div>
+  <script>window.addEventListener('online', () => location.reload());</script>
+</body>
+</html>

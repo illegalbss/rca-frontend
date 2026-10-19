@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Royal Crystal Academy</title>
+  <meta name="description" content="Royal Crystal Academy school app — parent portal, results, fees and school calendar.">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font-family: Arial, Helvetica, sans-serif; color: #1f2937;
+           background: linear-gradient(160deg, #6B0F1A 0%, #4A0A12 55%, #2b060b 100%);
+           display: flex; align-items: center; justify-content: center;
+           padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); }
+    .card { background: #fff; border-radius: 22px; padding: 30px 22px 24px; width: 100%; max-width: 420px; text-align: center;
+            box-shadow: 0 16px 50px rgba(0,0,0,0.3); }
+    .badge { width: 104px; height: 104px; object-fit: contain; }
+    h1 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.45rem; color: #6B0F1A; margin: 10px 0 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .motto { font-family: Georgia, serif; font-style: italic; color: #9a7a10; font-size: 0.95rem; margin-bottom: 22px; }
+    .big { display: flex; align-items: center; gap: 14px; text-align: left; width: 100%; min-height: 72px; padding: 14px 18px;
+           border-radius: 16px; text-decoration: none; margin-bottom: 12px; font-size: 1.1rem; font-weight: 700; }
+    .big .ic { font-size: 1.8rem; flex: none; }
+    .big small { display: block; font-weight: 400; font-size: 0.82rem; opacity: 0.85; margin-top: 2px; }
+    .parent { background: #6B0F1A; color: #fff; }
+    .staff { background: #f5eef0; color: #6B0F1A; border: 2px solid #e8d5d9; }
+    .links { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; font-size: 0.9rem; }
+    .links a { color: #6B0F1A; font-weight: 600; text-decoration: none; padding: 8px 4px; }
+    .help { margin-top: 14px; font-size: 0.8rem; color: #6b7280; }
+  </style>
+  <!-- School app (PWA) -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#6B0F1A">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="RCA School">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <script src="/assets/js/pwa.js" defer></script>
+</head>
+<body>
+  <div class="card">
+    <img class="badge" src="/assets/images/logo.png" alt="Royal Crystal Academy badge">
+    <h1>Royal Crystal Academy</h1>
+    <div class="motto">Moral, Excellence &amp; Greatness</div>
+
+    <a class="big parent" href="/parent-login.html">
+      <span class="ic">👨‍👩‍👧</span>
+      <span>Parent Portal<small>Results, fees, receipts &amp; announcements</small></span>
+    </a>
+    <a class="big staff" href="/admin/login.html">
+      <span class="ic">🏫</span>
+      <span>Staff Portal<small>For teachers and school staff</small></span>
+    </a>
+
+    <div class="links">
+      <a href="/academic-calendar.html">📅 School Calendar</a>
+      <a href="/index.html">🌐 School Website</a>
+    </div>
+    <p class="help">Need help? Call <a href="tel:08036721390" style="color:#6B0F1A">0803 672 1390</a></p>
+  </div>
+</body>
+</html>

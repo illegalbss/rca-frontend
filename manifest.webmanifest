@@ -1,0 +1,23 @@
+{
+  "name": "Royal Crystal Academy",
+  "short_name": "RCA School",
+  "description": "Royal Crystal Academy school app — parent portal, results, fees and school calendar.",
+  "id": "/app.html",
+  "start_url": "/app.html?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#6B0F1A",
+  "background_color": "#ffffff",
+  "lang": "en-NG",
+  "categories": ["education"],
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Parent Portal", "short_name": "Parents", "url": "/parent-login.html?source=pwa", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Staff Portal", "short_name": "Staff", "url": "/admin/login.html?source=pwa", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

@@ -45,6 +45,21 @@
       return data;
     },
 
+    // Everything a logout must remove from this device: the login session
+    // (sessionStorage) plus any pupil data older "offline fallback" code
+    // left in localStorage (rca_v1_* results/payments/attendance copies,
+    // rca_parents). The install-reminder preference is kept — it isn't
+    // personal. Also asks the service worker to drop its (public-only) cache.
+    clearSession() {
+      try {
+        Object.keys(sessionStorage).filter(k => k.startsWith('rca_')).forEach(k => sessionStorage.removeItem(k));
+        Object.keys(localStorage)
+          .filter(k => k.startsWith('rca_v1_') || k === 'rca_parents' || k === 'rca_user_data' || k === 'rca_token')
+          .forEach(k => localStorage.removeItem(k));
+      } catch (e) {}
+      try { navigator.serviceWorker?.controller?.postMessage('clear-cache'); } catch (e) {}
+    },
+
     setToken(token)  { sessionStorage.setItem('rca_token', token); },
     getToken()       { return sessionStorage.getItem('rca_token'); },
     clearToken()     { sessionStorage.removeItem('rca_token'); },
