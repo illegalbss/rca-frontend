@@ -213,7 +213,9 @@
               <option value="paid">Fully Paid</option>
               <option value="partial">Part Paid</option>
               <option value="any">Paid Something (Full + Part)</option>
-              <option value="">Everyone (incl. Not Paid)</option>
+              <option value="owing">Owing (Not Paid + Part Paid)</option>
+              <option value="unpaid">Not Paid At All</option>
+              <option value="">Everyone</option>
             </select>
           </div>
           <div class="form-group" style="margin:0;min-width:120px">
@@ -692,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams({ term });
     if (cls) params.set('class', cls);
     if (search) params.set('search', search);
-    if (show && show !== 'any') params.set('status', show);
+    if (show && show !== 'any' && show !== 'owing') params.set('status', show);
 
     let rows = [];
     try {
@@ -721,6 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (show === 'any') rows = rows.filter(r => r.amount_paid > 0);
+    if (show === 'owing') rows = rows.filter(r => r.status !== 'paid');
     paidCache = rows;
 
     document.getElementById('paidCount').textContent =
@@ -790,6 +793,19 @@ document.addEventListener('DOMContentLoaded', () => {
       any:     [`${what} Payments Report`, `Pupils Who Have Made a Payment Towards Their ${what}`],
       '':      [`${what} Payment Status Report`, `Payment Status of Every Pupil`]
     };
+    // Owing / not-paid lists print as the Outstanding report (fee due,
+    // paid, outstanding, summary by class) rather than the Paid one.
+    if (show === 'owing' || show === 'unpaid') {
+      window.RCA_PRINT.outstanding({
+        title: `Outstanding ${what} Report`,
+        subtitle: (show === 'unpaid' ? `Pupils Who Have Not Paid Their ${what}` : `Pupils Yet to Fully Pay Their ${what}`) + (cls ? ` — ${cls}` : ''),
+        termLabel: TERM_LABELS[document.getElementById('paidTerm').value],
+        session: await getSessionLabel(),
+        rows: paidCache,
+        win
+      });
+      return;
+    }
     const [title, subtitle] = titles[show] || titles[''];
     window.RCA_PRINT.paid({
       title,

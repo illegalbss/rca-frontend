@@ -183,11 +183,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:18px 20px;margin-bottom:20px">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:4px">
           <span style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#111827">ICT / Portal Fee Report</span>
+          <span style="display:flex;gap:8px;align-items:center">
+          <button type="button" class="btn btn-outline btn-sm" id="ictPrintOwingBtn" style="font-size:0.75rem">&#128424; Print Owing List</button>
           <select id="ictReportTerm" class="form-control" style="width:auto">
             <option value="term1" ${CUR_TERM === 'term1' ? 'selected' : ''}>First Term</option>
             <option value="term2" ${CUR_TERM === 'term2' ? 'selected' : ''}>Second Term</option>
             <option value="term3" ${CUR_TERM === 'term3' ? 'selected' : ''}>Third Term</option>
           </select>
+          </span>
         </div>
         <p style="font-size:0.78rem;color:#6b7280;margin-bottom:14px">Who has and hasn't paid the ICT/Portal Fee this term — this money doesn't go through the school account, so it's kept separate from Finance Reports.</p>
         <div id="ictReportStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px"></div>
@@ -595,6 +598,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     const termSelect = document.getElementById('ictReportTerm');
     const searchInput = document.getElementById('ictReportSearch');
     if (!termSelect) return;
+
+    // Branded "Outstanding ICT / Portal Fee Report" (finance-print.js) of
+    // everyone who hasn't fully paid this term — the whole school, not
+    // just the current search, grouped by class.
+    document.getElementById('ictPrintOwingBtn')?.addEventListener('click', async () => {
+      const win = window.RCA_PRINT.prepare();
+      if (!win) return;
+      try {
+        const data = await window.RCA_API.call('/payments/ict-fee-report?' + new URLSearchParams({ term: ictReportTerm }));
+        const rows = (data.pupils || [])
+          .filter(p => p.status !== 'paid')
+          .map(p => ({
+            ...p,
+            grand_total: p.ict_fee_amount,
+            balance: Math.max(Number(p.ict_fee_amount || 0) - Number(p.amount_paid || 0), 0)
+          }))
+          .sort((a, b) => a.class_name.localeCompare(b.class_name) || a.full_name.localeCompare(b.full_name));
+        window.RCA_PRINT.outstanding({
+          title: 'Outstanding ICT / Portal Fee Report',
+          subtitle: 'Pupils Yet to Fully Pay the ICT / Portal Fee',
+          termLabel: TERM_LABELS[ictReportTerm],
+          session: feeSchedule[0]?.session_label || window.RCA_CONFIG?.SESSION,
+          rows,
+          win
+        });
+      } catch (e) {
+        win.close();
+        alert('Could not load the ICT fee report: ' + e.message);
+      }
+    });
 
     termSelect.value = ictReportTerm;
     searchInput.value = ictReportSearch;

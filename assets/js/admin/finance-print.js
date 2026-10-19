@@ -247,17 +247,19 @@
   }
 
   /* ================= OUTSTANDING PAYMENT REPORT ================= */
-  function outstanding({ termLabel, session, rows, win }) {
+  function outstanding({ title, subtitle, termLabel, session, rows, win }) {
+    title = title || 'Outstanding Payment Report';
+    subtitle = subtitle || 'Pupils Yet to Fully Pay Their Fees';
     rows = rows || [];
     const due = rows.reduce((s, r) => s + Number(r.grand_total || 0), 0);
     const paid = rows.reduce((s, r) => s + Number(r.amount_paid || 0), 0);
     const owing = rows.reduce((s, r) => s + Number(r.balance || 0), 0);
     const classes = byClass(rows, r => Number(r.balance || 0));
 
-    open('Outstanding Payment Report', `
+    open(title, `
       <div class="sheet">
         ${header()}
-        ${banner('Outstanding Payment Report', 'Pupils Yet to Fully Pay Their Fees')}
+        ${banner(title, subtitle)}
         ${meta(session, termLabel)}
         <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
           ${kpi('k-red', 'users', 'Total Pupils Owing', rows.length)}
