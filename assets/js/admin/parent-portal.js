@@ -33,7 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Top bar shows where you are (it used to say "Dashboard" everywhere).
     const titleEl = document.getElementById('ppPageTitle');
-    if (titleEl && navLink) titleEl.textContent = navLink.textContent.replace(/\s+/g, ' ').trim();
+    if (titleEl && navLink) {
+      const label = navLink.cloneNode(true);
+      label.querySelector('.pp-nav-icon')?.remove();   // words only, not the ○ icon
+      titleEl.textContent = label.textContent.replace(/\s+/g, ' ').trim();
+    }
     window.scrollTo(0, 0);
   };
 
@@ -213,9 +217,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const nameEl = document.getElementById('ppUserName');
     const avatarEl = document.getElementById('ppAvatar');
     const welcomeEl = document.getElementById('dashWelcomeName');
+    const initials = (user.full_name || '?').split(' ').filter(Boolean).map(p => p[0]).join('').substring(0, 2).toUpperCase();
     if (nameEl) nameEl.textContent = user.full_name || 'Parent';
-    if (avatarEl) avatarEl.textContent = (user.full_name || '?').split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
+    if (avatarEl) avatarEl.textContent = initials;
     if (welcomeEl) welcomeEl.textContent = (user.full_name || 'Parent').split(' ')[0];
+    // Sidebar profile block (same design as the staff dashboard)
+    const sideName = document.getElementById('ppSideName');
+    const sideAvatar = document.getElementById('ppSideAvatar');
+    if (sideName) sideName.textContent = user.full_name || 'Parent';
+    if (sideAvatar) sideAvatar.textContent = initials;
   }
 
   /* ============================================

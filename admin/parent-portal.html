@@ -31,33 +31,50 @@
       <span>Royal Crystal Academy</span>
     </div>
 
+    <!-- Profile block — same design as the staff dashboard sidebar -->
+    <div class="pp-sidebar-profile">
+      <div class="pp-sidebar-avatar" id="ppSideAvatar">?</div>
+      <div class="pp-sidebar-profile-info">
+        <div class="pp-sidebar-profile-role">Parent / Guardian</div>
+        <div class="pp-sidebar-profile-name" id="ppSideName">Loading...</div>
+        <div class="pp-sidebar-online">Online</div>
+      </div>
+    </div>
+
     <nav class="pp-nav">
+      <p class="pp-nav-section">Main</p>
       <a class="pp-nav-link active" data-page="dashboard" onclick="showPage('dashboard',this)">
         <span class="pp-nav-icon">&#9632;</span> Dashboard
       </a>
       <a class="pp-nav-link" data-page="children" onclick="showPage('children',this)">
-        <span class="pp-nav-icon">&#128106;</span> My Children
+        <span class="pp-nav-icon">&#9675;</span> My Children
       </a>
+
+      <p class="pp-nav-section">My Child's Records</p>
       <a class="pp-nav-link" data-page="payments" onclick="showPage('payments',this)">
-        <span class="pp-nav-icon">&#128179;</span> Payments
+        <span class="pp-nav-icon">&#9675;</span> Fees &amp; Payments
       </a>
       <a class="pp-nav-link" data-page="results" onclick="showPage('results',this)">
-        <span class="pp-nav-icon">&#128220;</span> Results
+        <span class="pp-nav-icon">&#9675;</span> Results
       </a>
       <a class="pp-nav-link" data-page="attendance" onclick="showPage('attendance',this)">
-        <span class="pp-nav-icon">&#128197;</span> Attendance
+        <span class="pp-nav-icon">&#9675;</span> Attendance
+      </a>
+
+      <p class="pp-nav-section">School News</p>
+      <a class="pp-nav-link" data-page="announcements" onclick="showPage('announcements',this)">
+        <span class="pp-nav-icon">&#9675;</span> Announcements
       </a>
       <a class="pp-nav-link" data-page="newsletter" onclick="showPage('newsletter',this)">
-        <span class="pp-nav-icon">&#128240;</span> Newsletter
-      </a>
-      <a class="pp-nav-link" data-page="announcements" onclick="showPage('announcements',this)">
-        <span class="pp-nav-icon">&#128227;</span> Announcements
+        <span class="pp-nav-icon">&#9675;</span> Newsletter
       </a>
       <a class="pp-nav-link" data-page="school-info" onclick="showPage('school-info',this)">
-        <span class="pp-nav-icon">&#8505;</span> School Information
+        <span class="pp-nav-icon">&#9675;</span> School Information
       </a>
+
+      <p class="pp-nav-section">Help</p>
       <a class="pp-nav-link" data-page="contact-admin" onclick="showPage('contact-admin',this)">
-        <span class="pp-nav-icon">&#9993;</span> Contact ICT Admin
+        <span class="pp-nav-icon">&#9675;</span> Contact ICT Admin
       </a>
     </nav>
 
@@ -65,11 +82,14 @@
       <a class="pp-nav-link" href="dashboard.html" id="ppBackToStaffLink" style="display:none">
         <span class="pp-nav-icon">&#8592;</span> Back to Staff Dashboard
       </a>
-      <a class="pp-nav-link" data-page="profile" onclick="showPage('profile',this)">
-        <span class="pp-nav-icon">&#128100;</span> Profile
+      <a class="pp-nav-link" href="../index.html">
+        <span class="pp-nav-icon">&#8592;</span> Back to website
       </a>
-      <a class="pp-nav-link" href="../parent-login.html" id="ppLogout">
-        <span class="pp-nav-icon">&#10006;</span> Logout
+      <a class="pp-nav-link" data-page="profile" onclick="showPage('profile',this)">
+        <span class="pp-nav-icon">&#128273;</span> My Profile &amp; Password
+      </a>
+      <a class="pp-nav-link pp-logout-link" href="../parent-login.html" id="ppLogout">
+        <span class="pp-nav-icon">&#10006;</span> Log out
       </a>
     </div>
   </aside>
