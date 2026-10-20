@@ -121,7 +121,7 @@
   }
 
   function dismiss() {
-    try { localStorage.setItem(DISMISS_KEY, String(Date.now() + 14 * 24 * 3600 * 1000)); } catch (e) {}
+    try { localStorage.setItem(DISMISS_KEY, String(Date.now() + 3 * 24 * 3600 * 1000)); } catch (e) {}
     document.querySelector('.rca-pwa-btn')?.remove();
   }
 
@@ -166,7 +166,8 @@
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     document.querySelector('.rca-pwa-btn')?.remove();
-    dismiss(); // installed — don't offer again in the browser
+    // (No long "dismissed" timer here: if the app is later removed, the
+    // browser offers it again and so do we.)
   });
   // iPhone/iPad (no install prompt exists) and other mobile browsers:
   // offer the step-by-step instructions instead.
@@ -246,5 +247,15 @@
   }
   document.addEventListener('DOMContentLoaded', addRefreshButton);
 
-  window.RCA_PWA = { showInstructions, isStandalone, openDocWindow, refreshApp };
+  // Permanent "Install the School App" links (class rca-install-link) on
+  // the parent login and start screen: always work, even after "Not now",
+  // and are hidden only when already running as the installed app.
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".rca-install-link").forEach(a => {
+      if (isStandalone()) { a.style.display = "none"; return; }
+      a.addEventListener("click", e => { e.preventDefault(); onInstallClick(); });
+    });
+  });
+
+  window.RCA_PWA = { showInstructions, isStandalone, openDocWindow, refreshApp, install: onInstallClick };
 })();
