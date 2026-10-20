@@ -48,7 +48,8 @@
 
 /* ---- CONTACT PAGE RESPONSIVE ---- */
 @media (max-width: 768px) {
-  .contact-grid { grid-template-columns: 1fr; }
+  .contact-grid { grid-template-columns: minmax(0, 1fr); }
+  .contact-info .card { overflow-wrap: anywhere; }
   .contact-info-cards { grid-template-columns: 1fr 1fr; }
   .map-embed { height: 220px; }
 }

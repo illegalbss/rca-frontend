@@ -763,6 +763,12 @@
   .hero-prev, .hero-next { width: 40px; height: 40px; font-size: 1.4rem; }
   .hero-prev { left: 12px; }
   .hero-next { right: 12px; }
+}
+
+/* Phones: the arrows sit on top of the hero text; swipe and the dots still
+   change slides. */
+@media (max-width: 600px) {
+  .hero-prev, .hero-next { display: none; }
   .hero-slide { padding-top: 90px; }
 
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -806,7 +812,8 @@
 
   .levels-grid { grid-template-columns: 1fr; }
 
-  .contact-strip-grid { grid-template-columns: 1fr; }
+  .contact-strip-grid { grid-template-columns: minmax(0, 1fr); }
+  .contact-strip-item { overflow-wrap: anywhere; }
 
   .gallery-preview-grid { grid-template-columns: 1fr; }
   .gallery-item, .gallery-item-lg { height: 180px; grid-row: span 1; }
