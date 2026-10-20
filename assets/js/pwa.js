@@ -175,5 +175,76 @@
     else if (isMobile) setTimeout(() => { if (!deferredPrompt) showButton(); }, 3000);
   });
 
-  window.RCA_PWA = { showInstructions, isStandalone };
+  /* ---------- printable documents inside the app ----------
+     Statements, reports and the school calendar are built by writing a
+     full HTML document into a new window. Installed apps and phone
+     browsers handle pop-up windows badly (blank page, or nothing at all),
+     so there the document opens in a full-screen viewer (an iframe) on
+     top of the page instead. Returns an object with the same shape the
+     print modules use — .document, .print(), .close() — or a real
+     window on desktop browsers. */
+  function openDocWindow() {
+    if (!(isStandalone() || isMobile)) return window.open('', '_blank');
+    css();
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:9900;background:#e5e7eb;display:flex;flex-direction:column';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = '✕';
+    close.setAttribute('aria-label', 'Close');
+    close.style.cssText = 'position:absolute;top:calc(8px + env(safe-area-inset-top));right:10px;z-index:2;width:44px;height:44px;border-radius:50%;border:0;background:rgba(17,24,39,.8);color:#fff;font:700 18px Arial;cursor:pointer';
+    const frame = document.createElement('iframe');
+    frame.title = 'Document';
+    frame.style.cssText = 'flex:1;width:100%;border:0;background:#fff;padding-top:env(safe-area-inset-top)';
+    ov.appendChild(frame); ov.appendChild(close);
+    document.body.appendChild(ov);
+    document.documentElement.style.overflow = 'hidden';
+    const handle = {
+      get document() { return frame.contentDocument; },
+      get closed() { return !ov.isConnected; },
+      print() { try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (e) { window.print(); } },
+      close() { ov.remove(); document.documentElement.style.overflow = ''; },
+      focus() {}
+    };
+    close.onclick = () => handle.close();
+    // The document's own Close / Print buttons call window.close()/print()
+    // inside the frame — point them at the viewer each time it's rewritten.
+    const patch = () => { try { frame.contentWindow.close = handle.close; } catch (e) {} };
+    frame.addEventListener('load', patch);
+    patch();
+    return handle;
+  }
+
+  /* ---------- Refresh button inside the installed app ----------
+     An installed app has no browser refresh button, so add one to the
+     top bar. It checks for a new version first, then reloads. */
+  async function refreshApp(btn) {
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      await reg?.update();
+    } catch (e) { /* offline or no worker — just reload */ }
+    location.reload();
+  }
+  function addRefreshButton() {
+    if (!isStandalone() || document.getElementById('rcaRefreshBtn')) return;
+    const b = document.createElement('button');
+    b.id = 'rcaRefreshBtn';
+    b.type = 'button';
+    b.title = 'Refresh — get the latest information and app update';
+    b.setAttribute('aria-label', 'Refresh');
+    b.innerHTML = '&#x21bb;';
+    b.style.cssText = `width:40px;height:40px;border-radius:50%;border:1px solid #e5e7eb;background:#fff;color:${COLOR};font:700 22px Arial,sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1`;
+    b.onclick = () => refreshApp(b);
+    const bar = document.querySelector('.pp-topbar-right, .topbar-user, .admin-topbar');
+    if (bar) {
+      bar.insertBefore(b, bar.firstChild);
+    } else {
+      b.style.cssText += `;position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:9000;box-shadow:0 4px 14px rgba(0,0,0,.2)`;
+      document.body.appendChild(b);
+    }
+  }
+  document.addEventListener('DOMContentLoaded', addRefreshButton);
+
+  window.RCA_PWA = { showInstructions, isStandalone, openDocWindow, refreshApp };
 })();

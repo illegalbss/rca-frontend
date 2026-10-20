@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const fmt = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
   const SESSION = '2025/2026';
+  // The term the school is in now (from the date — see config.js).
+  const CURRENT_TERM = window.RCA_CONFIG?.CURRENT_TERM || 'term1';
 
   /* ============================================
      PAGE NAVIGATION (switches between .pp-page sections)
@@ -243,9 +245,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         <button class="pp-stat-link" onclick="showPage('children', document.querySelector('[data-page=children]'))">View Details</button>
       </div>
       <div class="pp-stat">
-        <div class="pp-stat-label">Outstanding Balance</div>
+        <div class="pp-stat-label">Outstanding Balance — <strong>${TERM_LABELS[CURRENT_TERM]}</strong></div>
         <span class="pp-stat-value" id="dashBalanceValue">…</span>
-        <button class="pp-stat-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">View Payments</button>
+        <span class="pp-stat-label" id="dashBalanceNote" style="font-size:0.72rem"></span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="pp-stat-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">View Payments</button>
+          <button class="pp-stat-link" onclick="window._ppPrintStatement(this)">&#128424; Print Statement</button>
+        </div>
       </div>
       <div class="pp-stat">
         <div class="pp-stat-label">Recent Payment</div>
@@ -260,15 +266,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    // Current term's balance (it was hardcoded to Second Term, so during
+    // First/Third Term the dashboard showed the wrong term's balance).
     let totalBalance = 0;
+    let balanceFailed = false;
+    let sessionLabel = '';
     let mostRecent = null;
     await Promise.all(myChildren.map(async (c) => {
       try {
         const lookup = await window.RCA_API.call(
-          `/payments/lookup?admission_no=${encodeURIComponent(c.admission_no)}&term=term2&session=${SESSION}`
+          `/payments/lookup?admission_no=${encodeURIComponent(c.admission_no)}&term=${CURRENT_TERM}`
         );
         totalBalance += Number(lookup.balance || 0);
-      } catch (e) { /* balance stays whatever we've summed so far */ }
+        sessionLabel = sessionLabel || lookup.session || '';
+      } catch (e) { balanceFailed = true; }
       try {
         const hist = await window.RCA_API.call(`/payments?admission_no=${encodeURIComponent(c.admission_no)}`);
         (hist.payments || []).forEach(p => {
@@ -278,9 +289,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }));
 
     const balanceEl = document.getElementById('dashBalanceValue');
+    const noteEl = document.getElementById('dashBalanceNote');
     if (balanceEl) {
-      balanceEl.textContent = fmt(totalBalance);
-      balanceEl.classList.add(totalBalance > 0 ? 'red' : 'green');
+      if (balanceFailed) {
+        // Never show a partial total as if it were the real balance.
+        balanceEl.textContent = '—';
+        if (noteEl) noteEl.textContent = "Couldn't load right now — check your connection and tap Refresh.";
+      } else {
+        balanceEl.textContent = fmt(totalBalance);
+        balanceEl.classList.add(totalBalance > 0 ? 'red' : 'green');
+        if (noteEl) noteEl.textContent = `${TERM_LABELS[CURRENT_TERM]}${sessionLabel ? ' · ' + sessionLabel + ' session' : ''}${myChildren.length > 1 ? ' · all children' : ''}`;
+      }
     }
     const recentEl = document.getElementById('dashRecentValue');
     const recentDateEl = document.getElementById('dashRecentDate');
@@ -689,14 +708,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Branded Individual Payment Statement (finance-print.js) for the
   // selected child and term — /payments/lookup already combines school
   // fees and the ICT/Portal fee, the same totals shown on this page.
-  document.getElementById('downloadStatementBtn')?.addEventListener('click', async () => {
-    const child = selectedChild || myChildren[0];
+  // One child's Individual Payment Statement for one term. Used by the
+  // Payments page's Download Statement and the dashboard's Print Statement.
+  // Must be called straight from a click (it opens the print window first).
+  async function printStatement(child, term, btn) {
     if (!child) { alert('No child is linked to your account yet.'); return; }
-    const term = document.getElementById('statementTerm')?.value || 'term2';
     const win = window.RCA_PRINT.prepare();
     if (!win) return;
-    const btn = document.getElementById('downloadStatementBtn');
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
     try {
       const feeData = await loadChildFullFeeData(child);
       const t = feeData.terms[term];
@@ -728,9 +747,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       win.close();
       alert('Could not prepare the statement: ' + e.message);
     } finally {
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
     }
+  }
+
+  document.getElementById('downloadStatementBtn')?.addEventListener('click', e => {
+    printStatement(selectedChild || myChildren[0], document.getElementById('statementTerm')?.value || CURRENT_TERM, e.currentTarget);
   });
+
+  // Dashboard "Print Statement": the current term's statement. With one
+  // child it prints straight away; with several, the Payments page lets
+  // the parent pick the child and term.
+  window._ppPrintStatement = function (btn) {
+    if (myChildren.length === 1) { printStatement(myChildren[0], CURRENT_TERM, btn); return; }
+    showPage('payments');
+    const sel = document.getElementById('statementTerm');
+    if (sel) { sel.value = CURRENT_TERM; sel.scrollIntoView({ behavior: 'smooth', block: 'center' }); sel.focus(); }
+  };
+
   document.getElementById('makePaymentBtn')?.addEventListener('click', () => {
     alert('Fees are currently paid at the school office or by bank transfer — the accountant will record your payment and it will appear here.\n\nFor payment details, please contact the school office.');
   });

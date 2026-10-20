@@ -312,7 +312,7 @@
   // blockers allow it), then fills it once the dates have loaded. The
   // toolbar's ◀ ▶ buttons re-render the same tab for another session.
   async function open(opts = {}) {
-    const win = opts.win || window.open('', '_blank');
+    const win = opts.win || (window.RCA_PWA?.openDocWindow ? window.RCA_PWA.openDocWindow() : window.open('', '_blank'));
     if (!win) { alert('Please allow pop-ups for this site to download the calendar.'); return; }
     const startYear = opts.startYear || defaultStartYear();
     if (!opts.win) win.document.write('<p style="font:14px Arial;padding:24px;color:#6b7280">Preparing calendar…</p>');

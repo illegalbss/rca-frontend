@@ -220,18 +220,22 @@
     });
   }
 
+  // On phones / the installed app this is an in-page viewer (pwa.js),
+  // because pop-up windows there open blank or not at all.
+  const openWin = () => (window.RCA_PWA?.openDocWindow ? window.RCA_PWA.openDocWindow() : window.open('', '_blank'));
+
   // Call prepare() synchronously inside the click handler, BEFORE any
   // await, and pass the result as { win } — browsers block pop-ups that
   // open after an async wait, but allow one opened straight from a click.
   function prepare() {
-    const w = window.open('', '_blank');
+    const w = openWin();
     if (!w) { alert('Please allow pop-ups for this site to print the report.'); return null; }
     w.document.write('<p style="font:14px Arial;padding:24px;color:#6b7280">Preparing document…</p>');
     return w;
   }
 
   function open(title, bodyHtml, win) {
-    const w = win || window.open('', '_blank');
+    const w = win || openWin();
     if (!w) { alert('Please allow pop-ups for this site to print the report.'); return; }
     w.document.open();
     w.document.write(`<!doctype html><html><head><meta charset="utf-8">
