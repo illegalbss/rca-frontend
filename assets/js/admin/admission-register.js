@@ -122,7 +122,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (!hit) return false;
       }
       if (cls    && r.class_name !== cls)    return false;
-      if (status && r.status     !== status) return false;
+      if (status === 'repeating') { if (!repeatingNow(r) || (r.status || 'active') !== 'active') return false; }
+      else if (status && r.status !== status) return false;
       return true;
     });
   }
@@ -156,7 +157,9 @@ document.addEventListener('DOMContentLoaded', async function () {
           '<div><div class="ar-name">' + (r.full_name || '—') + '</div>' +
           '<div class="ar-sub">' + ((r.gender || '').toLowerCase() === 'female' ? 'Female' : 'Male') + '</div></div>' +
         '</div></td>' +
-        '<td class="col-class">' + (r.class_name || '—') + '</td>' +
+        '<td class="col-class">' + (r.class_name || '—') +
+          (repeatingNow(r) ? '<div class="ar-sub" style="color:#b45309;font-weight:700">&#8634; Repeating' + (repeatingNow(r).session ? ' · ' + repeatingNow(r).session : '') + '</div>' : '') +
+        '</td>' +
         '<td class="col-dob">'        + fmtDate(r.date_of_birth)    + '</td>' +
         '<td class="col-admission">'  + fmtDate(r.date_of_admission) + '</td>' +
         '<td class="col-parent"><div class="ar-parent-name">' + (r.parent_name  || '—') + '</div>' +
@@ -167,6 +170,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           '<button class="row-action-btn" onclick="AR.edit(\'' + r.admission_no + '\')">Edit</button>' +
           ((r.status || 'active') === 'active'
             ? '<button class="row-action-btn ar-btn-promote" onclick="AR.promote(\'' + r.admission_no + '\')" title="Promote to next class">&#8593; Promote</button>' +
+              '<button class="row-action-btn" style="color:#7c3aed;border-color:#c4b5fd" onclick="AR.repeat(\'' + r.admission_no + '\')" title="Pupil repeats this class">&#8634; Repeat</button>' +
               '<button class="row-action-btn" style="color:#b45309;border-color:#fcd34d" onclick="AR.withdraw(\'' + r.admission_no + '\')" title="Pupil has left the school">Left School</button>'
             : '<button class="row-action-btn" style="color:#15803d;border-color:#86efac" onclick="AR.reinstate(\'' + r.admission_no + '\')" title="Pupil has returned">&#8634; Reinstate</button>') +
           '<button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="AR.remove(\'' + r.admission_no + '\')">Remove</button>' +
@@ -406,7 +410,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     var docs = r.docs || {};
     var activity = await getPupilActivity(admissionNo);
 
-    var promotions = activity.filter(function (a) { return a.action === 'promote'; });
+    var promotions = activity.filter(function (a) { return a.action === 'promote' || a.action === 'repeat'; });
     var histHTML = promotions.length
       ? promotions.map(function (a) {
           return '<tr><td>' + new Date(a.created_at).toLocaleDateString('en-GB') + '</td>' +
@@ -590,6 +594,73 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
 
       if (window.logActivity) window.logActivity('promote', 'Promoted ' + r.full_name + ' to ' + newClass, 'students');
+      await loadRegister();
+      closeModal('arFormModal');
+      renderTable();
+    });
+  }
+
+  /* ── REPEAT A CLASS ───────────────────────────
+     The pupil stays in their class for another session. Recorded in the
+     pupil's class history (docs.class_history) and the activity log. */
+  function classHistory(r) {
+    var d = r.docs;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch (e) { d = {}; } }
+    return (d && d.class_history) || [];
+  }
+  // The latest class-history entry, if it says they're repeating the
+  // class they're in now (a later promotion replaces it).
+  function repeatingNow(r) {
+    var h = classHistory(r);
+    var last = h[h.length - 1];
+    return last && last.type === 'repeated' && last.to === r.class_name ? last : null;
+  }
+
+  function showRepeatModal(admissionNo) {
+    var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
+    if (!r) return;
+    var modal = document.getElementById('arFormModal');
+    modal.innerHTML =
+      '<div class="ar-modal" style="max-width:440px">' +
+        '<div class="ar-modal-header">' +
+          '<span class="ar-modal-title">Repeat Class</span>' +
+          '<button class="ar-modal-close" onclick="AR.closeModal(\'arFormModal\')">&#10005;</button>' +
+        '</div>' +
+        '<div class="ar-modal-body">' +
+          '<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:14px 16px;margin-bottom:20px">' +
+            '<div style="font-weight:700;color:#5b21b6;font-size:0.92rem">' + (r.full_name || 'Student') + '</div>' +
+            '<div style="font-size:0.82rem;color:#6d28d9;margin-top:4px">Will stay in <strong>' + (r.class_name || '—') + '</strong> for another year</div>' +
+          '</div>' +
+          '<div class="ar-form-group">' +
+            '<label class="ar-form-label">Session they repeat in</label>' +
+            '<input id="fRepeatSession" class="ar-form-input" placeholder="e.g. 2026/2027 (leave blank for the current session)">' +
+          '</div>' +
+          '<div class="ar-form-group">' +
+            '<label class="ar-form-label">Reason / note (optional)</label>' +
+            '<input id="fRepeatNote" class="ar-form-input" maxlength="300" placeholder="e.g. Parent request, needs more time with reading">' +
+          '</div>' +
+          '<p style="font-size:0.78rem;color:#6b7280;margin:4px 0 0;line-height:1.5">The pupil\'s class doesn\'t change — this records the repeat in their Class History so it shows in the register.</p>' +
+        '</div>' +
+        '<div class="ar-modal-footer">' +
+          '<button class="btn btn-outline" onclick="AR.closeModal(\'arFormModal\')">Cancel</button>' +
+          '<button class="btn btn-primary" id="arRepeatConfirmBtn">Confirm Repeat</button>' +
+        '</div>' +
+      '</div>';
+    modal.classList.add('open');
+
+    document.getElementById('arRepeatConfirmBtn').addEventListener('click', async function () {
+      var btn = document.getElementById('arRepeatConfirmBtn');
+      btn.disabled = true;
+      try {
+        await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo) + '/repeat', {
+          method: 'POST',
+          body: { session: document.getElementById('fRepeatSession').value.trim(), note: document.getElementById('fRepeatNote').value.trim() }
+        });
+      } catch (e) {
+        btn.disabled = false;
+        alert('Could not record the repeat: ' + e.message);
+        return;
+      }
       await loadRegister();
       closeModal('arFormModal');
       renderTable();
@@ -909,6 +980,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   window.AR = {
     view:    showViewModal,
     withdraw:  showWithdrawModal,
+    repeat:    showRepeatModal,
     reinstate: reinstate,
     edit:    function (admissionNo) {
       var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
