@@ -619,6 +619,18 @@ document.addEventListener('DOMContentLoaded', async function () {
   function showRepeatModal(admissionNo) {
     var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
     if (!r) return;
+
+    // Default class to repeat: if their last recorded move was a promotion,
+    // the class they were promoted out of; otherwise their current class.
+    var hist = classHistory(r);
+    var last = hist[hist.length - 1];
+    var defaultClass = (last && last.type === 'promoted' && last.to === r.class_name && last.from) ? last.from : r.class_name;
+    var classes = window.SCHOOL_CLASSES || [];
+    if (r.class_name && classes.indexOf(r.class_name) < 0) classes = classes.concat([r.class_name]);
+    var classOpts = classes.map(function (c) {
+      return '<option value="' + c + '"' + (c === defaultClass ? ' selected' : '') + '>' + c + (c === r.class_name ? '  (current class)' : '') + '</option>';
+    }).join('');
+
     var modal = document.getElementById('arFormModal');
     modal.innerHTML =
       '<div class="ar-modal" style="max-width:440px">' +
@@ -629,7 +641,12 @@ document.addEventListener('DOMContentLoaded', async function () {
         '<div class="ar-modal-body">' +
           '<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:14px 16px;margin-bottom:20px">' +
             '<div style="font-weight:700;color:#5b21b6;font-size:0.92rem">' + (r.full_name || 'Student') + '</div>' +
-            '<div style="font-size:0.82rem;color:#6d28d9;margin-top:4px">Will stay in <strong>' + (r.class_name || '—') + '</strong> for another year</div>' +
+            '<div style="font-size:0.82rem;color:#6d28d9;margin-top:4px">Currently in <strong>' + (r.class_name || '—') + '</strong></div>' +
+          '</div>' +
+          '<div class="ar-form-group">' +
+            '<label class="ar-form-label">Class they are repeating *</label>' +
+            '<select id="fRepeatClass" class="ar-form-select">' + classOpts + '</select>' +
+            '<div id="fRepeatMoveNote" style="font-size:0.78rem;margin-top:6px;color:#b45309"></div>' +
           '</div>' +
           '<div class="ar-form-group">' +
             '<label class="ar-form-label">Session they repeat in</label>' +
@@ -639,7 +656,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             '<label class="ar-form-label">Reason / note (optional)</label>' +
             '<input id="fRepeatNote" class="ar-form-input" maxlength="300" placeholder="e.g. Parent request, needs more time with reading">' +
           '</div>' +
-          '<p style="font-size:0.78rem;color:#6b7280;margin:4px 0 0;line-height:1.5">The pupil\'s class doesn\'t change — this records the repeat in their Class History so it shows in the register.</p>' +
+          '<p style="font-size:0.78rem;color:#6b7280;margin:4px 0 0;line-height:1.5">The repeat is recorded in the pupil\'s Class History and shows in the register. If you pick a different class, the pupil is moved into it and appears on that class\'s list instead.</p>' +
         '</div>' +
         '<div class="ar-modal-footer">' +
           '<button class="btn btn-outline" onclick="AR.closeModal(\'arFormModal\')">Cancel</button>' +
@@ -648,13 +665,28 @@ document.addEventListener('DOMContentLoaded', async function () {
       '</div>';
     modal.classList.add('open');
 
+    var classSel = document.getElementById('fRepeatClass');
+    function updateMoveNote() {
+      document.getElementById('fRepeatMoveNote').innerHTML = classSel.value && classSel.value !== r.class_name
+        ? '&#9888; ' + (r.full_name || 'The pupil') + ' will be moved from <strong>' + r.class_name + '</strong> to <strong>' + classSel.value + '</strong>.'
+        : '';
+    }
+    classSel.addEventListener('change', updateMoveNote);
+    updateMoveNote();
+
     document.getElementById('arRepeatConfirmBtn').addEventListener('click', async function () {
+      var repeatClass = classSel.value;
+      if (!repeatClass) { alert('Please choose the class the pupil is repeating.'); return; }
       var btn = document.getElementById('arRepeatConfirmBtn');
       btn.disabled = true;
       try {
         await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo) + '/repeat', {
           method: 'POST',
-          body: { session: document.getElementById('fRepeatSession').value.trim(), note: document.getElementById('fRepeatNote').value.trim() }
+          body: {
+            class_name: repeatClass,
+            session: document.getElementById('fRepeatSession').value.trim(),
+            note: document.getElementById('fRepeatNote').value.trim()
+          }
         });
       } catch (e) {
         btn.disabled = false;
