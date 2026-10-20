@@ -165,7 +165,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         '<td class="col-actions"><div class="row-actions">' +
           '<button class="row-action-btn" onclick="AR.view(\'' + r.admission_no + '\')">View</button>' +
           '<button class="row-action-btn" onclick="AR.edit(\'' + r.admission_no + '\')">Edit</button>' +
-          '<button class="row-action-btn ar-btn-promote" onclick="AR.promote(\'' + r.admission_no + '\')" title="Promote to next class">&#8593; Promote</button>' +
+          ((r.status || 'active') === 'active'
+            ? '<button class="row-action-btn ar-btn-promote" onclick="AR.promote(\'' + r.admission_no + '\')" title="Promote to next class">&#8593; Promote</button>' +
+              '<button class="row-action-btn" style="color:#b45309;border-color:#fcd34d" onclick="AR.withdraw(\'' + r.admission_no + '\')" title="Pupil has left the school">Left School</button>'
+            : '<button class="row-action-btn" style="color:#15803d;border-color:#86efac" onclick="AR.reinstate(\'' + r.admission_no + '\')" title="Pupil has returned">&#8634; Reinstate</button>') +
           '<button class="row-action-btn" style="color:#dc2626;border-color:#fca5a5" onclick="AR.remove(\'' + r.admission_no + '\')">Remove</button>' +
         '</div></td>' +
       '</tr>';
@@ -248,7 +251,7 @@ document.addEventListener('DOMContentLoaded', async function () {
               '<input id="fDOB" type="date" class="ar-form-input" value="' + (r.date_of_birth || '') + '">' +
             '</div>' +
             '<div class="ar-form-group">' +
-              '<label class="ar-form-label">Date of Admission *</label>' +
+              '<label class="ar-form-label">Date of Admission <span style="font-weight:400;color:#9ca3af">(if known)</span></label>' +
               '<input id="fDOA" type="date" class="ar-form-input" value="' + (r.date_of_admission || '') + '">' +
             '</div>' +
           '</div>' +
@@ -263,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async function () {
               '<select id="fStatus" class="ar-form-select">' + buildStatusOptions(r.status) + '</select>' +
             '</div>' +
             '<div class="ar-form-group">' +
-              '<label class="ar-form-label">Date of Completion</label>' +
+              '<label class="ar-form-label">Date Left / Completed</label>' +
               '<input id="fDOC" type="date" class="ar-form-input" value="' + (r.date_of_completion || '') + '">' +
             '</div>' +
           '</div>' +
@@ -343,7 +346,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       var docOthers    = (document.getElementById('fDocOthers').value     || '').trim();
 
       if (!firstName || !lastName) { alert('Please enter the student\'s first name and last name.'); return; }
-      if (!doa)  { alert('Please enter the date of admission.'); return; }
+      // Admission date is optional: many pupils who started in Nursery have no date on file.
       if (!cls)  { alert('Please select the current class.'); return; }
 
       var saveBtn = document.getElementById('arFormSaveBtn');
@@ -593,6 +596,87 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
   }
 
+  /* ── WITHDRAW (pupil has left) ────────────────
+     One quick step: why they left + the date. Unlike Edit, nothing else
+     is required — old records often have no admission date on file. */
+  function showWithdrawModal(admissionNo) {
+    var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
+    if (!r) return;
+    var today = new Date().toISOString().split('T')[0];
+
+    var modal = document.getElementById('arFormModal');
+    modal.innerHTML =
+      '<div class="ar-modal" style="max-width:440px">' +
+        '<div class="ar-modal-header">' +
+          '<span class="ar-modal-title">Pupil Has Left</span>' +
+          '<button class="ar-modal-close" onclick="AR.closeModal(\'arFormModal\')">&#10005;</button>' +
+        '</div>' +
+        '<div class="ar-modal-body">' +
+          '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 16px;margin-bottom:20px">' +
+            '<div style="font-weight:700;color:#991b1b;font-size:0.92rem">' + (r.full_name || 'Student') + '</div>' +
+            '<div style="font-size:0.82rem;color:#b91c1c;margin-top:4px">' + (r.admission_no || '') + ' · ' + (r.class_name || '—') + '</div>' +
+          '</div>' +
+          '<div class="ar-form-group">' +
+            '<label class="ar-form-label">Reason *</label>' +
+            '<select id="fWithdrawStatus" class="ar-form-select">' +
+              '<option value="withdrawn">Withdrawn (left the school)</option>' +
+              '<option value="transferred">Transferred to another school</option>' +
+              '<option value="graduated">Graduated (completed Basic 6)</option>' +
+            '</select>' +
+          '</div>' +
+          '<div class="ar-form-group">' +
+            '<label class="ar-form-label">Date Left *</label>' +
+            '<input id="fWithdrawDate" type="date" class="ar-form-input" value="' + today + '" max="' + today + '">' +
+          '</div>' +
+          '<p style="font-size:0.78rem;color:#6b7280;margin:4px 0 0;line-height:1.5">The pupil stays in the register for the record, but is removed from current class lists, score entry, report cards and fee lists. Past results and payments are kept. You can reinstate them later.</p>' +
+        '</div>' +
+        '<div class="ar-modal-footer">' +
+          '<button class="btn btn-outline" onclick="AR.closeModal(\'arFormModal\')">Cancel</button>' +
+          '<button class="btn btn-primary" id="arWithdrawConfirmBtn">Confirm</button>' +
+        '</div>' +
+      '</div>';
+
+    modal.classList.add('open');
+
+    document.getElementById('arWithdrawConfirmBtn').addEventListener('click', async function () {
+      var status = document.getElementById('fWithdrawStatus').value;
+      var date = document.getElementById('fWithdrawDate').value;
+      if (!date) { alert('Please enter the date the pupil left.'); return; }
+
+      var btn = document.getElementById('arWithdrawConfirmBtn');
+      btn.disabled = true;
+      try {
+        await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo), {
+          method: 'PUT', body: { status: status, date_of_completion: date }
+        });
+      } catch (e) {
+        btn.disabled = false;
+        alert('Could not update: ' + e.message);
+        return;
+      }
+
+      if (window.logActivity) window.logActivity('update', 'Marked ' + status + ': ' + (r.full_name || admissionNo) + ' (left ' + date + ')', 'students');
+      await loadRegister();
+      closeModal('arFormModal');
+      renderTable();
+    });
+  }
+
+  async function reinstate(admissionNo) {
+    var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
+    if (!r) return;
+    if (!confirm('Reinstate ' + (r.full_name || 'this pupil') + ' as an active pupil in ' + (r.class_name || 'their last class') + '?\n\nYou can change the class with Promote or Edit afterwards.')) return;
+    try {
+      await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo), { method: 'PUT', body: { status: 'active' } });
+    } catch (e) {
+      alert('Could not reinstate: ' + e.message);
+      return;
+    }
+    if (window.logActivity) window.logActivity('update', 'Reinstated: ' + (r.full_name || admissionNo), 'students');
+    await loadRegister();
+    renderTable();
+  }
+
   /* ── PRINT / EXPORT MODAL ─────────────────── */
 
   function showPrintModal() {
@@ -824,6 +908,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   window.AR = {
     view:    showViewModal,
+    withdraw:  showWithdrawModal,
+    reinstate: reinstate,
     edit:    function (admissionNo) {
       var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
       if (r) showFormModal(r);
