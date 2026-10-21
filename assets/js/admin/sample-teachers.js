@@ -47,7 +47,7 @@
 (function () {
 
   const ALL_CLASSES = window.SCHOOL_CLASSES || [
-    'Pre-Nursery 1','Pre-Nursery 2','Nursery 1','Nursery 1B','Nursery 2','Nursery 3',
+    'Pre-Nursery 1','Pre-Nursery 2','Nursery 1A','Nursery 1B','Nursery 2','Nursery 3',
     'Basic 1A','Basic 1B','Basic 2','Basic 3','Basic 4','Basic 5','Basic 6'
   ];
 

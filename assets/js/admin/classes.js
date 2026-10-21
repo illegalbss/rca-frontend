@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Normalize to the field names the rest of this file already uses.
   const allTeachers = (rawStaff || []).map(function (u) {
     return {
+      id: u.id,
       staff_id: u.staff_id,
       full_name: u.full_name,
       phone: u.phone || '—',
@@ -203,22 +204,107 @@ document.addEventListener('DOMContentLoaded', async () => {
      RENDER: Class Teacher card
      -------------------------------------------- */
   function renderClassTeacherCard(data) {
-    if (!data.classTeacher) {
-      classTeacherInfo.innerHTML = `<p class="empty-state-text">No class teacher has been assigned to this class yet.</p>`;
-      return;
-    }
-
     const t = data.classTeacher;
-    classTeacherInfo.innerHTML = `
+    classTeacherInfo.innerHTML = t ? `
       <div class="teacher-info-block">
         <div class="teacher-info-avatar">${getInitials(t.full_name)}</div>
         <div>
           <div class="teacher-info-name">${t.full_name}</div>
-          <div class="teacher-info-meta">${t.staff_id}</div>
+          ${t.staff_id ? `<div class="teacher-info-meta">${t.staff_id}</div>` : ''}
           <div class="teacher-info-meta">${t.phone}</div>
         </div>
       </div>
+    ` :`<p class="empty-state-text">No class teacher has been assigned to this class yet.</p>`;
+
+    if (isAdmin) classTeacherInfo.appendChild(buildFormTeacherPicker(data));
+  }
+
+  /* --------------------------------------------
+     Change form teacher (head teacher / ICT admin / proprietor)
+     --------------------------------------------
+     Any class or subject teacher can be picked. A teacher who is already
+     form teacher of another class moves here, and that class is left
+     without one until someone else is assigned.
+  */
+  function buildFormTeacherPicker(data) {
+    const wrap = document.createElement('div');
+    wrap.className = 'form-teacher-picker';
+    const candidates = allTeachers
+      .filter(t => t.id && (t.primary_role === 'class_teacher' || t.primary_role === 'subject_teacher'))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const current = data.classTeacher ? data.classTeacher.id : '';
+
+    wrap.innerHTML = `
+      <label for="formTeacherSelect">${data.classTeacher ? 'Change form teacher' : 'Assign a form teacher'}</label>
+      <div class="form-teacher-row">
+        <select id="formTeacherSelect" class="form-control">
+          <option value="">— No form teacher —</option>
+          ${candidates.map(t => {
+            const formOf = t.primary_role === 'class_teacher' ? t.assigned_classes[0] : '';
+            const note = formOf && formOf !== data.className ? ` (now form teacher of ${formOf})` : '';
+            return `<option value="${t.id}"${t.id === current ? ' selected' : ''}>${t.full_name}${note}</option>`;
+          }).join('')}
+        </select>
+        <button type="button" class="btn btn-primary btn-sm">Save</button>
+      </div>
+      <p class="form-teacher-msg"></p>
     `;
+
+    const select = wrap.querySelector('select');
+    const btn = wrap.querySelector('button');
+    const msg = wrap.querySelector('.form-teacher-msg');
+
+    btn.addEventListener('click', async () => {
+      const userId = select.value || null;
+      if (String(userId || '') === String(current || '')) { msg.textContent = 'No change.'; return; }
+      const picked = allTeachers.find(t => String(t.id) === String(userId));
+      const formOf = picked && picked.primary_role === 'class_teacher' ? picked.assigned_classes[0] : '';
+      const question = !picked
+        ? `Remove the form teacher from ${data.className}?`
+        : `Make ${picked.full_name} the form teacher of ${data.className}?` +
+          (formOf && formOf !== data.className ? `\n\n${formOf} will then have no form teacher until you assign one.` : '');
+      if (!confirm(question)) return;
+
+      btn.disabled = true;
+      msg.textContent = 'Saving…';
+      try {
+        await window.RCA_API.call('/users/form-teacher', {
+          method: 'POST', body: { class_name: data.className, user_id: userId }
+        });
+        applyFormTeacherLocally(data.className, picked);
+        rebuildClassGrid();
+        openClassDetail(data.className);
+      } catch (e) {
+        btn.disabled = false;
+        msg.textContent = 'Could not save: ' + e.message;
+      }
+    });
+
+    return wrap;
+  }
+
+  // Mirror what POST /users/form-teacher did on the server, so the page
+  // updates without a reload.
+  function applyFormTeacherLocally(className, picked) {
+    allTeachers.forEach(t => {
+      if (t.primary_role === 'class_teacher' && t.assigned_classes[0] === className && t !== picked) {
+        t.assigned_classes = t.assigned_classes.filter(c => c !== className);
+        if (t.assigned_classes.length) { t.primary_role = 'subject_teacher'; t.roles = ['subject_teacher']; }
+      }
+    });
+    if (picked) {
+      const rest = (picked.primary_role === 'class_teacher' ? picked.assigned_classes.slice(1) : picked.assigned_classes)
+        .filter(c => c !== className);
+      picked.assigned_classes = [className, ...rest];
+      picked.primary_role = 'class_teacher';
+      picked.roles = ['class_teacher'];
+    }
+  }
+
+  function rebuildClassGrid() {
+    nurseryGrid.innerHTML = '';
+    primaryGrid.innerHTML = '';
+    renderClassGrid();
   }
 
   /* --------------------------------------------

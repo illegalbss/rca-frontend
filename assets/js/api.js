@@ -46,10 +46,28 @@
   /* ============================================
      STUDENTS
      ============================================ */
+  // A pupil whose class isn't in SCHOOL_CLASSES (a class dropped from the
+  // list, or renamed before the records were) would vanish from every page
+  // that lists classes. Add such classes to the list in place, right after
+  // their level (e.g. "Nursery 1C" after "Nursery 1B"), so they still show.
+  function addMissingClasses(students) {
+    const list = window.SCHOOL_CLASSES;
+    if (!Array.isArray(list)) return;
+    const level = c => String(c).replace(/^(.*\d)[A-Z]$/, '$1');
+    (students || []).forEach(s => {
+      const name = s.class_name;
+      if (!name || list.includes(name)) return;
+      let at = -1;
+      list.forEach((c, i) => { if (level(c) === level(name)) at = i; });
+      list.splice(at < 0 ? list.length : at + 1, 0, name);
+    });
+  }
+
   async function getStudents(params = {}) {
     try {
       const qs = new URLSearchParams(params).toString();
       const data = await apiCall(`/students${qs ? '?' + qs : ''}`);
+      addMissingClasses(data.students);
       return data.students;
     } catch (e) {
       console.warn('API unavailable, using localStorage:', e.message);

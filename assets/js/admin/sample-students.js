@@ -16,13 +16,13 @@
 
 (function () {
 
-  // Pre-Nursery 2 was promoted into a second Nursery 1 arm (Nursery 1B); it
-  // stays listed so its pupils can still be seen and moved. Basic 1 also
-  // runs as two parallel arms, 1A and 1B.
+  // Nursery 1 runs as two arms: 1A, and 1B (Pre-Nursery 2 promoted into it).
+  // Pre-Nursery 2 stays listed so its pupils can still be seen and moved.
+  // Basic 1 also runs as two parallel arms, 1A and 1B.
   window.SCHOOL_CLASSES = [
     'Pre-Nursery 1',
     'Pre-Nursery 2',
-    'Nursery 1',
+    'Nursery 1A',
     'Nursery 1B',
     'Nursery 2',
     'Nursery 3',
@@ -36,11 +36,11 @@
   ];
 
   // The class a pupil moves up into. Parallel arms ("Basic 1A", "Basic 1B",
-  // "Nursery 1" / "Nursery 1B") share a level, so all go up to the next level
+  // "Nursery 1A" / "Nursery 1B") share a level, so all go up to the next level
   // rather than 1A -> 1B. Returns null for the last class (graduation) or an
   // unknown one.
   var NEXT_CLASS_OVERRIDES = {
-    'Pre-Nursery 1': 'Nursery 1',
+    'Pre-Nursery 1': 'Nursery 1A',
     'Pre-Nursery 2': 'Nursery 1B'
   };
   window.nextSchoolClass = function (className) {

@@ -243,3 +243,29 @@
   font-size: var(--fs-sm);
   font-style: italic;
 }
+
+/* Change form teacher (Class Teacher card, admins only) */
+.form-teacher-picker {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eee;
+}
+.form-teacher-picker label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.form-teacher-row {
+  display: flex;
+  gap: 8px;
+}
+.form-teacher-row select {
+  flex: 1;
+  min-width: 0;
+}
+.form-teacher-msg {
+  font-size: 0.8rem;
+  margin-top: 6px;
+  min-height: 1em;
+}
