@@ -20,13 +20,17 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-  const ICT_CLASSES = ['Basic 3','Basic 4','Basic 5','Basic 6'];
-  const GROUP1      = ['Basic 3','Basic 4'];
+  // Basic 3–6, including any arms (Basic 3A, Basic 3B). Rebuilt once pupils
+  // load, so a class that only exists in the pupil records is included too.
+  const ICT_LEVELS  = ['Basic 3','Basic 4','Basic 5','Basic 6'];
+  const levelOf     = window.classLevel || (c => c);
+  const isIctClass  = c => ICT_LEVELS.includes(levelOf(c));
+  let   ICT_CLASSES = (window.SCHOOL_CLASSES || ICT_LEVELS).filter(isIctClass);
   const GROUP2      = ['Basic 5','Basic 6'];
   const curriculum  = window.ICT_CURRICULUM || {};
   const skills1     = window.ICT_SKILLS.GROUP1;
   const skills2     = window.ICT_SKILLS.GROUP2;
-  function getGroup(cls) { return GROUP2.includes(cls) ? 'GROUP2' : 'GROUP1'; }
+  function getGroup(cls) { return GROUP2.includes(levelOf(cls)) ? 'GROUP2' : 'GROUP1'; }
   function getSkills(cls){ return getGroup(cls) === 'GROUP2' ? skills2 : skills1; }
 
   const cu = window.CURRENT_USER;
@@ -49,7 +53,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.RCA_API.call(`/ict-lab/progress?term=${currentTerm}`)
     ]);
     allStudents = students || [];
-    ictStudents = allStudents.filter(s => ICT_CLASSES.includes(s.class_name));
+    ICT_CLASSES = (window.SCHOOL_CLASSES || ICT_LEVELS).filter(isIctClass);
+    ictStudents = allStudents.filter(s => isIctClass(s.class_name));
     computers   = comp.computers || [];
     maintenance = maint.maintenance || [];
     schedule    = sched.schedule || [];
@@ -258,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      TAB 3: STUDENT PROGRESS (real, editable)
      ================================================ */
   function renderProgress() {
-    let selectedClass = 'Basic 3';
+    let selectedClass = ICT_CLASSES[0] || 'Basic 3A';
     let searchTerm    = '';
 
     function scoreColor(s) { return s >= 70 ? '#065f46' : s >= 50 ? '#92400e' : '#991b1b'; }

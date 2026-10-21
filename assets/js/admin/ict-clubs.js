@@ -45,7 +45,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function render() {
-    const eligible   = allStudents.filter(s => ['Basic 3','Basic 4','Basic 5','Basic 6'].includes(s.class_name));
+    const levelOf    = window.classLevel || (c => c);
+    const eligible   = allStudents.filter(s => ['Basic 3','Basic 4','Basic 5','Basic 6'].includes(levelOf(s.class_name)));
     const memberNos  = members.map(m => m.admission_no);
     const nonMembers = eligible.filter(s => !memberNos.includes(s.admission_no));
 

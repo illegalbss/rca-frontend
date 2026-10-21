@@ -18,7 +18,7 @@
 
   // Nursery 1 runs as two arms: 1A, and 1B (Pre-Nursery 2 promoted into it).
   // Pre-Nursery 2 stays listed so its pupils can still be seen and moved.
-  // Basic 1 also runs as two parallel arms, 1A and 1B.
+  // Basic 1 and Basic 3 also run as two parallel arms, A and B.
   window.SCHOOL_CLASSES = [
     'Pre-Nursery 1',
     'Pre-Nursery 2',
@@ -29,11 +29,17 @@
     'Basic 1A',
     'Basic 1B',
     'Basic 2',
-    'Basic 3',
+    'Basic 3A',
+    'Basic 3B',
     'Basic 4',
     'Basic 5',
     'Basic 6'
   ];
+
+  // The level a class belongs to, ignoring its arm: "Basic 3B" -> "Basic 3".
+  window.classLevel = function (className) {
+    return String(className || '').replace(/^(.*\d)[A-Z]$/, '$1');
+  };
 
   // The class a pupil moves up into. Parallel arms ("Basic 1A", "Basic 1B",
   // "Nursery 1A" / "Nursery 1B") share a level, so all go up to the next level
@@ -46,7 +52,7 @@
   window.nextSchoolClass = function (className) {
     if (NEXT_CLASS_OVERRIDES[className]) return NEXT_CLASS_OVERRIDES[className];
     var list = window.SCHOOL_CLASSES;
-    var level = function (c) { return String(c).replace(/^(.*\d)[A-Z]$/, '$1'); };
+    var level = window.classLevel;
     var i = list.indexOf(className);
     if (i < 0) return null;
     for (var j = i + 1; j < list.length; j++) {

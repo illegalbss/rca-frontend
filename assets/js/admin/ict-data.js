@@ -215,8 +215,9 @@
     const ICT_CLASSES = ['Basic 3','Basic 4','Basic 5','Basic 6'];
     const progress = {};
 
-    students.filter(s => ICT_CLASSES.includes(s.class_name)).forEach(s => {
-      const isGroup2 = ['Basic 5','Basic 6'].includes(s.class_name);
+    const levelOf = window.classLevel || (c => c);
+    students.filter(s => ICT_CLASSES.includes(levelOf(s.class_name))).forEach(s => {
+      const isGroup2 = ['Basic 5','Basic 6'].includes(levelOf(s.class_name));
       const skills   = isGroup2 ? window.ICT_SKILLS.GROUP2 : window.ICT_SKILLS.GROUP1;
       const seed     = seedRandom(s.admission_no);
 
