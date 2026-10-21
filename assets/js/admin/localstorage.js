@@ -102,6 +102,16 @@
       .forEach(k => localStorage.removeItem(k));
   }
 
+  /* ---- Nothing is restored from the browser any more ----
+     Every page loads pupils, staff, results, approvals, payments and so on
+     from the school server. Old copies saved in this browser (which could
+     be out of date, or left over from the sample data) are deleted here so
+     they can never be shown instead of the real records. The stores below
+     therefore always start from their empty defaults. */
+  ['students', 'teachers', 'users', 'results', 'approvals', 'behavior', 'payments',
+   'announcements', 'events', 'discipline', 'computers', 'maintenance', 'activity_log']
+    .forEach(k => { try { localStorage.removeItem(VERSION + '_' + k); } catch (e) {} });
+
   /* ---- LOAD OR GENERATE each data store ---- */
 
   /* STUDENTS */
@@ -321,9 +331,7 @@
   };
 
   /* ---- Auto-save before tab/window closes ---- */
-  window.addEventListener('beforeunload', () => {
-    window.RCA.saveAll();
-  });
+  // (No auto-save on close: pupil and staff records are not kept on the device.)
 
   /* ---- Log the init result ---- */
   const usage = window.RCA.usage();

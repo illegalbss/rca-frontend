@@ -2,9 +2,9 @@
    LOGIN — login.js
    Royal Crystal Academy
    ============================================
-   Phase 4: Calls real backend API for authentication.
-   Stores JWT token + user data in sessionStorage.
-   Falls back to localStorage demo mode if API is unreachable.
+   Calls the real backend API for authentication and stores the JWT
+   token + user data in sessionStorage. There is no offline/demo login:
+   if the server can't be reached, the person is told to try again.
 */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -87,37 +87,16 @@ document.addEventListener('DOMContentLoaded', () => {
         showError(data.error || 'Login failed.');
         return;
       }
-      // Any other API error (500, etc.) — fall through to demo mode below.
-      console.warn('API login failed unexpectedly, falling back to demo mode:', data.error || res.status);
-    } catch (e) {
-      console.warn('API unreachable, falling back to demo mode:', e.message);
-    }
-
-    // ---- Demo/offline fallback: local fixture data only ----
-    const allUsers = window.SAMPLE_USERS || [];
-    const user = allUsers.find(u => u.email.toLowerCase() === email);
-
-    if (user) {
-      if (user.status === 'deactivated' || user.status === 'suspended') {
-        setLoading(false);
-        showError('This account has been deactivated. Contact the ICT Administrator.');
-        return;
-      }
-      const defaultPwd = 'RCA@2026!';
-      const userPwd = user.password || defaultPwd;
-      if (pwd === userPwd || pwd === defaultPwd) {
-        storeSession(user, null);
-        return;
-      }
+      // Any other API error (500, too many requests, etc.)
       setLoading(false);
-      showError('Incorrect password. Contact the ICT Administrator if you have forgotten your password.');
+      showError((data.error || 'The school server had a problem') + '. Please try again in a moment.');
+      return;
+    } catch (e) {
+      // No demo/offline login: only the school server can let anyone in.
+      setLoading(false);
+      showError('Could not reach the school server. Check your internet connection and try again.');
       return;
     }
-
-    // No account found anywhere
-    setLoading(false);
-    showError('No account found with that email address. Contact the ICT Administrator.');
-    return;
   });
 
   /* ---- Password show/hide toggle ---- */

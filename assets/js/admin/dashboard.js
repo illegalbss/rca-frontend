@@ -2,9 +2,9 @@
    DASHBOARD — dashboard.js
    Royal Crystal Academy
    ============================================
-   Every number on every stat card, chart, and
-   summary panel comes from real data generators.
-   No hardcoded placeholder numbers anywhere.
+   Every number on every stat card, chart, and summary panel comes
+   from the school server (pupils, staff, this term's results,
+   attendance, fees and approvals). No sample or made-up numbers.
 
    Role routing:
      ict_admin       → ICT Administrator Dashboard
@@ -21,53 +21,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   const mainEl  = document.getElementById('dashboardMain');
   const titleEl = document.getElementById('dashboardTitle');
 
-  // Load the REAL students from the database before computing any stats
-  if (window.RCA_API) {
-    try {
-      const realStudents = await window.RCA_API.getStudents();
-      if (realStudents) {
-        window.SAMPLE_STUDENTS = realStudents.map(s => ({
-          ...s,
-          gender: (s.gender || '').toLowerCase()
-        }));
-      }
-    } catch (e) {
-      console.warn('Could not load real students for dashboard:', e.message);
-    }
-
-    // Same fix for users — without this, every staff/parent count and the
-    // role-breakdown chart below was reading from the empty SAMPLE_USERS
-    // fixture, so a parent (or any account) added via User Management
-    // never showed up here. Real rows have primary_role, not roles — add
-    // that array so the .includes('parent') checks below keep working.
-    try {
-      const realUsers = await window.RCA_API.getUsers();
-      if (realUsers) {
-        window.SAMPLE_USERS = realUsers.map(u => ({
-          ...u,
-          roles: u.roles || [u.primary_role || u.role]
-        }));
-      }
-    } catch (e) {
-      console.warn('Could not load real users for dashboard:', e.message);
-    }
+  if (!user) {
+    mainEl.innerHTML = '<p style="padding:40px;color:#9ca3af">Not logged in.</p>';
+    return;
   }
+  if (roles.includes('parent')) { window.location.href = 'parent-portal.html'; return; }
 
-  /* ---- All data sources ---- */
+  /* ---- All data comes from the school server, for the current term ---- */
+  const api     = window.RCA_API;
+  const TERM    = (window.RCA_CONFIG && window.RCA_CONFIG.CURRENT_TERM) || 'term1';
+  const TERMS   = ['term1', 'term2', 'term3'];
+  const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+  const TERM_LABEL  = TERM_LABELS[TERM];
+  const SESSION = (window.RCA_CONFIG && window.RCA_CONFIG.SESSION) || '';
+  const now     = new Date();
+  const today   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const isFinance = ['ict_admin', 'head_teacher', 'accountant'].some(r => roles.includes(r));
+  const safe = p => Promise.resolve(p).catch(() => null);
+
+  mainEl.innerHTML = '<p style="padding:40px;color:#6b7280">Loading the latest figures…</p>';
+  const [studentsRaw, staffRaw, usersRaw, approvalList, overview, attToday, calEvents, termReports] = await Promise.all([
+    api.getStudents(),
+    api.getStaffDirectory(),
+    roles.includes('ict_admin') ? api.getUsers() : [],
+    window.loadApprovals ? safe(window.loadApprovals(TERM)) : [],
+    safe(api.call('/scores/overview?term=' + TERM)),
+    safe(api.call('/attendance/today?date=' + today)),
+    safe(api.getCalendarEvents()),
+    // The accountant sees all three terms; others only need this term.
+    isFinance ? Promise.all(TERMS.map(t => (t === TERM || roles.includes('accountant'))
+      ? safe(api.call('/payments/report?term=' + t)) : null)) : [null, null, null]
+  ]);
+
   // Only count ACTIVE students — exclude inactive, archived, removed
-  const allStudentsRaw = window.SAMPLE_STUDENTS || [];
-  const allStudents = allStudentsRaw.filter(s =>
-    s.status !== 'archived' &&
-    s.status !== 'inactive' &&
-    s.status !== 'removed'
-  );
-  const allTeachers = window.SAMPLE_TEACHERS || [];
-  const allUsers    = window.SAMPLE_USERS    || [];
+  const allStudents = (studentsRaw || [])
+    .filter(s => !s.status || s.status === 'active')
+    .map(s => ({ ...s, gender: (s.gender || '').toLowerCase() }));
+  // Staff from the real staff list; full accounts list (with parents) for the ICT admin.
+  const allTeachers = (staffRaw || []).map(u => ({ ...u, roles: [u.primary_role] }));
+  const allUsers    = (usersRaw || []).map(u => ({ ...u, roles: u.roles || [u.primary_role || u.role] }));
   const allClasses  = window.SCHOOL_CLASSES  || [];
-  const allSubjects = window.SCHOOL_SUBJECTS || [];
-  const allResults  = window.SAMPLE_RESULTS  || {};
-  const payRecords  = window.PAYMENT_RECORDS || {};
-  const approvals   = window.RESULT_APPROVALS || {};
+  const allSubjects = window.ALL_SUBJECTS_COMBINED || window.SCHOOL_SUBJECTS || [];
+  const subjectName = code => (allSubjects.find(s => s.id === code) || {}).name || code;
+  const approvalOf  = cls => (window.RESULT_APPROVALS || {})[`${cls}|${TERM}`];
+  const termReport  = termReports[TERMS.indexOf(TERM)];
   const fmt         = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
 
   /* ---- Access denied banner ---- */
@@ -111,44 +108,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     roleCount[r] = (roleCount[r] || 0) + 1;
   });
 
-  // Approvals
-  const appVals      = Object.values(approvals);
+  // Approvals (this term, classes that have pupils)
+  const appVals      = approvalList || [];
   const appApproved  = appVals.filter(r => ['approved','published'].includes(r.status)).length;
   const appPending   = appVals.filter(r => ['submitted','reviewed'].includes(r.status)).length;
   const appDraft     = appVals.filter(r => r.status === 'draft').length;
   const appReturned  = appVals.filter(r => r.status === 'returned').length;
   const appTotal     = appVals.length || 1;
 
-  // Payments
-  const payVals       = Object.values(payRecords);
-  const totalExpected = payVals.reduce((s, r) => s + r.amount_expected, 0);
-  const totalPaid     = payVals.reduce((s, r) => s + r.amount_paid, 0);
-  const totalBalance  = totalExpected - totalPaid;
-  const paidFull      = payVals.filter(r => r.status === 'paid').length;
-  const paidPartial   = payVals.filter(r => r.status === 'partial').length;
-  const paidNone      = payVals.filter(r => r.status === 'unpaid').length;
+  // Payments — this term's real fee report (finance roles only)
+  const rep           = termReport || {};
+  const totalExpected = rep.total_expected || 0;
+  const totalPaid     = rep.total_paid || 0;
+  const totalBalance  = rep.total_outstanding != null ? rep.total_outstanding : totalExpected - totalPaid;
+  const paidFull      = rep.paid_count || 0;
+  const paidPartial   = rep.partial_count || 0;
+  const paidNone      = rep.unpaid_count || 0;
+  const payCount      = (paidFull + paidPartial + paidNone) || 1;
   const collRate      = totalExpected > 0
     ? (totalPaid / totalExpected * 100).toFixed(1) : '0';
 
-  // Average score per class (from real results)
+  // Average score per class this term (real scores; 0 = none entered yet)
+  const overviewByClass = {};
+  ((overview && overview.classes) || []).forEach(c => { overviewByClass[c.class_name] = c; });
   function classAverage(className) {
-    const cls = allStudents.filter(s => s.class_name === className);
-    const avgs = cls.map(s => {
-      const r = allResults[s.admission_no];
-      if (!r) return null;
-      const scores = Object.values(r).map(sub => sub.finalScore || 0);
-      return scores.length ? scores.reduce((a,b) => a+b, 0) / scores.length : null;
-    }).filter(a => a !== null);
-    return avgs.length ? Math.round(avgs.reduce((a,b) => a+b, 0) / avgs.length) : 0;
+    return (overviewByClass[className] || {}).average || 0;
   }
 
-  // Grade distribution across whole school
+  // Grade distribution across whole school this term
   function gradeDistribution() {
     const counts = { A:0, B:0, C:0, D:0, E:0, F:0 };
-    Object.values(allResults).forEach(pupil => {
-      Object.values(pupil).forEach(sub => {
-        if (sub.grade && counts[sub.grade] !== undefined) counts[sub.grade]++;
-      });
+    Object.entries((overview && overview.grades) || {}).forEach(([g, n]) => {
+      if (counts[g] !== undefined) counts[g] = n;
     });
     const total = Object.values(counts).reduce((a,b) => a+b, 0) || 1;
     return Object.entries(counts).map(([g, n]) => ({
@@ -156,15 +147,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }));
   }
 
-  // Today's simulated attendance (realistic spread)
-  function attendanceToday() {
-    const seed = new Date().getDate(); // changes each day
-    const base = 92 + (seed % 6);     // 92–97%
-    const present = Math.round(totalStudents * base / 100);
-    return { present, absent: totalStudents - present, pct: base };
-  }
+  // Today's real attendance: present + late out of the pupils marked so far.
+  const todayAtt = attToday && attToday.marked
+    ? {
+        pct: Math.round((attToday.present + attToday.late) / attToday.marked * 100),
+        present: attToday.present + attToday.late,
+        absent: attToday.absent,
+        classes: attToday.classes_marked.length
+      }
+    : null;
+  const attLabel = todayAtt ? todayAtt.pct + '%' : 'Not marked';
 
-  const todayAtt = attendanceToday();
+  // Upcoming school calendar events
+  const day = d => String(d || '').slice(0, 10);
+  const upcomingEvents = (calEvents || [])
+    .filter(e => day(e.end_date || e.event_date) >= today)
+    .sort((a, b) => day(a.event_date).localeCompare(day(b.event_date)))
+    .slice(0, 4);
+  const fmtDay = d => new Date(day(d) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
   /* ================================================
      HTML HELPERS
@@ -311,7 +311,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${statCard('👥','dsi-blue',   totalStudents,                    'Total Students',     'View all students',    'students.html')}
         ${statCard('👨‍🏫','dsi-green', allTeachers.length,               'Total Staff',        'View all teachers',    'teachers.html')}
         ${statCard('🏫','dsi-purple',  allClasses.length,                'Classes',            'View all classes',     'classes.html')}
-        ${statCard('✅','dsi-teal',    todayAtt.pct + '%',               'Attendance Today',   'View attendance',      'attendance.html')}
+        ${statCard('✅','dsi-teal',    attLabel,                         'Attendance Today',   'View attendance',      'attendance.html')}
         ${statCard('⏳','dsi-red',     appPending,                       'Pending Approvals',  'View pending',         'approvals.html')}
       </div>
 
@@ -411,8 +411,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="dash-grid-2">
-        ${card('Fee Collection Summary', `
-          ${sysRow('Total Expected (All Terms)', fmt(totalExpected))}
+        ${card('Fee Collection — ' + TERM_LABEL, `
+          ${termReport ? '' : '<p style="color:#9ca3af;font-size:0.8rem;margin:0 0 8px">Fee figures could not be loaded.</p>'}
+          ${sysRow('Total Expected', fmt(totalExpected))}
           ${sysRow('Total Collected', fmt(totalPaid), 'color:#16a34a;font-weight:700')}
           ${sysRow('Outstanding Balance', fmt(totalBalance), 'color:#dc2626;font-weight:700')}
           <div style="margin:10px 0 4px">
@@ -439,13 +440,16 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
         `, {label:'Finance Reports', href:'finance-reports.html'})}
 
-        ${card('Upcoming Events', `
+        ${card('Upcoming Events', upcomingEvents.length
+          ? upcomingEvents.map(e => sysRow('📅 ' + fmtDay(e.event_date) + (e.end_date && day(e.end_date) !== day(e.event_date) ? ' – ' + fmtDay(e.end_date) : ''),
+              String(e.title || '').replace(/[<>&]/g, ''))).join('')
+          : `
           <div style="text-align:center;padding:20px 12px;color:#9ca3af;font-size:0.82rem">
             <div style="font-size:1.4rem;margin-bottom:8px">📅</div>
             <div style="font-weight:600;color:#6b7280;margin-bottom:4px">No events scheduled</div>
             <div>Add events via the <a href="school-calendar.html" style="color:#1d4ed8">School Calendar</a>.</div>
           </div>
-        `)}
+        `, {label:'School Calendar', href:'school-calendar.html'})}
       </div>
     `;
   }
@@ -465,15 +469,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       { label:'Parents',      color:'#9ca3af', count:parentUsers.length }
     ].map(s => ({ ...s, pct: Math.round(s.count/totalU*100) })).filter(s => s.count > 0);
 
-    // Data volume stats
-    const totalResultRecords = Object.values(allResults).reduce((s, r) => s + Object.keys(r).length, 0);
-    const totalPaymentTxns   = payVals.reduce((s, r) => s + (r.payments||[]).length, 0);
+    // Data volume stats (this term)
+    const totalResultRecords = (overview && overview.entries) || 0;
+    const activeAccounts     = allUsers.filter(u => u.status === 'active').length;
 
     mainEl.innerHTML = `
       <div class="welcome-banner" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)">
         <div>
           <h2>ICT Administrator — ${user.full_name} 🛡️</h2>
-          <p>System health is good. All ${allUsers.length} accounts active.</p>
+          <p>${activeAccounts} of ${allUsers.length} accounts active.</p>
         </div>
         <span class="welcome-emoji">💻</span>
       </div>
@@ -487,21 +491,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="dash-grid-2" style="margin-bottom:16px">
-        ${card('System Overview', `
-          ${sysRow('🟢 Database Status', 'Healthy — All systems running', 'color:#16a34a')}
-          <div style="margin:10px 0 14px">
-            <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#6b7280;margin-bottom:4px">
-              <span>💾 Storage Used</span><span>45%</span>
-            </div>
-            <div style="height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden">
-              <div style="width:45%;height:100%;background:linear-gradient(90deg,#1d4ed8,#6366f1);border-radius:4px"></div>
-            </div>
-            <div style="font-size:0.68rem;color:#9ca3af;margin-top:3px">60 GB of 150 GB used</div>
-          </div>
-          ${sysRow('🕒 Last Backup', 'Today, 06:00 AM', 'color:#16a34a')}
-          ${sysRow('🔒 SSL Certificate', 'Valid — 340 days remaining', 'color:#16a34a')}
-          ${sysRow('📊 Result Records', totalResultRecords.toLocaleString() + ' entries')}
-          ${sysRow('💳 Payment Records', totalPaymentTxns.toLocaleString() + ' transactions')}
+        ${card('School Overview — ' + TERM_LABEL, `
+          ${sysRow('🎒 Pupils on roll', totalStudents.toLocaleString())}
+          ${sysRow('🏫 Classes', allClasses.length)}
+          ${sysRow('📊 Scores entered this term', totalResultRecords.toLocaleString())}
+          ${sysRow('✅ Attendance today', todayAtt ? `${todayAtt.pct}% (${todayAtt.classes} class${todayAtt.classes === 1 ? '' : 'es'} marked)` : 'Not marked yet')}
+          ${sysRow('💳 Fees collected this term', termReport ? fmt(totalPaid) : '—')}
+          ${sysRow('⏳ Results awaiting approval', appPending)}
         `)}
 
         ${card('User Role Distribution', `
@@ -548,7 +544,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         `)}
 
         ${card('Security Overview', `
-          ${secRow('Failed Login Attempts',  '0',             'sec-green')}
           ${secRow('Deactivated Accounts',   deactStaff,      deactStaff > 0 ? 'sec-orange' : 'sec-green')}
           ${secRow('Active Staff Sessions',  activeStaff,     'sec-green')}
           ${secRow('Total Parent Accounts',  parentUsers.length, 'sec-green')}
@@ -556,28 +551,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         `)}
       </div>
 
-      <!-- Phase 2: localStorage Storage Info -->
-      ${window.RCA ? (() => {
-        const u = window.RCA.usage();
-        const barColor = u.usedPct > 80 ? '#dc2626' : u.usedPct > 60 ? '#f59e0b' : '#16a34a';
-        return card('💾 Local Storage (Phase 2)', `
-          <div style="margin-bottom:10px">
-            <div style="display:flex;justify-content:space-between;font-size:0.78rem;margin-bottom:4px">
-              <span style="color:#6b7280">Storage Used</span>
-              <span style="font-weight:700;color:${barColor}">${u.usedKB}KB / ${u.limitKB}KB (${u.usedPct}%)</span>
-            </div>
-            <div style="height:10px;background:#f3f4f6;border-radius:5px;overflow:hidden">
-              <div style="width:${u.usedPct}%;height:100%;background:${barColor};border-radius:5px;transition:width 0.5s"></div>
-            </div>
-          </div>
-          ${sysRow('📅 Data Version', window.RCA.version)}
-          ${sysRow('🔄 Status', window.RCA.isFirstLoad ? 'Fresh data generated' : 'Loaded from storage')}
-          <div style="margin-top:12px">
-            <button onclick="window.RCA.reset()" class="btn btn-outline" style="font-size:0.75rem;color:#dc2626;border-color:#fca5a5;width:100%">🗑 Reset All Data to Defaults</button>
-          </div>
-          <div style="font-size:0.68rem;color:#9ca3af;margin-top:8px;line-height:1.5">Data persists between browser sessions. Phase 4 will use a real PostgreSQL database.</div>
-        `);
-      })() : ''}
     `;
   }
 
@@ -594,34 +567,32 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const myClasses  = user.linked_classes  || [];
     const mySubjects = user.linked_subjects || [];
-    const myStudents = allStudents.filter(s => myClasses.includes(s.class_name));
+    // A link to a whole level ("Basic 3") covers its arms (Basic 3A, 3B).
+    const levelOf    = window.classLevel || (c => c);
+    const myStudents = allStudents.filter(s => myClasses.includes(s.class_name) || myClasses.includes(levelOf(s.class_name)));
 
-    // Real approval statuses for my classes
+    // Real approval statuses for my classes, this term
     const myApprovals = myClasses.map(c => {
-      const rec = approvals[`${c}|term2`];
+      const rec = approvalOf(c);
       return { cls: c, status: rec ? rec.status : 'draft' };
     });
     const submitted  = myApprovals.filter(a => ['submitted','reviewed','approved','published'].includes(a.status)).length;
     const stillDraft = myApprovals.filter(a => a.status === 'draft').length;
 
-    // Real student averages for my class
-    const myStudentAvgs = myStudents.map(s => {
-      const r = allResults[s.admission_no];
-      if (!r) return null;
-      const scores = Object.values(r).map(sub => sub.finalScore || 0);
-      return scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
-    }).filter(a => a !== null);
-    const myClassAvg = myStudentAvgs.length
-      ? Math.round(myStudentAvgs.reduce((a,b)=>a+b,0)/myStudentAvgs.length)
+    // Average of all scores entered this term in my classes
+    const myOverview = myClasses.map(c => overviewByClass[c]).filter(Boolean);
+    const myEntries  = myOverview.reduce((s, c) => s + c.entries, 0);
+    const myClassAvg = myEntries
+      ? Math.round(myOverview.reduce((s, c) => s + c.average * c.entries, 0) / myEntries)
       : 0;
 
     // Tasks: one per subject+class combo
     const tasks = [];
     mySubjects.forEach(sub => {
       myClasses.forEach(cls => {
-        const rec = approvals[`${cls}|term2`];
+        const rec = approvalOf(cls);
         tasks.push({
-          label: `Enter ${sub} scores — ${cls}`,
+          label: `Enter ${subjectName(sub)} scores — ${cls}`,
           status: rec && rec.status !== 'draft' ? 'done' : 'pending'
         });
       });
@@ -633,7 +604,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="welcome-banner" style="background:linear-gradient(135deg,#166534,#16a34a)">
         <div>
           <h2>Welcome, ${user.full_name}! 👩‍🏫</h2>
-          <p>${title} — Academic Session 2025/2026</p>
+          <p>${title} — ${TERM_LABEL}${SESSION ? ', ' + SESSION : ''}</p>
         </div>
         <span class="welcome-emoji">📋</span>
       </div>
@@ -652,7 +623,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ${myClasses.length === 0
               ? '<p style="color:#9ca3af;font-size:0.8rem">No classes assigned.</p>'
               : myClasses.map(cls => {
-                  const rec = approvals[`${cls}|term2`];
+                  const rec = approvalOf(cls);
                   const status = rec ? rec.status : 'draft';
                   const statusColor = {
                     draft:'#9ca3af', submitted:'#f59e0b', reviewed:'#3b82f6',
@@ -679,7 +650,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               : mySubjects.map(sub => `
                 <div class="my-subject-row">
                   <div>
-                    <div class="my-subject-name">${sub}</div>
+                    <div class="my-subject-name">${subjectName(sub)}</div>
                     <div class="my-subject-classes">${myClasses.join(' · ') || 'All assigned classes'}</div>
                   </div>
                   <a href="score-entry.html" class="qa-btn qa-blue" style="font-size:0.72rem;padding:4px 10px;display:inline-block">Enter</a>
@@ -690,7 +661,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${card('My Progress', `
           <div style="text-align:center;padding:8px 0 12px">
             <div style="font-family:var(--font-heading);font-size:2rem;font-weight:700;color:#1d4ed8">${myClassAvg}%</div>
-            <div style="font-size:0.75rem;color:#6b7280;margin-bottom:12px">Class Average Score</div>
+            <div style="font-size:0.75rem;color:#6b7280;margin-bottom:12px">${myEntries ? 'Average Score — ' + TERM_LABEL : 'No scores entered yet this term'}</div>
           </div>
           ${sysRow('✅ Tasks Completed', doneTasks + ' / ' + tasks.length)}
           ${sysRow('⏳ Still Pending',   pendingTasks + ' task' + (pendingTasks !== 1 ? 's' : ''))}
@@ -731,28 +702,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderAccountant() {
     titleEl.textContent = 'Accountant Dashboard';
 
-    // Class-level outstanding amounts
-    const classTotals = allClasses.map(cls => {
-      const students = allStudents.filter(s => s.class_name === cls);
-      let expected = 0, paid = 0;
-      students.forEach(s => {
-        ['term1','term2','term3'].forEach(t => {
-          const rec = payRecords[`${s.admission_no}|${t}`];
-          if (rec) { expected += rec.amount_expected; paid += rec.amount_paid; }
-        });
-      });
-      return { label: cls, expected, paid, balance: expected - paid };
-    });
-
-    const topOutstanding = [...classTotals]
-      .sort((a,b) => b.balance - a.balance).slice(0, 5);
-    const maxBalance = Math.max(...topOutstanding.map(c => c.balance), 1);
+    // Amount collected per class this term (from the fee report)
+    const topCollected = [...(rep.by_class || [])]
+      .sort((a,b) => b.paid - a.paid).slice(0, 5)
+      .map(c => ({ label: c.class_name, paid: c.paid }));
 
     mainEl.innerHTML = `
       <div class="welcome-banner" style="background:linear-gradient(135deg,#064e3b,#059669)">
         <div>
           <h2>Accountant Dashboard — ${user.full_name} 💰</h2>
-          <p>Fee collection summary for Academic Session 2025/2026</p>
+          <p>Fee collection — ${TERM_LABEL}${SESSION ? ', ' + SESSION : ''}${termReport ? '' : ' (figures could not be loaded)'}</p>
         </div>
         <span class="welcome-emoji">📊</span>
       </div>
@@ -768,28 +727,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${card('Payment Status Breakdown', `
           <div class="donut-wrap">
             ${donutSVG([
-              { color:'#16a34a', pct: Math.round(paidFull/payVals.length*100) },
-              { color:'#f59e0b', pct: Math.round(paidPartial/payVals.length*100) },
-              { color:'#dc2626', pct: Math.round(paidNone/payVals.length*100) }
+              { color:'#16a34a', pct: Math.round(paidFull/payCount*100) },
+              { color:'#f59e0b', pct: Math.round(paidPartial/payCount*100) },
+              { color:'#dc2626', pct: Math.round(paidNone/payCount*100) }
             ], 110)}
             <div class="donut-legend">
               <div class="donut-item">
                 <span class="donut-dot" style="background:#16a34a"></span>
                 <span class="donut-item-label">Paid in Full</span>
                 <span class="donut-item-count">${paidFull}</span>
-                <span class="donut-item-pct">(${Math.round(paidFull/payVals.length*100)}%)</span>
+                <span class="donut-item-pct">(${Math.round(paidFull/payCount*100)}%)</span>
               </div>
               <div class="donut-item">
                 <span class="donut-dot" style="background:#f59e0b"></span>
                 <span class="donut-item-label">Partial</span>
                 <span class="donut-item-count">${paidPartial}</span>
-                <span class="donut-item-pct">(${Math.round(paidPartial/payVals.length*100)}%)</span>
+                <span class="donut-item-pct">(${Math.round(paidPartial/payCount*100)}%)</span>
               </div>
               <div class="donut-item">
                 <span class="donut-dot" style="background:#dc2626"></span>
                 <span class="donut-item-label">Not Paid</span>
                 <span class="donut-item-count">${paidNone}</span>
-                <span class="donut-item-pct">(${Math.round(paidNone/payVals.length*100)}%)</span>
+                <span class="donut-item-pct">(${Math.round(paidNone/payCount*100)}%)</span>
               </div>
             </div>
           </div>
@@ -803,17 +762,17 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
         `, {label:'Full Report', href:'finance-reports.html'})}
 
-        ${card('Outstanding by Class (Top 5)', `
+        ${card('Collected by Class (Top 5) — ' + TERM_LABEL, topCollected.length ? `
           ${miniBarChart(
-            topOutstanding.map(c => ({
+            topCollected.map(c => ({
               label: c.label,
-              val: Math.round(c.balance/1000),
-              color: '#dc2626'
+              val: Math.round(c.paid/1000),
+              color: '#16a34a'
             })),
-            Math.max(...topOutstanding.map(c => Math.round(c.balance/1000)), 1)
+            Math.max(...topCollected.map(c => Math.round(c.paid/1000)), 1)
           )}
-          <div style="font-size:0.7rem;color:#9ca3af;margin-top:6px">Values in ₦'000</div>
-        `, {label:'Finance Reports', href:'finance-reports.html'})}
+          <div style="font-size:0.7rem;color:#9ca3af;margin-top:6px">Values in ₦'000. See Finance Reports for who still owes.</div>
+        ` : '<p style="color:#9ca3af;font-size:0.8rem">No payments recorded yet this term.</p>', {label:'Finance Reports', href:'finance-reports.html'})}
       </div>
 
       <div class="dash-grid-2">
@@ -827,12 +786,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         `)}
 
         ${card('Term-by-Term Summary', `
-          ${['term1','term2','term3'].map((term, i) => {
-            const termVals = Object.entries(payRecords)
-              .filter(([k]) => k.endsWith('|'+term))
-              .map(([,r]) => r);
-            const tPaid = termVals.reduce((s,r)=>s+r.amount_paid,0);
-            const tExp  = termVals.reduce((s,r)=>s+r.amount_expected,0);
+          ${TERMS.map((term, i) => {
+            const r = termReports[i] || {};
+            const tPaid = r.total_paid || 0;
+            const tExp  = r.total_expected || 0;
             const tRate = tExp > 0 ? (tPaid/tExp*100).toFixed(0) : 0;
             const labels = ['First Term','Second Term','Third Term'];
             return `<div style="margin-bottom:12px">
@@ -854,32 +811,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ================================================
      ROUTE
      ================================================ */
-  if (!user) {
-    mainEl.innerHTML = '<p style="padding:40px;color:#9ca3af">Not logged in.</p>';
-    return;
-  }
-
-  // Phase 4: try to enrich dashboard with real API data
-  async function loadAndRender() {
-    // Try to get real payment summary for accountant/head teacher
-    if (window.RCA_API && (roles.includes('accountant') || roles.includes('head_teacher') || roles.includes('ict_admin'))) {
-      try {
-        const summary = await window.RCA_API.getPaymentSummary();
-        if (summary && summary.total_expected) {
-          // Convert kobo to naira and update the computed values
-          window._API_PAYMENT_SUMMARY = summary;
-        }
-      } catch(e) { /* use localStorage data */ }
-    }
-
-    if      (roles.includes('ict_admin'))     renderICTAdmin();
-    else if (roles.includes('head_teacher'))  renderHeadTeacher();
-    else if (roles.includes('class_teacher') || roles.includes('subject_teacher')) renderTeacher();
-    else if (roles.includes('accountant'))    renderAccountant();
-    else if (roles.includes('parent'))        window.location.href = 'parent-portal.html';
-    else                                      renderHeadTeacher();
-  }
-
-  loadAndRender();
+  if      (roles.includes('ict_admin'))     renderICTAdmin();
+  else if (roles.includes('head_teacher'))  renderHeadTeacher();
+  else if (roles.includes('class_teacher') || roles.includes('subject_teacher')) renderTeacher();
+  else if (roles.includes('accountant'))    renderAccountant();
+  else                                      renderHeadTeacher();
 
 });

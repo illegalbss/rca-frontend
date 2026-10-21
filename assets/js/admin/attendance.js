@@ -1,8 +1,9 @@
 /* ============================================
    ATTENDANCE MANAGEMENT — attendance.js
    ============================================
-   Depends on window.SAMPLE_STUDENTS + window.SCHOOL_CLASSES
-   (from sample-students.js - see script order in attendance.html).
+   Pupils come from RCA_API.getStudents() and each class+date register
+   from RCA_API.getAttendance() — the school server, so every phone sees
+   the same register. Nothing is kept in the browser.
 
    The attendance register for the currently open class+date is
    held in memory as `register`, an object shaped like:
@@ -11,9 +12,9 @@
    Save button below sends it to the real backend.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  const allStudents = window.SAMPLE_STUDENTS || [];
+  const allStudents = await window.RCA_API.getStudents();
   const allClasses  = window.SCHOOL_CLASSES || [];
 
   /* --------------------------------------------
@@ -24,12 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
      for each class is stored separately. The inner object maps
      each pupil's admission number to their status string.
   */
-  // Load persisted attendance from localStorage
-  let attendanceStore = {};
-  try {
-    const saved = localStorage.getItem('rca_v1_attendance');
-    if (saved) attendanceStore = JSON.parse(saved);
-  } catch(e) { attendanceStore = {}; }
+  // Registers loaded from the server during this visit (see loadRegister).
+  // (The old browser-only copy, rca_v1_attendance, is no longer read.)
+  const attendanceStore = {};
 
   // Tracks whether the CURRENTLY OPEN register has unsaved edits
   let hasUnsavedChanges = false;
@@ -138,18 +136,23 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${className}|${dateString}`;
   }
 
+  // Fetches the saved register for a class+date (unmarked pupils come back
+  // as "present", the sensible default). Returns false if it can't load.
+  async function loadRegister(className, dateString) {
+    const key = getRegisterKey(className, dateString);
+    if (attendanceStore[key]) return true;
+    const rows = await window.RCA_API.getAttendance(className, dateString);
+    if (!rows) return false;
+    const register = {};
+    allStudents.filter(s => s.class_name === className).forEach(s => { register[s.admission_no] = 'present'; });
+    rows.forEach(r => { register[r.admission_no] = String(r.status || 'present').toLowerCase(); });
+    attendanceStore[key] = register;
+    return true;
+  }
+
   function getOrCreateRegister(className, dateString) {
     const key = getRegisterKey(className, dateString);
-
-    if (!attendanceStore[key]) {
-      const studentsInClass = allStudents.filter(s => s.class_name === className);
-      const register = {};
-      studentsInClass.forEach(s => {
-        register[s.admission_no] = 'present'; // sensible default
-      });
-      attendanceStore[key] = register;
-    }
-
+    if (!attendanceStore[key]) attendanceStore[key] = {};
     return attendanceStore[key];
   }
 
@@ -158,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
      -------------------------------------------- 
      Re-runs whenever class, date, or the search box changes.
   */
-  function renderRegister() {
+  async function renderRegister() {
     const className = classSelect.value;
     const dateString = dateSelect.value;
 
@@ -166,6 +169,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show/hide the weekend notice
     weekendNotice.style.display = isWeekend(dateString) ? 'block' : 'none';
+
+    if (!(await loadRegister(className, dateString))) {
+      // Blank "present" boxes here could overwrite a register already saved.
+      tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#b91c1c;padding:2rem">' +
+        'Could not load this register from the school server. Please refresh the page.</td></tr>';
+      saveBtn.disabled = true;
+      return;
+    }
+    if (className !== classSelect.value || dateString !== dateSelect.value) return; // changed while loading
+    saveBtn.disabled = false;
 
     const register = getOrCreateRegister(className, dateString);
     let studentsInClass = allStudents.filter(s => s.class_name === className);
@@ -276,32 +289,33 @@ document.addEventListener('DOMContentLoaded', () => {
     saveStatus.className = 'save-status saved';
   }
 
-  saveBtn.addEventListener('click', () => {
+  saveBtn.addEventListener('click', async () => {
     const className  = classSelect.value;
     const dateString = dateSelect.value;
     const register   = getOrCreateRegister(className, dateString);
 
-    markSaved();
-
-    // Save attendance to the real database.
     // `register` is the in-memory { admissionNo: status } map for this
     // class+date, kept up to date by the pill-click handlers above —
     // we just need to convert it into the array shape the API expects.
-    if (window.RCA_API) {
-      const records = Object.entries(register).map(([admissionNo, status]) => ({
-        student_id: admissionNo,
-        status
-      }));
-      if (records.length > 0) {
-        window.RCA_API.markAttendance(className, dateString, records)
-          .catch(e => console.warn('Attendance API failed:', e.message));
-      }
-    }
+    const records = Object.entries(register).map(([admissionNo, status]) => ({
+      student_id: admissionNo,
+      status
+    }));
+    if (!records.length) return;
 
-    // Also persist to localStorage as an offline fallback
+    const label = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
     try {
-      localStorage.setItem('rca_v1_attendance', JSON.stringify(attendanceStore));
-    } catch(e) { console.warn('Attendance localStorage save failed:', e); }
+      await window.RCA_API.markAttendance(className, dateString, records);
+    } catch (e) {
+      alert('Attendance was NOT saved: ' + e.message + '\n\nPlease press Save again.');
+      return;
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = label;
+    }
+    markSaved();
   });
 
   /* --------------------------------------------

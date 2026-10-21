@@ -1,342 +1,302 @@
 /* ============================================
-   PROMOTION RECORDS — promotion.js
+   PROMOTION — promotion.js
    ============================================
-   Depends on window.SAMPLE_STUDENTS, window.SCHOOL_CLASSES,
-   window.SAMPLE_PROMOTION_SCORES, and window.PROMOTION_PASS_THRESHOLD
-   (see script order in promotion.html).
+   End-of-year promotion on the school's real records.
 
-   CORE IDEA: every pupil gets a SUGGESTED decision computed from
-   their average score vs the pass threshold. Staff can OVERRIDE
-   any individual suggestion via a dropdown. We track overrides
-   SEPARATELY from suggestions, so "Apply Suggested to All" can
-   reset everyone back to the computed default at any time without
-   losing the distinction between "the rule decided this" and
-   "a human decided this differently".
+   Pupils come from RCA_API.getStudents(); each pupil's year average from
+   GET /students/year-averages (the mean of their term averages this
+   session). Every pupil gets a SUGGESTED decision from the pass mark;
+   staff can change any of them. Decisions:
+     promote:<class>  move up (for a level with arms, e.g. Basic 3A/3B,
+                      pick the arm; the A arm is suggested)
+     repeat           stay in the same class
+     graduate         final class only — leaves as graduated
+     skip             no change for this pupil now
 
-   Basic 6 is a special case: there's no "next class" to promote
-   into - pupils who pass GRADUATE (leave the school) instead.
+   "Apply" sends one class per request to POST /students/bulk-promote,
+   all sharing one batch id, so "Undo last promotion" (POST
+   /students/undo-promotion) can put every pupil back.
 */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  const allStudents = window.SAMPLE_STUDENTS || [];
-  const allClasses  = window.SCHOOL_CLASSES || [];
-  const scores       = window.SAMPLE_PROMOTION_SCORES || {};
-  const PASS_THRESHOLD = window.PROMOTION_PASS_THRESHOLD || 40;
+  const PASS_MARK  = window.PROMOTION_PASS_THRESHOLD || 40;
+  const LAST_BATCH = 'rca_last_promotion_batch';   // only the batch id, nothing personal
+  const allClasses = window.SCHOOL_CLASSES || [];
+  const levelOf    = window.classLevel || (c => c);
+  const ALL        = '__all__';
 
-  // Tracks manual overrides PER CLASS so switching classes and coming
-  // back doesn't lose anyone's overrides during this page visit.
-  // Shape: { "Basic 5": { "RCA/2024/0012": "repeat", ... }, ... }
-  const overridesByClass = {};
+  let pupils   = [];   // current pupils
+  let averages = {};   // admission_no -> { average, terms }
+  const overrides = {}; // admission_no -> decision chosen by staff
 
-  let currentClass = null;
-  let promotionsApplied = false;
-
-  /* --------------------------------------------
-     ELEMENT REFERENCES
-     -------------------------------------------- */
-  const sourceClassSelect  = document.getElementById('sourceClassSelect');
-  const promotionArrowText = document.getElementById('promotionArrowText');
-  const summaryContainer    = document.getElementById('promotionSummary');
-  const searchInput         = document.getElementById('promotionSearch');
-  const applyThresholdBtn   = document.getElementById('applyThresholdBtn');
-  const tableBody            = document.getElementById('promotionTableBody');
-  const noResultsMsg         = document.getElementById('noPromotionResults');
-  const confirmBarStatus     = document.getElementById('confirmBarStatus');
-  const applyPromotionsBtn   = document.getElementById('applyPromotionsBtn');
-
-  const modalOverlay   = document.getElementById('confirmModalOverlay');
-  const modalCloseBtn  = document.getElementById('modalCloseBtn');
+  /* ---------- ELEMENTS ---------- */
+  const classSelect     = document.getElementById('sourceClassSelect');
+  const arrowText       = document.getElementById('promotionArrowText');
+  const sessionPill     = document.getElementById('sessionPill');
+  const summary         = document.getElementById('promotionSummary');
+  const searchInput     = document.getElementById('promotionSearch');
+  const resetBtn        = document.getElementById('applyThresholdBtn');
+  const tableBody       = document.getElementById('promotionTableBody');
+  const noResults       = document.getElementById('noPromotionResults');
+  const statusText      = document.getElementById('confirmBarStatus');
+  const applyBtn        = document.getElementById('applyPromotionsBtn');
+  const undoBtn         = document.getElementById('undoPromotionBtn');
+  const modal           = document.getElementById('confirmModalOverlay');
   const modalBody       = document.getElementById('confirmModalBody');
-  const cancelApplyBtn  = document.getElementById('cancelApplyBtn');
-  const confirmApplyBtn = document.getElementById('confirmApplyBtn');
+  const modalConfirmBtn = document.getElementById('confirmApplyBtn');
+  document.getElementById('passMarkText').textContent = PASS_MARK + '%';
 
-  /* --------------------------------------------
-     HELPERS
-     -------------------------------------------- */
-  function getInitials(fullName) {
-    return fullName.split(' ').map(p => p.charAt(0)).join('').substring(0, 2).toUpperCase();
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const initials = n => String(n || '').split(' ').map(p => p.charAt(0)).join('').substring(0, 2).toUpperCase();
+
+  /* ---------- RULES ---------- */
+  // Every class of the level pupils move into: Basic 2 -> [Basic 3A, Basic 3B].
+  function nextOptions(className) {
+    const next = window.nextSchoolClass(className);
+    if (!next) return [];
+    const level = levelOf(next);
+    const arms = allClasses.filter(c => c !== level && levelOf(c) === level);
+    return arms.length ? arms : [next];
   }
+  const isFinalClass = className => !window.nextSchoolClass(className) && allClasses.includes(className);
 
-  // Given a class name, what's the NEXT class pupils promote into?
-  // Returns null for Basic 6, since there is no next class - those
-  // pupils graduate (leave the school) instead of moving up.
-  function getNextClass(className) {
-    return window.nextSchoolClass(className);
+  function suggested(p) {
+    const avg = (averages[p.admission_no] || {}).average;
+    if (avg != null && avg < PASS_MARK) return 'repeat';
+    if (isFinalClass(p.class_name)) return 'graduate';
+    const opts = nextOptions(p.class_name);
+    return opts.length ? 'promote:' + opts[0] : 'skip';
   }
+  const decisionOf = p => overrides[p.admission_no] || suggested(p);
 
-  // The auto-SUGGESTED decision, based purely on the score threshold.
-  // This NEVER reflects manual overrides - it's always "what the rule says".
-  function getSuggestedDecision(className, score) {
-    const isLastClass = getNextClass(className) === null;
-    if (score >= PASS_THRESHOLD) {
-      return isLastClass ? 'graduate' : 'promote';
+  function label(decision, p) {
+    if (decision.startsWith('promote:')) return 'Promote → ' + decision.slice(8);
+    if (decision === 'repeat')   return 'Repeat ' + p.class_name;
+    if (decision === 'graduate') return 'Graduate';
+    return 'No change';
+  }
+  const kind = d => d.startsWith('promote:') ? 'promote' : d;
+
+  /* ---------- LOAD ---------- */
+  async function load() {
+    applyBtn.disabled = true;
+    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:#6b7280">Loading pupils and results…</td></tr>';
+    const [list, avg] = await Promise.all([
+      window.RCA_API.getStudents(),
+      window.RCA_API.call('/students/year-averages').catch(e => ({ error: e.message }))
+    ]);
+    pupils = (list || []).filter(p => !p.status || p.status === 'active');
+    if (avg.error) {
+      tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:#b91c1c">Could not load the year's results (${esc(avg.error)}). Please refresh before promoting.</td></tr>`;
+      return false;
     }
-    return 'repeat';
+    averages = {};
+    (avg.averages || []).forEach(a => { averages[a.admission_no] = a; });
+    sessionPill.textContent = (avg.session || '') + ' Session';
+    applyBtn.disabled = false;
+    return true;
   }
 
-  // The ACTUAL decision for a pupil: their override if one exists,
-  // otherwise falls back to the suggested decision.
-  function getActualDecision(className, admissionNo, score) {
-    const classOverrides = overridesByClass[className] || {};
-    return classOverrides[admissionNo] || getSuggestedDecision(className, score);
+  function populateClasses() {
+    const withPupils = allClasses.filter(c => pupils.some(p => p.class_name === c));
+    classSelect.innerHTML = `<option value="${ALL}">All classes (whole school)</option>` +
+      withPupils.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
   }
 
-  function decisionLabel(decision) {
-    return decision.charAt(0).toUpperCase() + decision.slice(1);
+  function shownPupils() {
+    const cls = classSelect.value;
+    const term = searchInput.value.trim().toLowerCase();
+    return pupils
+      .filter(p => cls === ALL || p.class_name === cls)
+      .filter(p => !term || p.full_name.toLowerCase().includes(term) || p.admission_no.toLowerCase().includes(term))
+      .sort((a, b) => allClasses.indexOf(b.class_name) - allClasses.indexOf(a.class_name) || a.full_name.localeCompare(b.full_name));
   }
 
-  /* --------------------------------------------
-     POPULATE THE CLASS DROPDOWN
-     -------------------------------------------- */
-  function populateClassDropdown() {
-    sourceClassSelect.innerHTML = allClasses
-      .map(className => `<option value="${className}">${className}</option>`)
-      .join('');
-  }
+  /* ---------- RENDER ---------- */
+  function render() {
+    const cls = classSelect.value;
+    if (cls === ALL) arrowText.textContent = 'Every class moves up one level; Basic 6 graduates.';
+    else if (isFinalClass(cls)) arrowText.textContent = '→ final year — passing pupils graduate';
+    else arrowText.textContent = '→ promotes into ' + (nextOptions(cls).join(' or ') || '—');
 
-  /* --------------------------------------------
-     UPDATE THE "promotes into..." TEXT
-     -------------------------------------------- */
-  function updateArrowText(className) {
-    const nextClass = getNextClass(className);
-    promotionArrowText.textContent = nextClass
-      ? `\u2192 promotes into ${nextClass}`
-      : `\u2192 final year — passing pupils graduate`;
-  }
-
-  /* --------------------------------------------
-     CORE RENDER
-     -------------------------------------------- */
-  function renderTable() {
-    const className = sourceClassSelect.value;
-    if (!className) return;
-
-    let students = allStudents.filter(s => s.class_name === className);
-
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    if (searchTerm) {
-      students = students.filter(s =>
-        s.full_name.toLowerCase().includes(searchTerm) ||
-        s.admission_no.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    // Sort by score descending - highest performers first, which is
-    // a natural reading order for a review-and-approve task like this
-    students = [...students].sort((a, b) => scores[b.admission_no] - scores[a.admission_no]);
-
-    if (students.length === 0) {
-      tableBody.innerHTML = '';
-      noResultsMsg.style.display = 'block';
-      renderSummary(className);
-      return;
-    }
-    noResultsMsg.style.display = 'none';
-
-    tableBody.innerHTML = students.map(student => {
-      const score = scores[student.admission_no];
-      const suggested = getSuggestedDecision(className, score);
-      const actual = getActualDecision(className, student.admission_no, score);
-      const isOverridden = actual !== suggested;
-      const isLastClass = getNextClass(className) === null;
-
-      // The options available depend on whether this is Basic 6
-      // (Graduate instead of Promote) or any earlier class
-      const promoteOptionLabel = isLastClass ? 'Graduate' : 'Promote';
-      const promoteOptionValue = isLastClass ? 'graduate' : 'promote';
-
+    const list = shownPupils();
+    noResults.style.display = list.length ? 'none' : 'block';
+    tableBody.innerHTML = list.map(p => {
+      const a = averages[p.admission_no] || {};
+      const sug = suggested(p);
+      const dec = decisionOf(p);
+      const options = [
+        ...nextOptions(p.class_name).map(c => 'promote:' + c),
+        'repeat',
+        ...(isFinalClass(p.class_name) ? ['graduate'] : []),
+        'skip'
+      ];
+      const terms = Object.entries(a.terms || {}).map(([t, v]) => t.replace('term', 'T') + ' ' + v + '%').join(' · ');
       return `
         <tr>
-          <td class="col-avatar"><div class="row-avatar">${getInitials(student.full_name)}</div></td>
-          <td>${student.full_name}</td>
+          <td class="col-avatar"><div class="row-avatar">${initials(p.full_name)}</div></td>
+          <td>${esc(p.full_name)}<div style="font-size:0.75rem;color:#6b7280">${esc(p.class_name)} · ${esc(p.admission_no)}</div></td>
+          <td>${a.average == null
+            ? '<span style="color:#9ca3af">No results yet</span>'
+            : `<span class="score-value ${a.average >= PASS_MARK ? 'above-threshold' : 'below-threshold'}">${a.average}%</span><div style="font-size:0.72rem;color:#6b7280">${terms}</div>`}</td>
+          <td><span class="decision-badge ${kind(sug)}">${esc(label(sug, p))}</span></td>
           <td>
-            <span class="score-value ${score >= PASS_THRESHOLD ? 'above-threshold' : 'below-threshold'}">${score}%</span>
-          </td>
-          <td><span class="decision-badge ${suggested}">${decisionLabel(suggested)}</span></td>
-          <td>
-            <select class="form-control decision-select ${isOverridden ? 'overridden' : ''}" data-admission="${student.admission_no}">
-              <option value="${promoteOptionValue}" ${actual === promoteOptionValue ? 'selected' : ''}>${promoteOptionLabel}</option>
-              <option value="repeat" ${actual === 'repeat' ? 'selected' : ''}>Repeat</option>
+            <select class="form-control decision-select ${dec !== sug ? 'overridden' : ''}" data-admission="${esc(p.admission_no)}">
+              ${options.map(o => `<option value="${esc(o)}" ${o === dec ? 'selected' : ''}>${esc(label(o, p))}</option>`).join('')}
             </select>
           </td>
-        </tr>
-      `;
+        </tr>`;
     }).join('');
 
-    // Wire up override dropdowns
-    tableBody.querySelectorAll('.decision-select').forEach(select => {
-      select.addEventListener('change', () => {
-        const admissionNo = select.getAttribute('data-admission');
-        const student = allStudents.find(s => s.admission_no === admissionNo);
-        const suggested = getSuggestedDecision(className, scores[admissionNo]);
+    tableBody.querySelectorAll('.decision-select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const p = pupils.find(x => x.admission_no === sel.dataset.admission);
+        if (sel.value === suggested(p)) delete overrides[p.admission_no];
+        else overrides[p.admission_no] = sel.value;
+        sel.classList.toggle('overridden', sel.value !== suggested(p));
+        renderSummary();
+      });
+    });
+    renderSummary();
+  }
 
-        if (!overridesByClass[className]) overridesByClass[className] = {};
+  function counts(list) {
+    const c = { promote: 0, repeat: 0, graduate: 0, skip: 0 };
+    list.forEach(p => { c[kind(decisionOf(p))]++; });
+    return c;
+  }
 
-        if (select.value === suggested) {
-          // Selecting back to the suggested value clears the override,
-          // rather than storing a redundant "override" that matches
-          // the default anyway
-          delete overridesByClass[className][admissionNo];
-        } else {
-          overridesByClass[className][admissionNo] = select.value;
-        }
+  function renderSummary() {
+    const cls = classSelect.value;
+    const c = counts(pupils.filter(p => cls === ALL || p.class_name === cls));
+    summary.innerHTML = `
+      <div class="card summary-card-promo promote"><span class="num">${c.promote}</span><span class="label">Promote</span></div>
+      <div class="card summary-card-promo repeat"><span class="num">${c.repeat}</span><span class="label">Repeat</span></div>
+      <div class="card summary-card-promo graduate"><span class="num">${c.graduate}</span><span class="label">Graduate</span></div>
+      <div class="card summary-card-promo"><span class="num">${c.skip}</span><span class="label">No change</span></div>`;
+  }
 
-        select.classList.toggle('overridden', select.value !== suggested);
-        renderSummary(className);
-        markNotYetApplied();
+  /* ---------- APPLY ---------- */
+  function pendingDecisions() {
+    const cls = classSelect.value;
+    return pupils
+      .filter(p => cls === ALL || p.class_name === cls)
+      .map(p => ({ p, d: decisionOf(p) }))
+      .filter(x => x.d !== 'skip');
+  }
+
+  applyBtn.addEventListener('click', () => {
+    const items = pendingDecisions();
+    if (!items.length) { alert('Nothing to apply — every pupil is set to "No change".'); return; }
+    const c = counts(items.map(x => x.p));
+    const where = classSelect.value === ALL ? 'the <strong>whole school</strong>' : '<strong>' + esc(classSelect.value) + '</strong>';
+    modalBody.innerHTML = `
+      <p>You're about to apply the end-of-year promotion for ${where}:</p>
+      <ul>
+        <li><strong>${c.promote}</strong> pupils move up to their new class</li>
+        <li><strong>${c.repeat}</strong> pupils repeat their class</li>
+        <li><strong>${c.graduate}</strong> pupils graduate (kept in the register as graduated)</li>
+      </ul>
+      <p style="margin-top:12px">Every move is written into each pupil's class history.
+      If something is wrong, use <strong>Undo last promotion</strong> straight after.</p>`;
+    modal.classList.add('open');
+  });
+
+  const closeModal = () => modal.classList.remove('open');
+  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+  document.getElementById('cancelApplyBtn').addEventListener('click', closeModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  modalConfirmBtn.addEventListener('click', async () => {
+    const items = pendingDecisions();
+    const batchId = 'P' + Date.now().toString(36).toUpperCase();
+    // One request per class keeps each one short on the slow server.
+    const byClass = {};
+    items.forEach(({ p, d }) => {
+      (byClass[p.class_name] = byClass[p.class_name] || []).push({
+        admission_no: p.admission_no,
+        decision: kind(d),
+        class_name: d.startsWith('promote:') ? d.slice(8) : p.class_name
       });
     });
 
-    renderSummary(className);
-  }
-
-  /* --------------------------------------------
-     RENDER SUMMARY CARDS
-     -------------------------------------------- */
-  function renderSummary(className) {
-    const studentsInClass = allStudents.filter(s => s.class_name === className);
-    const isLastClass = getNextClass(className) === null;
-
-    const counts = { promote: 0, repeat: 0, graduate: 0 };
-    studentsInClass.forEach(s => {
-      const decision = getActualDecision(className, s.admission_no, scores[s.admission_no]);
-      counts[decision]++;
-    });
-
-    if (isLastClass) {
-      summaryContainer.innerHTML = `
-        <div class="card summary-card-promo graduate">
-          <span class="num">${counts.graduate}</span>
-          <span class="label">Graduate</span>
-        </div>
-        <div class="card summary-card-promo repeat">
-          <span class="num">${counts.repeat}</span>
-          <span class="label">Repeat Basic 6</span>
-        </div>
-        <div class="card summary-card-promo">
-          <span class="num">${studentsInClass.length}</span>
-          <span class="label">Total Pupils</span>
-        </div>
-      `;
-    } else {
-      summaryContainer.innerHTML = `
-        <div class="card summary-card-promo promote">
-          <span class="num">${counts.promote}</span>
-          <span class="label">Promote to ${getNextClass(className)}</span>
-        </div>
-        <div class="card summary-card-promo repeat">
-          <span class="num">${counts.repeat}</span>
-          <span class="label">Repeat ${className}</span>
-        </div>
-        <div class="card summary-card-promo">
-          <span class="num">${studentsInClass.length}</span>
-          <span class="label">Total Pupils</span>
-        </div>
-      `;
-    }
-  }
-
-  /* --------------------------------------------
-     "APPLY SUGGESTED TO ALL" — clears every override for this class
-     -------------------------------------------- */
-  applyThresholdBtn.addEventListener('click', () => {
-    const className = sourceClassSelect.value;
-    overridesByClass[className] = {};
-    renderTable();
-    markNotYetApplied();
-  });
-
-  /* --------------------------------------------
-     CONFIRM & APPLY MODAL
-     -------------------------------------------- 
-     PHASE 1 LIMITATION: "applying" promotions here doesn't actually
-     move pupils to a new class_name in SAMPLE_STUDENTS - that would
-     require real data mutation across the whole app (Students,
-     Classes, Attendance would all need to reflect the change). For
-     Phase 1, this confirms the DECISION-MAKING workflow end to end;
-     real promotion execution (actually updating each pupil's class)
-     is exactly the kind of operation Phase 2/4's real data layer
-     will handle.
-  */
-  function markNotYetApplied() {
-    promotionsApplied = false;
-    confirmBarStatus.textContent = 'Review decisions, then apply when ready.';
-    confirmBarStatus.classList.remove('applied');
-  }
-
-  applyPromotionsBtn.addEventListener('click', () => {
-    const className = sourceClassSelect.value;
-    const studentsInClass = allStudents.filter(s => s.class_name === className);
-    const isLastClass = getNextClass(className) === null;
-
-    const counts = { promote: 0, repeat: 0, graduate: 0 };
-    studentsInClass.forEach(s => {
-      const decision = getActualDecision(className, s.admission_no, scores[s.admission_no]);
-      counts[decision]++;
-    });
-
-    const promoteLine = isLastClass
-      ? `<li><strong>${counts.graduate}</strong> pupils will graduate and leave Royal Crystal Academy</li>`
-      : `<li><strong>${counts.promote}</strong> pupils will be promoted to ${getNextClass(className)}</li>`;
-
-    modalBody.innerHTML = `
-      <p>You're about to apply promotion decisions for <strong>${className}</strong> (2025/2026 session):</p>
-      <ul>
-        ${promoteLine}
-        <li><strong>${counts.repeat}</strong> pupils will repeat ${className}</li>
-      </ul>
-      <p style="margin-top:12px;">This action cannot be undone once real data storage is added in a later phase.</p>
-    `;
-
-    modalOverlay.classList.add('open');
-  });
-
-  function closeModal() {
-    modalOverlay.classList.remove('open');
-  }
-
-  modalCloseBtn.addEventListener('click', closeModal);
-  cancelApplyBtn.addEventListener('click', closeModal);
-  modalOverlay.addEventListener('click', (event) => {
-    if (event.target === modalOverlay) closeModal();
-  });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && modalOverlay.classList.contains('open')) closeModal();
-  });
-
-  confirmApplyBtn.addEventListener('click', () => {
-    promotionsApplied = true;
-    confirmBarStatus.textContent = 'Promotion decisions applied for this session (Phase 1 demo).';
-    confirmBarStatus.classList.add('applied');
     closeModal();
+    applyBtn.disabled = true;
+    const classes = Object.keys(byClass);
+    let done = 0;
+    const failed = [];
+    try { localStorage.setItem(LAST_BATCH, batchId); } catch (e) {}
+    for (let i = 0; i < classes.length; i++) {
+      statusText.textContent = `Saving… ${classes[i]} (${i + 1} of ${classes.length})`;
+      try {
+        const r = await window.RCA_API.call('/students/bulk-promote', {
+          method: 'POST', body: { batch_id: batchId, decisions: byClass[classes[i]] }
+        });
+        done += r.done || 0;
+        (r.failed || []).forEach(f => failed.push(`${f.admission_no}: ${f.error}`));
+      } catch (e) {
+        failed.push(`${classes[i]}: ${e.message} (whole class not saved)`);
+      }
+    }
+
+    Object.keys(overrides).forEach(k => delete overrides[k]);
+    await load();
+    populateClasses();
+    render();
+    showUndo();
+    statusText.textContent = `Done: ${done} pupil${done === 1 ? '' : 's'} updated.` + (failed.length ? ` ${failed.length} not saved.` : '');
+    statusText.classList.add('applied');
+    if (failed.length) {
+      alert('Some pupils were NOT updated:\n\n' + failed.slice(0, 15).join('\n') +
+        (failed.length > 15 ? `\n…and ${failed.length - 15} more` : '') + '\n\nYou can apply again for the rest.');
+    }
   });
 
-  /* --------------------------------------------
-     EVENT LISTENERS
-     -------------------------------------------- */
-  sourceClassSelect.addEventListener('change', () => {
-    currentClass = sourceClassSelect.value;
-    updateArrowText(currentClass);
-    searchInput.value = '';
-    markNotYetApplied();
-    renderTable();
+  /* ---------- UNDO ---------- */
+  function showUndo() {
+    let id = null;
+    try { id = localStorage.getItem(LAST_BATCH); } catch (e) {}
+    undoBtn.style.display = id ? '' : 'none';
+  }
+
+  undoBtn.addEventListener('click', async () => {
+    let id = null;
+    try { id = localStorage.getItem(LAST_BATCH); } catch (e) {}
+    if (!id) return;
+    if (!confirm('Undo the last promotion? Every pupil it moved goes back to their old class, and graduated pupils become current pupils again.')) return;
+    undoBtn.disabled = true;
+    statusText.textContent = 'Undoing…';
+    try {
+      const r = await window.RCA_API.call('/students/undo-promotion', { method: 'POST', body: { batch_id: id } });
+      try { localStorage.removeItem(LAST_BATCH); } catch (e) {}
+      await load();
+      populateClasses();
+      render();
+      showUndo();
+      statusText.textContent = `Undone: ${r.undone} pupil${r.undone === 1 ? '' : 's'} put back.`;
+      if (r.failed && r.failed.length) alert('Not put back:\n\n' + r.failed.map(f => f.error).join('\n'));
+    } catch (e) {
+      statusText.textContent = 'Undo failed.';
+      alert('Could not undo: ' + e.message);
+    } finally {
+      undoBtn.disabled = false;
+    }
   });
 
-  searchInput.addEventListener('input', renderTable);
+  /* ---------- EVENTS + START ---------- */
+  classSelect.addEventListener('change', () => { searchInput.value = ''; render(); });
+  searchInput.addEventListener('input', render);
+  resetBtn.addEventListener('click', () => {
+    const cls = classSelect.value;
+    pupils.filter(p => cls === ALL || p.class_name === cls).forEach(p => { delete overrides[p.admission_no]; });
+    render();
+  });
 
-  /* --------------------------------------------
-     INITIALIZE
-     -------------------------------------------- 
-     Default to the first PRIMARY class (Basic 1), since promotion
-     conceptually applies most clearly there - though every class
-     in the dropdown works the same way.
-  */
-  populateClassDropdown();
-  const defaultClass = allClasses.find(c => c.startsWith('Basic')) || allClasses[0];
-  sourceClassSelect.value = defaultClass;
-  currentClass = defaultClass;
-  updateArrowText(defaultClass);
-  renderTable();
-
+  if (await load()) {
+    populateClasses();
+    render();
+  }
+  showUndo();
 });

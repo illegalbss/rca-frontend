@@ -121,12 +121,11 @@
 
       <main class="admin-main">
 
-        <!-- Placeholder data notice -->
-        <div class="data-notice">
-          <strong>Phase 1 note:</strong> Average scores shown below are
-          generated placeholders, since Result Management hasn't been built
-          yet. Once it exists, these will be replaced by real computed
-          averages — the promotion logic itself won't need to change.
+        <!-- How suggestions are made -->
+        <div class="data-notice" id="promotionNotice">
+          Each pupil's <strong>year average</strong> is the average of their term results this session.
+          Pupils at or above <strong id="passMarkText">40%</strong> are suggested for promotion; below it, to repeat.
+          Pupils with no results yet are suggested for promotion. Change any decision before you apply.
         </div>
 
         <!-- Class + session toolbar -->
@@ -136,21 +135,21 @@
             <select id="sourceClassSelect" class="form-control"></select>
           </div>
           <div class="promotion-arrow">
-            <span id="promotionArrowText">&rarr; promotes into &hellip;</span>
+            <span id="promotionArrowText">Loading pupils…</span>
           </div>
-          <span class="session-pill">2025/2026 Session</span>
+          <span class="session-pill" id="sessionPill"></span>
         </div>
 
         <!-- Live summary cards -->
-        <div class="grid grid-3 promotion-summary" id="promotionSummary"></div>
+        <div class="grid grid-4 promotion-summary" id="promotionSummary"></div>
 
         <!-- Bulk actions -->
         <div class="bulk-actions">
           <div class="search-wrap">
             <span class="search-icon">&#9906;</span>
-            <input type="search" id="promotionSearch" class="form-control search-input" placeholder="Search this class..." autocomplete="new-password">
+            <input type="search" id="promotionSearch" class="form-control search-input" placeholder="Search pupils..." autocomplete="new-password">
           </div>
-          <button class="btn btn-outline" id="applyThresholdBtn">Apply Suggested to All</button>
+          <button class="btn btn-outline" id="applyThresholdBtn">Reset to Suggested</button>
         </div>
 
         <!-- Pupil review table -->
@@ -161,7 +160,7 @@
                 <tr>
                   <th class="col-avatar"></th>
                   <th>Pupil</th>
-                  <th>Average Score</th>
+                  <th>Year Average</th>
                   <th>Suggested</th>
                   <th>Decision</th>
                 </tr>
@@ -175,7 +174,8 @@
         <!-- Confirm bar -->
         <div class="confirm-bar">
           <span id="confirmBarStatus" class="confirm-status">Review decisions, then apply when ready.</span>
-          <button class="btn btn-primary" id="applyPromotionsBtn">Confirm &amp; Apply Promotion Decisions</button>
+          <button class="btn btn-outline" id="undoPromotionBtn" style="display:none">Undo last promotion</button>
+          <button class="btn btn-primary" id="applyPromotionsBtn">Apply Promotion</button>
         </div>
 
       </main>
@@ -186,26 +186,18 @@
   <div class="modal-overlay" id="confirmModalOverlay">
     <div class="modal-card">
       <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
-      <h3 id="confirmModalTitle">Confirm Promotion Decisions</h3>
+      <h3 id="confirmModalTitle">Confirm Promotion</h3>
       <div id="confirmModalBody"></div>
       <div class="modal-actions">
         <button class="btn btn-outline" id="cancelApplyBtn">Cancel</button>
-        <button class="btn btn-primary" id="confirmApplyBtn">Yes, Apply Decisions</button>
+        <button class="btn btn-primary" id="confirmApplyBtn">Yes, Apply</button>
       </div>
     </div>
   </div>
 
-  <!--
-    SCRIPT LOAD ORDER:
-    1. sample-students.js   - creates window.SAMPLE_STUDENTS + window.SCHOOL_CLASSES
-    2. sample-promotion.js  - creates window.SAMPLE_PROMOTION_SCORES (needs SAMPLE_STUDENTS)
-    3. dashboard-shell.js   - sidebar/topbar (shared)
-    4. promotion.js         - this page's own logic
-  -->
+  <script src="../assets/js/config.js"></script>
+  <script src="../assets/js/api.js"></script>
   <script src="../assets/js/admin/sample-students.js"></script>
-  <script src="../assets/js/admin/sample-promotion.js"></script>
-  <script src="../assets/js/admin/sample-teachers.js"></script>
-  <script src="../assets/js/admin/sample-users.js"></script>
   <script src="../assets/js/admin/dashboard-shell.js"></script>
   <script src="../assets/js/admin/promotion.js"></script>
 </body>

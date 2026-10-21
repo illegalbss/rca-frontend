@@ -46,19 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
   */
   const currentRole = sessionStorage.getItem('rca_demo_role');
 
-  if (!currentRole) {
+  // A session only counts if the school server issued it (a token). Old
+  // offline "demo" sessions had no token and are sent back to log in.
+  if (!currentRole || !sessionStorage.getItem('rca_token')) {
     window.location.href = 'login.html';
     return; // stop running the rest of this script
   }
 
-  // Prefer window.CURRENT_USER as already set by the early IIFE above from
-  // sessionStorage's rca_user_data (the real login payload — e.g. a parent
-  // account's linked_children). A real account won't exist in the hardcoded
-  // SAMPLE_USERS demo fixture, so falling straight to that lookup would
-  // silently replace the real record with an incomplete one.
-  const currentUserId = sessionStorage.getItem('rca_user_id');
-  const allUsers = window.SAMPLE_USERS || [];
-  const currentUser = window.CURRENT_USER || allUsers.find(u => u.id === currentUserId) || {
+  // window.CURRENT_USER is set by the early IIFE above from sessionStorage's
+  // rca_user_data (the real login payload).
+  const currentUser = window.CURRENT_USER || {
     roles: [currentRole],
     primary_role: currentRole,
     role: currentRole,

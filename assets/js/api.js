@@ -4,8 +4,9 @@
    ============================================
    Every admin page includes this file.
    It provides window.RCA_API — a set of functions
-   that call the real backend API and fall back to
-   localStorage data if the API is unreachable.
+   that call the real backend API. Nothing falls back to sample or
+   browser-saved data: a failed load shows a warning bar, a failed save
+   throws so the page can say it was not saved.
 
    Usage:
      const students = await window.RCA_API.getStudents({ class: 'Basic 4' });
@@ -21,6 +22,29 @@
   }
 
   /* ---- Base API call ---- */
+  // A read that fails shows this bar instead of filling the page with old,
+  // sample or browser-saved data: the page only ever shows the school's
+  // real records, and says plainly when some couldn't be loaded.
+  function serverProblem(err) {
+    // "Not allowed for your role" is expected on some pages, not a fault.
+    if (err && err.status === 403) return;
+    console.warn('School server request failed:', err && err.message);
+    const show = () => {
+      if (document.getElementById('rcaServerProblem')) return;
+      const bar = document.createElement('div');
+      bar.id = 'rcaServerProblem';
+      bar.setAttribute('role', 'alert');
+      bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#991b1b;color:#fff;' +
+        'font:600 14px/1.4 Arial,sans-serif;padding:10px 44px 10px 16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25)';
+      bar.innerHTML = 'Could not load some information from the school server' +
+        (err && err.message ? ' (' + String(err.message).replace(/[<>&]/g, '') + ')' : '') +
+        '. Parts of this page may be empty. <a href="#" style="color:#fde68a;text-decoration:underline" onclick="location.reload();return false">Refresh</a> to try again.' +
+        '<button aria-label="Close" style="position:absolute;right:10px;top:6px;background:none;border:0;color:#fff;font-size:20px;cursor:pointer" onclick="this.parentNode.remove()">&times;</button>';
+      document.body.appendChild(bar);
+    };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  }
+
   async function apiCall(endpoint, options = {}) {
     const token  = getToken();
     const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
@@ -37,7 +61,9 @@
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || 'API error');
+      const e = new Error(err.error || "API error");
+      e.status = res.status;
+      throw e;
     }
 
     return res.json();
@@ -70,14 +96,8 @@
       addMissingClasses(data.students);
       return data.students;
     } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
-      let students = window.SAMPLE_STUDENTS || [];
-      if (params.class) students = students.filter(s => s.class_name === params.class);
-      if (params.search) students = students.filter(s =>
-        s.full_name?.toLowerCase().includes(params.search.toLowerCase()) ||
-        s.admission_no?.toLowerCase().includes(params.search.toLowerCase())
-      );
-      return students;
+      serverProblem(e);
+      return [];
     }
   }
 
@@ -111,34 +131,25 @@
       const data = await apiCall(`/scores?class=${encodeURIComponent(className)}&subject=${subjectCode}&term=${term}`);
       return data.scores;
     } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
-      return null; // score-entry.js handles localStorage fallback
+      serverProblem(e);
+      return null;
     }
   }
 
+  // Writes throw on failure (never "saved locally only"): the caller shows
+  // the error, so nobody believes something was saved when it wasn't.
   async function saveScore(studentId, subjectCode, term, scores) {
-    try {
-      return await apiCall(`/scores/${encodeURIComponent(studentId)}/${subjectCode}/${term}`, {
-        method: 'PUT',
-        body: scores
-      });
-    } catch (e) {
-      console.warn('Score save to API failed, saved to localStorage only:', e.message);
-      if (window.RCA) window.RCA.save('results');
-      return null;
-    }
+    return apiCall(`/scores/${encodeURIComponent(studentId)}/${subjectCode}/${term}`, {
+      method: 'PUT',
+      body: scores
+    });
   }
 
   async function submitScores(className, subjectCode, term) {
-    try {
-      return await apiCall('/scores/submit', {
-        method: 'POST',
-        body: { class_name: className, subject_code: subjectCode, term }
-      });
-    } catch (e) {
-      console.warn('Score submit API failed:', e.message);
-      return null;
-    }
+    return apiCall('/scores/submit', {
+      method: 'POST',
+      body: { class_name: className, subject_code: subjectCode, term }
+    });
   }
 
   /* ============================================
@@ -150,26 +161,20 @@
       const data = await apiCall(`/payments${qs ? '?' + qs : ''}`);
       return data.payments;
     } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
+      serverProblem(e);
       return null;
     }
   }
 
   async function recordPayment(paymentData) {
-    try {
-      return await apiCall('/payments', { method: 'POST', body: paymentData });
-    } catch (e) {
-      console.warn('Payment API failed, saved to localStorage only:', e.message);
-      if (window.RCA) window.RCA.save('payments');
-      return null;
-    }
+    return apiCall('/payments', { method: 'POST', body: paymentData });
   }
 
   async function getPaymentSummary() {
     try {
       return await apiCall('/payments/summary');
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return null;
     }
   }
@@ -183,8 +188,8 @@
       const data = await apiCall(`/users${qs ? '?' + qs : ''}`);
       return data.users;
     } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
-      return window.SAMPLE_USERS || [];
+      serverProblem(e);
+      return [];
     }
   }
 
@@ -193,7 +198,7 @@
       const data = await apiCall('/users/staff-directory');
       return data.staff;
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return [];
     }
   }
@@ -229,21 +234,16 @@
       const data = await apiCall(`/approvals${qs}`);
       return data.approvals;
     } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
+      serverProblem(e);
       return null;
     }
   }
 
   async function updateApproval(approvalId, action, returnReason) {
-    try {
-      return await apiCall(`/approvals/${approvalId}`, {
-        method: 'PATCH',
-        body: { action, return_reason: returnReason }
-      });
-    } catch (e) {
-      console.warn('Approval API failed:', e.message);
-      return null;
-    }
+    return apiCall(`/approvals/${approvalId}`, {
+      method: 'PATCH',
+      body: { action, return_reason: returnReason }
+    });
   }
 
   /* ============================================
@@ -254,36 +254,21 @@
       const data = await apiCall('/announcements');
       return data.announcements;
     } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
-      return window.ANNOUNCEMENTS || [];
+      serverProblem(e);
+      return [];
     }
   }
 
   async function createAnnouncement(data) {
-    try {
-      return await apiCall('/announcements', { method: 'POST', body: data });
-    } catch (e) {
-      console.warn('Announcement API failed:', e.message);
-      return null;
-    }
+    return apiCall('/announcements', { method: 'POST', body: data });
   }
 
   async function updateAnnouncement(id, data) {
-    try {
-      return await apiCall(`/announcements/${id}`, { method: 'PATCH', body: data });
-    } catch (e) {
-      console.warn('Announcement update API failed:', e.message);
-      return null;
-    }
+    return apiCall(`/announcements/${id}`, { method: 'PATCH', body: data });
   }
 
   async function deleteAnnouncement(id) {
-    try {
-      return await apiCall(`/announcements/${id}`, { method: 'DELETE' });
-    } catch (e) {
-      console.warn('Announcement delete API failed:', e.message);
-      return null;
-    }
+    return apiCall(`/announcements/${id}`, { method: 'DELETE' });
   }
 
   /* ============================================
@@ -294,7 +279,7 @@
       const data = await apiCall('/events');
       return data.events;
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return [];
     }
   }
@@ -319,21 +304,16 @@
       const data = await apiCall(`/attendance?class=${encodeURIComponent(className)}&date=${date}`);
       return data.attendance;
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return null;
     }
   }
 
   async function markAttendance(className, date, records) {
-    try {
-      return await apiCall('/attendance/mark', {
-        method: 'POST',
-        body: { class_name: className, date, records }
-      });
-    } catch (e) {
-      console.warn('Attendance API failed:', e.message);
-      return null;
-    }
+    return apiCall('/attendance/mark', {
+      method: 'POST',
+      body: { class_name: className, date, records }
+    });
   }
 
   async function getAttendanceSummary(studentId) {
@@ -341,7 +321,7 @@
       const data = await apiCall(`/attendance/summary/${encodeURIComponent(studentId)}`);
       return data.summary;
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return null;
     }
   }
@@ -355,8 +335,8 @@
       const data = await apiCall(`/activity-logs${qs ? '?' + qs : ''}`);
       return data.logs;
     } catch (e) {
-      console.warn('API unavailable, using localStorage:', e.message);
-      return window.ACTIVITY_LOG || [];
+      serverProblem(e);
+      return [];
     }
   }
 
@@ -369,7 +349,7 @@
       const data = await apiCall(`/discipline${qs}`);
       return data.incidents;
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return [];
     }
   }
@@ -386,7 +366,7 @@
       const data = await apiCall('/calendar');
       return data.events;
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return [];
     }
   }
@@ -411,7 +391,7 @@
       const data = await apiCall('/programmes');
       return data.programmes;
     } catch (e) {
-      console.warn('API unavailable:', e.message);
+      serverProblem(e);
       return [];
     }
   }

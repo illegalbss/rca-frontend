@@ -199,9 +199,11 @@ document.addEventListener('DOMContentLoaded', async () => {
      LOAD real scores for the current class+subject+term from the API
      and populate the `results` cache that getResultRecord() reads from.
      -------------------------------------------- */
+  // Returns false when the saved scores could not be loaded.
   async function loadScores(className, subjectId, term) {
     const rows = await window.RCA_API.getScores(className, subjectId, term);
-    (rows || []).forEach(r => {
+    if (!rows) return false;
+    rows.forEach(r => {
       if (!results[r.admission_no]) results[r.admission_no] = {};
       const blank = {
         test: Number(r.test) || 0,
@@ -212,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
       results[r.admission_no][subjectId] = { ...blank, ...computeFinalScore(blank) };
     });
+    return true;
   }
 
   /* --------------------------------------------
@@ -236,7 +239,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    for (const arm of arms) await loadScores(arm, subjectId, termSelect.value);
+    let loaded = true;
+    for (const arm of arms) loaded = (await loadScores(arm, subjectId, termSelect.value)) && loaded;
+    if (!loaded) {
+      // Showing blank boxes here would let a Save overwrite real scores with 0.
+      tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-danger);padding:2rem">' +
+        'Could not load the saved scores from the school server. Please refresh the page before entering scores.</td></tr>';
+      noResultsMsg.style.display = 'none';
+      if (saveBtn) saveBtn.disabled = true;
+      return;
+    }
 
     const combined = arms.length > 1;
     let students = allStudents.filter(s => arms.includes(s.class_name));
@@ -430,35 +442,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveStatus.className = 'save-status saved';
   }
 
+  // Saves every row to the school server and only says "Saved" once the
+  // server has accepted them all; any pupil that failed is named.
   saveBtn.addEventListener('click', async () => {
-    markSaved();
-    if (window.RCA) window.RCA.save('results');
+    const subjectCode = subjectSelect.value;
+    const term        = termSelect.value;
 
-    // Phase 4: save scores to real database
-    if (window.RCA_API) {
-      const className   = classSelect.value;
-      const subjectCode = subjectSelect.value;
-      const term        = termSelect.value;
+    const jobs = [];
+    tableBody.querySelectorAll('.score-row').forEach(row => {
+      const studentId = row.getAttribute('data-admission');
+      const inputs = row.querySelectorAll('input[type="number"]');
+      if (!studentId || !inputs.length || inputs[0].disabled) return;
+      const scores = {
+        test:       parseInt(inputs[0]?.value) || 0,
+        assessment: parseInt(inputs[1]?.value) || 0,
+        project:    parseInt(inputs[2]?.value) || 0,
+        midterm:    parseInt(inputs[3]?.value) || 0,
+        exam:       parseInt(inputs[4]?.value) || 0
+      };
+      const name = row.querySelector('.pupil-name-cell')?.childNodes[0]?.textContent.trim() || studentId;
+      jobs.push(window.RCA_API.saveScore(studentId, subjectCode, term, scores)
+        .then(() => null, e => `${name}: ${e.message}`));
+    });
+    if (!jobs.length) return;
 
-      // Get all score rows and send each to API
-      const rows = tableBody.querySelectorAll('.score-row');
-      for (const row of rows) {
-        const studentId = row.getAttribute('data-admission');
-        if (!studentId) continue;
-        const inputs = row.querySelectorAll('input[type="number"]');
-        if (!inputs.length) continue;
-        const scores = {
-          test:       parseInt(inputs[0]?.value) || 0,
-          assessment: parseInt(inputs[1]?.value) || 0,
-          project:    parseInt(inputs[2]?.value) || 0,
-          midterm:    parseInt(inputs[3]?.value) || 0,
-          exam:       parseInt(inputs[4]?.value) || 0
-        };
-        // Fire and forget — don't wait for each one
-        window.RCA_API.saveScore(studentId, subjectCode, term, scores)
-          .catch(e => console.warn('Score save failed for', studentId, e.message));
-      }
+    const label = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    saveStatus.textContent = 'Saving…';
+    const failed = (await Promise.all(jobs)).filter(Boolean);
+    saveBtn.disabled = false;
+    saveBtn.textContent = label;
+
+    if (failed.length) {
+      saveStatus.textContent = `${failed.length} not saved`;
+      saveStatus.className = 'save-status unsaved';
+      alert(`${failed.length} of ${jobs.length} scores were NOT saved:\n\n` + failed.slice(0, 10).join('\n') +
+        (failed.length > 10 ? `\n…and ${failed.length - 10} more` : '') + '\n\nPlease press Save Scores again.');
+      return;
     }
+    markSaved();
   });
 
   /* --------------------------------------------
