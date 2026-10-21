@@ -141,10 +141,7 @@
     tab.querySelectorAll('[data-revoke]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.revoke}/activation-code/revoke`, {}, 'Revoke this activation code? The parent will not be able to use it.')));
     tab.querySelectorAll('[data-deact]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.deact}/status`, { action: 'deactivate' }, 'Deactivate this parent account? They will not be able to log in, and any activation code is revoked.')));
     tab.querySelectorAll('[data-react]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.react}/status`, { action: 'reactivate' })));
-    tab.querySelectorAll('[data-link]').forEach(b => b.addEventListener('click', async () => {
-      const adm = prompt('Admission number of the child to link to this parent (only link a child once you have verified the relationship):');
-      if (adm && adm.trim()) await act(`/${b.dataset.link}/link`, { admission_no: adm.trim() });
-    }));
+    tab.querySelectorAll('[data-link]').forEach(b => b.addEventListener('click', () => showLinkChildModal(b.dataset.link)));
     tab.querySelectorAll('[data-unlink]').forEach(a => a.addEventListener('click', async e => {
       e.preventDefault();
       const [id, adm] = a.dataset.unlink.split('|');
@@ -152,6 +149,133 @@
       try { await window.RCA_API.call(`/parent-accounts/${id}/link/${encodeURIComponent(adm)}`, { method: 'DELETE' }); } catch (err) { alert(err.message); return; }
       await reload();
     }));
+  }
+
+  /* ---- Child picker: find pupils by name instead of typing admission
+     numbers. Type part of a name (or class / admission number / parent's
+     phone), tap a match to add it; chosen children show as removable chips.
+     suggestByPhone(phone) lists pupils registered with that parent phone. ---- */
+  let pupilsCache = null;
+  async function loadPupils() {
+    if (!pupilsCache) {
+      const list = await window.RCA_API.getStudents();
+      pupilsCache = (list || []).filter(s => !s.status || s.status === 'active');
+    }
+    return pupilsCache;
+  }
+  const digits10 = p => String(p || '').replace(/\D/g, '').slice(-10);
+
+  function childPicker(box, onChange) {
+    const chosen = [];
+    box.innerHTML = `
+      <div class="cp-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+      <input class="form-control cp-search" placeholder="Type the child's name…" autocomplete="off">
+      <div class="cp-list" style="border:1px solid #e5e7eb;border-radius:8px;margin-top:4px;max-height:220px;overflow-y:auto;display:none"></div>
+      <div class="cp-suggest" style="font-size:0.75rem;margin-top:6px"></div>`;
+    const chips = box.querySelector('.cp-chips');
+    const input = box.querySelector('.cp-search');
+    const list = box.querySelector('.cp-list');
+    const suggestEl = box.querySelector('.cp-suggest');
+
+    const row = (s, attr) => `<button type="button" ${attr}="${esc(s.admission_no)}" style="display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #f3f4f6;padding:8px 10px;cursor:pointer;font-size:0.82rem">
+        <strong>${esc(s.full_name)}</strong>
+        <span style="color:#6b7280"> · ${esc(s.class_name || '')} · ${esc(s.admission_no)}</span>
+        ${s.parent_name || s.parent_phone ? `<div style="color:#9ca3af;font-size:0.72rem">Parent on record: ${esc([s.parent_name, s.parent_phone].filter(Boolean).join(', '))}</div>` : ''}
+      </button>`;
+
+    function renderChips() {
+      chips.innerHTML = chosen.map(s => `<span style="background:#eef2ff;color:#3730a3;border-radius:16px;padding:4px 6px 4px 10px;font-size:0.78rem;display:inline-flex;align-items:center;gap:6px">
+          ${esc(s.full_name)} <small style="color:#6366f1">${esc(s.class_name || '')}</small>
+          <button type="button" data-remove="${esc(s.admission_no)}" aria-label="Remove" style="border:0;background:#c7d2fe;color:#3730a3;border-radius:50%;width:18px;height:18px;line-height:16px;cursor:pointer">×</button></span>`).join('');
+      chips.querySelectorAll('[data-remove]').forEach(b => b.onclick = () => {
+        const i = chosen.findIndex(s => s.admission_no === b.dataset.remove);
+        if (i >= 0) chosen.splice(i, 1);
+        renderChips(); onChange && onChange();
+      });
+    }
+    function add(adm) {
+      const s = (pupilsCache || []).find(x => x.admission_no === adm);
+      if (s && !chosen.some(c => c.admission_no === adm)) { chosen.push(s); renderChips(); onChange && onChange(); }
+      input.value = ''; list.style.display = 'none'; input.focus();
+    }
+
+    let timer;
+    input.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const q = input.value.trim().toLowerCase();
+        if (q.length < 2) { list.style.display = 'none'; return; }
+        list.style.display = 'block';
+        list.innerHTML = '<div style="padding:8px 10px;color:#6b7280;font-size:0.8rem">Searching…</div>';
+        const all = await loadPupils();
+        const words = q.split(/\s+/);
+        const qDigits = q.replace(/\D/g, '');
+        const hits = all.filter(s => {
+          const hay = `${s.full_name} ${s.class_name} ${s.admission_no}`.toLowerCase();
+          return words.every(w => hay.includes(w)) || (qDigits.length >= 6 && digits10(s.parent_phone).includes(qDigits));
+        }).filter(s => !chosen.some(c => c.admission_no === s.admission_no)).slice(0, 15);
+        list.innerHTML = hits.length ? hits.map(s => row(s, 'data-pick')).join('')
+          : '<div style="padding:8px 10px;color:#6b7280;font-size:0.8rem">No pupil found. Check the spelling, or register the child on the Students page first.</div>';
+        list.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => add(b.dataset.pick));
+      }, 200);
+    });
+
+    return {
+      get: () => chosen.map(s => s.admission_no),
+      // Pupils whose record has this parent phone, offered with one tap.
+      async suggestByPhone(phone) {
+        const d = digits10(phone);
+        if (d.length < 10) { suggestEl.innerHTML = ''; return; }
+        const all = await loadPupils();
+        const hits = all.filter(s => digits10(s.parent_phone) === d && !chosen.some(c => c.admission_no === s.admission_no));
+        suggestEl.innerHTML = hits.length
+          ? `<div style="color:#065f46;margin-bottom:4px">Children registered with this phone number — tap to add:</div>` +
+            `<div style="border:1px solid #d1fae5;border-radius:8px">${hits.map(s => row(s, 'data-sugg')).join('')}</div>`
+          : '';
+        suggestEl.querySelectorAll('[data-sugg]').forEach(b => b.onclick = () => { add(b.dataset.sugg); this.suggestByPhone(phone); });
+      }
+    };
+  }
+
+  /* ---- + Link Child (existing parent): same picker in a small window ---- */
+  function showLinkChildModal(parentId) {
+    const p = data.parents.find(x => String(x.id) === String(parentId)) || {};
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin:0 0 4px;color:var(--color-primary);font-size:1rem">Link a Child to ${esc(p.full_name || 'this parent')}</h3>
+        <p style="font-size:0.8rem;color:#6b7280;margin:0 0 14px">Only link a child once you have checked that this is their parent or guardian.</p>
+        <div id="lcPicker"></div>
+        <div id="lcResult" style="font-size:0.8rem;margin:10px 0"></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline" style="flex:1" id="lcCancel">Cancel</button>
+          <button class="btn btn-primary" style="flex:1" id="lcSave">Link</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    const picker = childPicker(m.querySelector('#lcPicker'));
+    picker.suggestByPhone(p.phone);
+    m.querySelector('#lcCancel').onclick = () => m.remove();
+    m.querySelector('#lcSave').onclick = async () => {
+      const kids = picker.get();
+      if (!kids.length) { m.querySelector('#lcResult').innerHTML = '<span style="color:#dc2626">Search for the child and tap their name first.</span>'; return; }
+      const btnSave = m.querySelector('#lcSave');
+      btnSave.disabled = true; btnSave.textContent = 'Saving…';
+      const msgs = [];
+      for (const adm of kids) {
+        try {
+          const r = await api(`/${parentId}/link`, { method: 'POST', body: { admission_no: adm } });
+          msgs.push(`<div style="color:#065f46">• ${esc(adm)}: ${esc(r?.message || 'linked')}</div>`);
+        } catch (e) {
+          msgs.push(`<div style="color:#991b1b">• ${esc(adm)}: ${esc(e.message)}</div>`);
+        }
+      }
+      m.querySelector('#lcResult').innerHTML = msgs.join('');
+      btnSave.style.display = 'none';
+      m.querySelector('#lcCancel').textContent = 'Close';
+      await reload();
+    };
   }
 
   /* ---- + Add Parent: one new family, through the same /import checks as
@@ -168,8 +292,8 @@
         <div class="form-group"><label>Parent / Guardian Full Name *</label><input id="apName" class="form-control"></div>
         <div class="form-group"><label>Phone Number *</label><input id="apPhone" class="form-control" placeholder="0803 123 4567"></div>
         <div class="form-group"><label>Email (optional)</label><input id="apEmail" type="email" class="form-control"></div>
-        <div class="form-group"><label>Child's Admission Number(s) *</label><input id="apKids" class="form-control" placeholder="RCA/2026/001, RCA/2026/002">
-          <small style="color:#6b7280;font-size:0.72rem">Separate several children with commas. The pupil must already be registered on the Students page.</small></div>
+        <div class="form-group"><label>Child / Children *</label><div id="apKids"></div>
+          <small style="color:#6b7280;font-size:0.72rem">Search by the child's name and tap them; add as many children as this parent has. The pupil must already be registered on the Students page.</small></div>
         <div id="apResult" style="font-size:0.8rem;margin-bottom:12px"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-outline" style="flex:1" id="apCancel">Cancel</button>
@@ -181,9 +305,12 @@
     const $ = id => m.querySelector('#' + id);
     const RES = { create: '#065f46', link: '#1d4ed8', link_pending: '#92400e', review: '#7c2d12', unchanged: '#374151', error: '#991b1b' };
 
+    const picker = childPicker($('apKids'), () => { $('apSave').style.display = 'none'; });
+    let phoneTimer;
+    $('apPhone').addEventListener('input', () => { clearTimeout(phoneTimer); phoneTimer = setTimeout(() => picker.suggestByPhone($('apPhone').value), 300); });
+
     function rows() {
-      const kids = $('apKids').value.split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
-      return kids.map(k => ({ full_name: $('apName').value.trim(), phone: $('apPhone').value.trim(), email: $('apEmail').value.trim(), admission_no: k }));
+      return picker.get().map(k => ({ full_name: $('apName').value.trim(), phone: $('apPhone').value.trim(), email: $('apEmail').value.trim(), admission_no: k }));
     }
     function show(res, saved) {
       $('apResult').innerHTML = res.rows.map(r => `<div style="color:${RES[r.result] || '#374151'};margin-bottom:4px">• <strong>${esc(r.admission_no)}</strong>: ${esc(r.message || r.result)}</div>`).join('');
@@ -192,12 +319,12 @@
       return ok;
     }
     // Any edit means the preview no longer matches — make them check again.
-    ['apName', 'apPhone', 'apEmail', 'apKids'].forEach(id => $(id).addEventListener('input', () => { $('apSave').style.display = 'none'; }));
+    ['apName', 'apPhone', 'apEmail'].forEach(id => $(id).addEventListener('input', () => { $('apSave').style.display = 'none'; }));
 
     $('apCancel').onclick = () => m.remove();
     $('apCheck').onclick = async () => {
       const r = rows();
-      if (!r.length || !r[0].full_name || !r[0].phone) { $('apResult').innerHTML = '<span style="color:#dc2626">Enter the name, phone number and at least one admission number.</span>'; return; }
+      if (!r.length || !r[0].full_name || !r[0].phone) { $('apResult').innerHTML = '<span style="color:#dc2626">Enter the parent name and phone number, and add at least one child.</span>'; return; }
       try { show(await api('/import', { method: 'POST', body: { rows: r, dry_run: true } }), false); }
       catch (e) { $('apResult').innerHTML = `<span style="color:#dc2626">${esc(e.message)}</span>`; }
     };
