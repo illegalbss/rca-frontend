@@ -9,16 +9,20 @@
        - Android/Chrome/Edge: opens the browser's own install prompt
        - iPhone/iPad Safari: shows Share → "Add to Home Screen" steps
        - other browsers: shows where to find "Install / Add to Home screen"
-     Hidden when already running as the installed app, after install, or
-     for 14 days after "Not now". Only a "dismissed until" date is kept
-     in localStorage — nothing personal.
+     Shown on every public page; hidden when already running as the
+     installed app or after install. "Not now" hides it only until the
+     next page opens. Nothing is stored on the phone.
    • A bar while offline ("live information needs internet").
    • When a new version is deployed, a small "Refresh" bar — never a
      forced reload, so nobody loses what they're doing.
 */
 (function () {
-  const INSTALL_PAGES = ['/', '/index.html', '/app.html', '/parent-login.html', '/admin/parent-portal.html', '/admin/login.html'];
-  const DISMISS_KEY = 'rca_pwa_install_dismissed_until';
+  // Every public page of the website, plus the app start screen, parent
+  // portal and logins.
+  const INSTALL_PAGES = ['/', '/index.html', '/app.html', '/parent-login.html', '/admin/parent-portal.html', '/admin/login.html',
+    '/about.html', '/admissions.html', '/news-events.html', '/gallery.html', '/ict-department.html',
+    '/academic-calendar.html', '/contact.html'];
+  const DISMISS_KEY = 'rca_pwa_install_dismissed_until';  // old 3-day hide; cleared below
   const COLOR = '#6B0F1A';
 
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -90,8 +94,11 @@
 
   /* ---------- install button ---------- */
   let deferredPrompt = null;
-  const dismissed = () => { try { return Date.now() < Number(localStorage.getItem(DISMISS_KEY) || 0); } catch (e) { return false; } };
-  const canShowHere = () => INSTALL_PAGES.includes(path) && !isStandalone() && !dismissed();
+  // "Not now" / ✕ only hides the button until the next page opens, so it is
+  // never lost on a phone where someone closed it by mistake.
+  let dismissedThisPage = false;
+  try { localStorage.removeItem(DISMISS_KEY); } catch (e) {}
+  const canShowHere = () => INSTALL_PAGES.includes(path) && !isStandalone() && !dismissedThisPage;
 
   function sheet(html) {
     css();
@@ -121,7 +128,7 @@
   }
 
   function dismiss() {
-    try { localStorage.setItem(DISMISS_KEY, String(Date.now() + 3 * 24 * 3600 * 1000)); } catch (e) {}
+    dismissedThisPage = true;
     document.querySelector('.rca-pwa-btn')?.remove();
   }
 
