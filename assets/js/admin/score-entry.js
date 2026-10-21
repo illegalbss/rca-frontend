@@ -63,13 +63,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userRoles = user.roles || [user.role];
     // Full access roles see all classes
     if (userRoles.includes('ict_admin') || userRoles.includes('head_teacher')) return allClasses;
-    // Teachers see only their assigned classes
-    const linked = user.linked_classes || [];
+    // Teachers see only their assigned classes. Being linked to a whole
+    // level ("Basic 3") covers each of its arms (Basic 3A, Basic 3B).
+    const linked = (user.linked_classes || []).map(lc => lc.trim().toLowerCase());
     if (linked.length === 0) return allClasses;
-    // Case-insensitive matching
     return allClasses.filter(cls =>
-      linked.some(lc => lc.trim().toLowerCase() === cls.trim().toLowerCase())
+      linked.includes(cls.trim().toLowerCase()) || linked.includes(levelOf(cls).trim().toLowerCase())
     );
+  }
+
+  /* --------------------------------------------
+     COMBINED ARMS ("Basic 3 (3A + 3B together)")
+     --------------------------------------------
+     Where 3A and 3B are taught together, a teacher with both arms gets
+     one extra choice that lists every pupil of the level on one sheet.
+     Its value is "level:Basic 3"; each pupil's score is still saved under
+     their own class, and submitting sends each arm for review.
+  */
+  const levelOf = window.classLevel || (c => c);
+  const COMBINED = 'level:';
+  function armsOf(value) {
+    if (!value || !value.startsWith(COMBINED)) return value ? [value] : [];
+    const level = value.slice(COMBINED.length);
+    return getPermittedClasses().filter(c => levelOf(c) === level && c !== level);
+  }
+  function classOptionsHtml(permittedClasses) {
+    const html = [];
+    const done = new Set();
+    permittedClasses.forEach(c => {
+      const level = levelOf(c);
+      const arms = permittedClasses.filter(x => levelOf(x) === level && x !== level);
+      if (arms.length > 1 && !done.has(level)) {
+        done.add(level);
+        // "Basic 3A", "Basic 3B" -> "3A + 3B"
+        const short = arms.map(a => a.replace(/^\D*/, '')).join(' + ');
+        html.push(`<option value="${COMBINED}${level}">${level} (${short} together)</option>`);
+      }
+      html.push(`<option value="${c}">${c}</option>`);
+    });
+    return html.join('');
   }
 
   // className is optional — when a teacher has precise teacher_assignments
@@ -82,6 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // the selected class actually belongs to before applying RBAC on
     // top of it, so a Nursery class never offers Basic-only subjects
     // (or vice versa) regardless of what the teacher is assigned to.
+    if (className && className.startsWith('level:')) className = armsOf(className)[0];
     const subjectsPool = window.getSubjectsForClass ? window.getSubjectsForClass(className) : allSubjects;
 
     const user = window.CURRENT_USER;
@@ -96,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const assignments = user.assignments || [];
     if (assignments.length > 0) {
       const codes = className
-        ? assignments.filter(a => a.class_name === className).map(a => a.subject_code)
+        ? assignments.filter(a => a.class_name === className || a.class_name === levelOf(className)).map(a => a.subject_code)
         : [...new Set(assignments.map(a => a.subject_code))];
       return subjectsPool.filter(s => codes.includes(s.id));
     }
@@ -127,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const permittedClasses  = getPermittedClasses();
 
     classSelect.innerHTML = permittedClasses.length > 0
-      ? permittedClasses.map(c => `<option value="${c}">${c}</option>`).join('')
+      ? classOptionsHtml(permittedClasses)
       : '<option value="">No classes assigned</option>';
 
     // Scope the subject list to whichever class ends up selected by
@@ -193,7 +226,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // for this user. This prevents manipulation of the dropdown HTML.
     const permitted = getPermittedClasses();
     const permittedSubs = getPermittedSubjects(className);
-    if (!permitted.includes(className)) {
+    const arms = armsOf(className);
+    if (!arms.length || !arms.every(c => permitted.includes(c))) {
       tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--color-danger);padding:2rem">&#128683; You are not assigned to this class.</td></tr>';
       return;
     }
@@ -202,9 +236,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    await loadScores(className, subjectId, termSelect.value);
+    for (const arm of arms) await loadScores(arm, subjectId, termSelect.value);
 
-    let students = allStudents.filter(s => s.class_name === className);
+    const combined = arms.length > 1;
+    let students = allStudents.filter(s => arms.includes(s.class_name));
 
     const searchTerm = searchInput.value.trim().toLowerCase();
     if (searchTerm) {
@@ -229,9 +264,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     tableBody.innerHTML = students.map(student => {
       const r = getResultRecord(student.admission_no, subjectId);
       return `
-        <tr class="score-row" data-admission="${student.admission_no}">
+        <tr class="score-row" data-admission="${student.admission_no}" data-class="${student.class_name}">
           <td class="col-avatar" data-label=""><div class="row-avatar">${getInitials(student.full_name)}</div></td>
-          <td class="pupil-name-cell" data-label="">${student.full_name}</td>
+          <td class="pupil-name-cell" data-label="">${student.full_name}${combined ? ` <small style="color:#6b7280;font-weight:600">· ${student.class_name.replace(/^\D*/, '')}</small>` : ''}</td>
           <td data-label="Test /${caMax.test}"><input type="number" class="score-input ca-input" data-component="test" min="0" max="${caMax.test}" value="${r.test}"></td>
           <td data-label="Assessment /${caMax.assessment}"><input type="number" class="score-input ca-input" data-component="assessment" min="0" max="${caMax.assessment}" value="${r.assessment}"></td>
           <td data-label="Project /${caMax.project}"><input type="number" class="score-input ca-input" data-component="project" min="0" max="${caMax.project}" value="${r.project}"></td>
@@ -264,27 +299,33 @@ document.addEventListener('DOMContentLoaded', async () => {
        1. Approval status is submitted/reviewed/approved/published (score submitted)
        2. OR current user cannot edit (Head Teacher without teacher assignment)
     */
-    const className = classSelect.value;
     const term = termSelect.value;
-    const approval = window.getApprovalRecord ? window.getApprovalRecord(className, term) : { status: 'draft' };
+    const statusOf = cls => (window.getApprovalRecord ? window.getApprovalRecord(cls, term) : { status: 'draft' }).status;
     // ICT Admin and Head Teacher can always edit regardless of approval status
     const user = window.CURRENT_USER;
     const ur   = user ? (user.roles || [user.role]) : [];
     const isSuperUser = ur.includes('ict_admin') || ur.includes('head_teacher');
-    const locked = !canEditScores() || (!isSuperUser && ['submitted','approved'].includes(approval.status));
+    // Per arm, so in a combined 3A + 3B sheet a submitted arm locks only its own rows.
+    const armLocked = cls => !canEditScores() || (!isSuperUser && ['submitted','approved'].includes(statusOf(cls)));
+    const arms = armsOf(classSelect.value);
 
-    tableBody.querySelectorAll('.score-input').forEach(inp => {
-      inp.disabled = locked;
-      inp.style.background = locked ? '#f8fafc' : '';
-      inp.style.color      = locked ? '#94a3b8' : '';
-      inp.style.cursor     = locked ? 'not-allowed' : '';
+    tableBody.querySelectorAll('.score-row').forEach(row => {
+      const locked = armLocked(row.getAttribute('data-class'));
+      row.querySelectorAll('.score-input').forEach(inp => {
+        inp.disabled = locked;
+        inp.style.background = locked ? '#f8fafc' : '';
+        inp.style.color      = locked ? '#94a3b8' : '';
+        inp.style.cursor     = locked ? 'not-allowed' : '';
+      });
     });
 
-    if (saveBtn) saveBtn.disabled = locked;
+    const allLocked = arms.every(armLocked);
+    if (saveBtn) saveBtn.disabled = allLocked;
     if (submitForReviewBtn) {
-      const canSubmit = canEditScores() && approval.status === 'draft' || approval.status === 'returned';
-      submitForReviewBtn.disabled = !canSubmit || locked && approval.status !== 'draft';
+      const canSubmit = canEditScores() && arms.some(c => ['draft', 'returned'].includes(statusOf(c)));
+      submitForReviewBtn.disabled = !canSubmit;
     }
+    const locked = allLocked;
 
     if (locked && canEditScores()) {
       // Scores are locked because submitted — show in banner (handled by renderApprovalBanner)
@@ -338,7 +379,8 @@ document.addEventListener('DOMContentLoaded', async () => {
      SUMMARY CARDS: class average, pass rate, grade spread
      -------------------------------------------- */
   function renderSummary(className, subjectId) {
-    const studentsInClass = allStudents.filter(s => s.class_name === className);
+    const arms = armsOf(className);
+    const studentsInClass = allStudents.filter(s => arms.includes(s.class_name));
     if (studentsInClass.length === 0) {
       summaryContainer.innerHTML = '';
       return;
@@ -432,9 +474,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderApprovalBanner() {
     if (!window.getApprovalRecord) return; // safety check if script didn't load
 
-    const className = classSelect.value;
     const term = termSelect.value;
-    const record = window.getApprovalRecord(className, term);
+    const arms = armsOf(classSelect.value);
+    const records = arms.map(c => window.getApprovalRecord(c, term));
+    // Combined 3A + 3B sheet with the arms at different stages: say so per arm.
+    if (records.length > 1 && records.some(r => r.status !== records[0].status)) {
+      approvalBanner.className = 'approval-banner tone-amber';
+      approvalBanner.innerHTML = '<strong>Status:</strong> ' + records.map(r =>
+        `${r.class_name}: ${(window.APPROVAL_STATUS_INFO[r.status] || {}).label || r.status}`).join(' &middot; ') +
+        '. Submitted arms are locked; the others can still be edited and submitted.';
+      submitForReviewBtn.disabled = !records.some(r => ['draft', 'returned'].includes(r.status));
+      submitForReviewBtn.textContent = 'Submit for Review';
+      return;
+    }
+    const record = records[0] || window.getApprovalRecord(classSelect.value, term);
     const statusInfo = window.APPROVAL_STATUS_INFO[record.status];
 
     let message = '';
@@ -466,12 +519,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   submitForReviewBtn.addEventListener('click', async () => {
-    const className = classSelect.value;
     const term = termSelect.value;
+    // A combined 3A + 3B sheet submits each arm that is still open.
+    const arms = armsOf(classSelect.value).filter(c =>
+      ['draft', 'returned'].includes(window.getApprovalRecord(c, term).status));
+    const className = arms.join(' + ');
 
     submitForReviewBtn.disabled = true;
     try {
-      await window.RCA_API.submitScores(className, subjectSelect.value, term);
+      for (const arm of arms) await window.RCA_API.submitScores(arm, subjectSelect.value, term);
     } catch (e) {
       submitForReviewBtn.disabled = false;
       alert('Could not submit scores: ' + e.message);
