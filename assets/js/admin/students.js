@@ -203,6 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     classDetailTitle.textContent = className;
     topbarTitle.textContent = `Students — ${className}`;
+    showFormTeacher(className);
 
     // Reset search/sort whenever we open a new class
     classSearchInput.value = '';
@@ -677,6 +678,24 @@ This will archive the record. You can restore it from User Management if needed.
         });
       });
     } catch (e) { /* not ict_admin, or offline — search just omits parent info */ }
+  }
+
+  // "Form teacher: X · Change" under the class name. Changing it happens on
+  // the Classes page (which this links straight into), for the roles that
+  // may assign form teachers.
+  let staffDirectory = null;
+  async function showFormTeacher(className) {
+    const el = document.getElementById('classFormTeacher');
+    if (!el) return;
+    el.textContent = '';
+    if (!staffDirectory) staffDirectory = await window.RCA_API.getStaffDirectory();
+    if (currentClass !== className) return;
+    const t = (staffDirectory || []).find(u =>
+      u.primary_role === 'class_teacher' && (u.linked_classes || [])[0] === className);
+    const roles = window.CURRENT_USER ? (window.CURRENT_USER.roles || [window.CURRENT_USER.role]) : [];
+    const canChange = ['ict_admin', 'head_teacher', 'proprietor'].some(r => roles.includes(r));
+    el.innerHTML = `Form teacher: <strong>${t ? t.full_name : 'none assigned'}</strong>` +
+      (canChange ? ` &middot; <a href="classes.html?class=${encodeURIComponent(className)}">${t ? 'Change' : 'Assign'}</a>` : '');
   }
 
   renderClassCards();

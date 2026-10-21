@@ -382,4 +382,9 @@ document.addEventListener('DOMContentLoaded', async () => {
      -------------------------------------------- */
   renderClassGrid();
 
+  // classes.html?class=Nursery%201A opens that class straight away (linked
+  // from the Students page's "Form teacher · Change").
+  const requestedClass = new URLSearchParams(window.location.search).get('class');
+  if (requestedClass && visibleClasses.includes(requestedClass)) openClassDetail(requestedClass);
+
 });
