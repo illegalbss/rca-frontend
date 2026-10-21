@@ -620,23 +620,24 @@ Status:       ${student.status}
   };
 
   // REMOVE student (soft delete — marks as archived)
-  window._deleteStudent = function(admNo) {
+  window._deleteStudent = async function(admNo) {
     const student = allStudents.find(s => s.admission_no === admNo);
     if (!student) return;
-    if (!confirm(`Remove ${student.full_name} from the system?
+    if (!confirm(`Remove ${student.full_name} (${admNo})?
 
-This will archive the record. You can restore it from User Management if needed.`)) return;
+Use this for a duplicate or a mistake. Nothing is deleted: the record is hidden, and can be brought back from Admission Register → status filter "Removed (duplicates)" → Reinstate.`)) return;
 
-    student.status = 'archived';
-
-    // Phase 4: update in real database
-    if (window.RCA_API) {
-      window.RCA_API.call(`/students/${encodeURIComponent(admNo)}`, {
+    try {
+      await window.RCA_API.call(`/students/${encodeURIComponent(admNo)}`, {
         method: 'PUT',
         body: { status: 'archived' }
-      }).catch(e => console.warn('Student archive API failed:', e.message));
+      });
+    } catch (e) {
+      alert('Could not remove: ' + e.message);
+      return;
     }
 
+    student.status = 'archived';
     renderStudentTable();
   };
 

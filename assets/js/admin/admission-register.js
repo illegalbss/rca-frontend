@@ -23,6 +23,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     REGISTER = await window.RCA_API.getStudents({ status: 'all' });
   }
 
+  // The server can take several seconds to answer, so a pressed Confirm/Save
+  // button says "Saving…" (and can't be pressed twice) until it does.
+  function busy(btn, on) {
+    if (!btn) return;
+    if (on) { btn.dataset.label = btn.textContent; btn.textContent = 'Saving…'; }
+    else if (btn.dataset.label) { btn.textContent = btn.dataset.label; }
+    btn.disabled = on;
+  }
+
+  // After a save the window closes straight away; the list refreshes behind it.
+  async function refreshRegister() {
+    if (tableBody) tableBody.style.opacity = '0.5';
+    await loadRegister();
+    if (tableBody) tableBody.style.opacity = '';
+    renderTable();
+  }
+
   /* ── DOM REFS ─────────────────────────────── */
   var searchInput    = document.getElementById('arSearch');
   var classFilter    = document.getElementById('arClassFilter');
@@ -73,7 +90,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       graduated:   '<span class="ar-badge ar-badge-graduated">Graduated</span>',
       transferred: '<span class="ar-badge ar-badge-transferred">Transferred</span>',
       withdrawn:   '<span class="ar-badge ar-badge-withdrawn">Withdrawn</span>',
-      deceased:    '<span class="ar-badge ar-badge-deceased">Deceased</span>'
+      deceased:    '<span class="ar-badge ar-badge-deceased">Deceased</span>',
+      archived:    '<span class="ar-badge ar-badge-deceased">Removed</span>'
     };
     return map[status] || ('<span class="ar-badge ar-badge-active">' + (status || 'Active') + '</span>');
   }
@@ -90,6 +108,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     var thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
     var counts = { total: 0, active: 0, graduated: 0, transferred: 0, withdrawn: 0, newThisMonth: 0 };
     REGISTER.forEach(function (r) {
+      if (r.status === 'archived') return;
       counts.total++;
       if (r.status === 'active')      counts.active++;
       if (r.status === 'graduated')   counts.graduated++;
@@ -122,6 +141,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (!hit) return false;
       }
       if (cls    && r.class_name !== cls)    return false;
+      // Removed records (duplicates/mistakes) only show under their own filter.
+      if (r.status === 'archived' && status !== 'archived') return false;
       if (status === 'repeating') { if (!repeatingNow(r) || (r.status || 'active') !== 'active') return false; }
       else if (status && r.status !== status) return false;
       return true;
@@ -354,7 +375,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!cls)  { alert('Please select the current class.'); return; }
 
       var saveBtn = document.getElementById('arFormSaveBtn');
-      saveBtn.disabled = true;
+      busy(saveBtn, true);
 
       var payload = {
         first_name: firstName, last_name: lastName, gender,
@@ -375,14 +396,13 @@ document.addEventListener('DOMContentLoaded', async function () {
           if (window.logActivity) window.logActivity('create', 'Added to register: ' + firstName + ' ' + lastName, 'students');
         }
       } catch (e) {
-        saveBtn.disabled = false;
+        busy(saveBtn, false);
         alert('Could not save: ' + e.message);
         return;
       }
 
-      await loadRegister();
       closeModal('arFormModal');
-      renderTable();
+      await refreshRegister();
     });
   }
 
@@ -579,22 +599,21 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!newClass) { alert('Please select the class to promote to.'); return; }
 
       var btn = document.getElementById('arPromoteConfirmBtn');
-      btn.disabled = true;
+      busy(btn, true);
 
       try {
         await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo) + '/promote', {
           method: 'POST', body: { class_name: newClass }
         });
       } catch (e) {
-        btn.disabled = false;
+        busy(btn, false);
         alert('Could not promote: ' + e.message);
         return;
       }
 
       if (window.logActivity) window.logActivity('promote', 'Promoted ' + r.full_name + ' to ' + newClass, 'students');
-      await loadRegister();
       closeModal('arFormModal');
-      renderTable();
+      await refreshRegister();
     });
   }
 
@@ -676,7 +695,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       var repeatClass = classSel.value;
       if (!repeatClass) { alert('Please choose the class the pupil is repeating.'); return; }
       var btn = document.getElementById('arRepeatConfirmBtn');
-      btn.disabled = true;
+      busy(btn, true);
       try {
         await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo) + '/repeat', {
           method: 'POST',
@@ -687,13 +706,12 @@ document.addEventListener('DOMContentLoaded', async function () {
           }
         });
       } catch (e) {
-        btn.disabled = false;
+        busy(btn, false);
         alert('Could not record the repeat: ' + e.message);
         return;
       }
-      await loadRegister();
       closeModal('arFormModal');
-      renderTable();
+      await refreshRegister();
     });
   }
 
@@ -745,21 +763,20 @@ document.addEventListener('DOMContentLoaded', async function () {
       if (!date) { alert('Please enter the date the pupil left.'); return; }
 
       var btn = document.getElementById('arWithdrawConfirmBtn');
-      btn.disabled = true;
+      busy(btn, true);
       try {
         await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo), {
           method: 'PUT', body: { status: status, date_of_completion: date }
         });
       } catch (e) {
-        btn.disabled = false;
+        busy(btn, false);
         alert('Could not update: ' + e.message);
         return;
       }
 
       if (window.logActivity) window.logActivity('update', 'Marked ' + status + ': ' + (r.full_name || admissionNo) + ' (left ' + date + ')', 'students');
-      await loadRegister();
       closeModal('arFormModal');
-      renderTable();
+      await refreshRegister();
     });
   }
 
@@ -1019,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     remove:  async function (admissionNo) {
       var r = REGISTER.find(function (x) { return x.admission_no === admissionNo; });
       if (!r) return;
-      if (!confirm('Remove "' + (r.full_name || 'this student') + '" from the active register?\n\nThis archives the record — it can be restored from User Management if needed.')) return;
+      if (!confirm('Remove "' + (r.full_name || 'this student') + '" (' + admissionNo + ')?\n\nUse this for a duplicate or a mistake. Nothing is deleted: the record is hidden from classes and the register, and can be brought back from the status filter "Removed (duplicates)" → Reinstate.')) return;
 
       try {
         await window.RCA_API.call('/students/' + encodeURIComponent(admissionNo), { method: 'PUT', body: { status: 'archived' } });
