@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const allStudents = await window.RCA_API.getStudents();
   const rawStaff     = await window.RCA_API.getStaffDirectory();
-  const allSubjects  = window.SCHOOL_SUBJECTS || [];
+  const allSubjects  = window.ALL_SUBJECTS_COMBINED || window.SCHOOL_SUBJECTS || [];
   function subjectLabels(codes) {
     return (codes || []).map(function (code) {
       var s = allSubjects.find(function (x) { return x.id === code; });
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       primary_role: u.primary_role,
       roles: [u.primary_role],
       assigned_classes: u.linked_classes || [],
+      subject_codes: u.linked_subjects || [],
       subjects: subjectLabels(u.linked_subjects)
     };
   });
@@ -333,28 +334,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* --------------------------------------------
      RENDER: Subjects offered
-     -------------------------------------------- 
-     We gather subjects from BOTH the class teacher AND every
-     specialist teaching this class, then de-duplicate using a
-     Set (a JS structure that automatically discards repeats).
+     --------------------------------------------
+     The class's curriculum — the same list Score Entry and the report
+     card use (nursery or primary, from subjects-and-grading.js). Where a
+     staff member other than the form teacher is linked to a subject in
+     this class, their name is shown on the chip.
   */
   function renderSubjects(data) {
-    const allSubjects = new Set();
+    const curriculum = window.getSubjectsForClass ? window.getSubjectsForClass(data.className) : [];
 
-    if (data.classTeacher) {
-      data.classTeacher.subjects.forEach(s => allSubjects.add(s));
-    }
-    data.otherStaff.forEach(t => t.subjects.forEach(s => allSubjects.add(s)));
-
-    if (allSubjects.size === 0) {
+    if (!curriculum.length) {
       classSubjectsList.innerHTML = `<p class="empty-state-text">No subjects recorded for this class yet.</p>`;
       return;
     }
 
-    // Convert the Set back into an Array so we can use .map() on it
-    classSubjectsList.innerHTML = [...allSubjects]
-      .map(subject => `<span class="subject-chip">${subject}</span>`)
-      .join('');
+    classSubjectsList.innerHTML = curriculum.map(subject => {
+      const teachers = data.otherStaff
+        .filter(t => t.subject_codes.includes(subject.id))
+        .map(t => t.full_name);
+      return `<span class="subject-chip">${subject.name}` +
+        (teachers.length ? ` <small class="subject-chip-teacher">&middot; ${teachers.join(', ')}</small>` : '') +
+        `</span>`;
+    }).join('');
   }
 
   /* --------------------------------------------

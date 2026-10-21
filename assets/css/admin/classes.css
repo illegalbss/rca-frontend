@@ -269,3 +269,8 @@
   margin-top: 6px;
   min-height: 1em;
 }
+
+.subject-chip-teacher {
+  font-weight: 400;
+  opacity: 0.75;
+}
