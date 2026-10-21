@@ -16,9 +16,10 @@
 
 (function () {
 
+  // One Pre-Nursery class for now (Pre-Nursery 2 was promoted to Nursery 1
+  // and not replaced). Basic 1 runs as two parallel arms, 1A and 1B.
   window.SCHOOL_CLASSES = [
     'Pre-Nursery 1',
-    'Pre-Nursery 2',
     'Nursery 1',
     'Nursery 2',
     'Nursery 3',
@@ -30,6 +31,20 @@
     'Basic 5',
     'Basic 6'
   ];
+
+  // The class a pupil moves up into. Parallel arms ("Basic 1A", "Basic 1B")
+  // share a level, so both go up to the next level (Basic 2) rather than
+  // 1A -> 1B. Returns null for the last class (graduation) or an unknown one.
+  window.nextSchoolClass = function (className) {
+    var list = window.SCHOOL_CLASSES;
+    var level = function (c) { return String(c).replace(/^(.*\d)[A-Z]$/, '$1'); };
+    var i = list.indexOf(className);
+    if (i < 0) return null;
+    for (var j = i + 1; j < list.length; j++) {
+      if (level(list[j]) !== level(className)) return list[j];
+    }
+    return null;
+  };
 
   // Seed students — used as initial data on any fresh browser load.
   // localstorage.js will prefer saved localStorage data if it exists.

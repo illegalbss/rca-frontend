@@ -62,9 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Returns null for Basic 6, since there is no next class - those
   // pupils graduate (leave the school) instead of moving up.
   function getNextClass(className) {
-    const index = allClasses.indexOf(className);
-    if (index === -1 || index === allClasses.length - 1) return null;
-    return allClasses[index + 1];
+    return window.nextSchoolClass(className);
   }
 
   // The auto-SUGGESTED decision, based purely on the score threshold.
