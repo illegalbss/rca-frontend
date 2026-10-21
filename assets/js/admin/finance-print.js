@@ -7,6 +7,7 @@
 
      RCA_PRINT.outstanding({ termLabel, session, rows })  — who is owing
      RCA_PRINT.paid({ title, subtitle, termLabel, session, rows }) — who has paid
+     RCA_PRINT.newPupils({ termLabel, session, rows, byTerm }) — new pupils + fees
      RCA_PRINT.statement({ pupil, termLabel, session, lines, adjustments,
                            totalDue, totalPaid, balance, status, payments })
 
@@ -341,6 +342,59 @@
       </div>`, win);
   }
 
+  /* ================= NEW PUPILS (ADMISSIONS) REPORT ================= */
+  // rows: { admission_no, full_name, class_name, parent_name, parent_phone,
+  //         date_of_admission, term, grand_total, amount_paid, balance, status }
+  // byTerm: [{ term, count, expected, paid }] for the summary box.
+  function newPupils({ termLabel, session, rows, byTerm, win }) {
+    rows = rows || [];
+    const TERM = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+    const due = rows.reduce((s, r) => s + Number(r.grand_total || 0), 0);
+    const paidSum = rows.reduce((s, r) => s + Number(r.amount_paid || 0), 0);
+    const owing = rows.reduce((s, r) => s + Number(r.balance || 0), 0);
+    const title = 'New Pupils Report';
+
+    open(title, `
+      <div class="sheet">
+        ${header()}
+        ${banner(title, 'Pupils Admitted and Their School Fees for the Term They Joined')}
+        ${meta(session, termLabel)}
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          ${kpi('k-blue', 'users', 'New Pupils', rows.length)}
+          ${kpi('k-blue', 'coins', 'Fees Due', naira(due))}
+          ${kpi('k-green', 'check', 'Fees Paid', naira(paidSum))}
+          ${kpi('k-red', 'alert', 'Outstanding', naira(owing))}
+        </div>
+        <table class="grid">
+          <thead><tr><th>S/N</th><th>Admission No.</th><th class="l">Pupil Name</th><th>Class</th><th>Joined</th><th class="l">Parent / Phone</th><th class="r">Fee Due (₦)</th><th class="r">Paid (₦)</th><th>Status</th></tr></thead>
+          <tbody>
+            ${rows.length ? rows.map((r, i) => `
+              <tr><td>${i + 1}</td><td>${esc(r.admission_no)}</td><td class="l">${esc(r.full_name)}</td><td>${esc(r.class_name)}</td>
+                <td>${esc(TERM[r.term] || '')}${r.date_of_admission ? '<br><small>' + dateStr(r.date_of_admission) + '</small>' : ''}</td>
+                <td class="l">${esc(r.parent_name || '')}${r.parent_phone ? '<br><small>' + esc(r.parent_phone) + '</small>' : ''}</td>
+                <td class="r">${r.grand_total == null ? '—' : money(r.grand_total)}</td><td class="r"><b>${money(r.amount_paid)}</b></td>
+                <td>${r.status ? pill(r.status) : '—'}</td></tr>`).join('')
+              : '<tr><td colspan="9" class="empty">No new pupils for this selection.</td></tr>'}
+          </tbody>
+        </table>
+        <div class="grow"></div>
+        <div class="lower">
+          <div class="box">
+            <div class="box-title">Summary by Term</div>
+            <table class="mini">
+              <thead><tr><th>Term</th><th class="r">New Pupils</th><th class="r">Fees Due (₦)</th><th class="r">Paid (₦)</th></tr></thead>
+              <tbody>
+                ${(byTerm || []).map(t => `<tr><td>${esc(TERM[t.term])}</td><td class="r">${t.count}</td><td class="r">${money(t.expected)}</td><td class="r">${money(t.paid)}</td></tr>`).join('')}
+                <tr class="total"><td>Total</td><td class="r">${(byTerm || []).reduce((s, t) => s + t.count, 0)}</td><td class="r">${money((byTerm || []).reduce((s, t) => s + t.expected, 0))}</td><td class="r">${money((byTerm || []).reduce((s, t) => s + t.paid, 0))}</td></tr>
+              </tbody>
+            </table>
+          </div>
+          ${signBlock('Admissions & Finance')}
+        </div>
+        ${footer()}
+      </div>`, win);
+  }
+
   /* ================= INDIVIDUAL PAYMENT STATEMENT ================= */
   function statement({ pupil, termLabel, session, lines, adjustments, totalDue, totalPaid, balance, status, payments, win }) {
     pupil = pupil || {};
@@ -437,5 +491,5 @@
       </div>`, win);
   }
 
-  window.RCA_PRINT = { prepare, outstanding, paid, statement };
+  window.RCA_PRINT = { prepare, outstanding, paid, statement, newPupils };
 })();

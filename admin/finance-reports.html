@@ -260,6 +260,55 @@
         </div>
       </div>
 
+      <!-- New pupils admitted each term, with their fees -->
+      <div class="outstanding-card" id="newPupilsCard">
+        <div class="outstanding-card-header">
+          <h3>&#127891; New Pupils by Term</h3>
+          <span id="newPupilsCount" style="font-size:var(--fs-sm);color:var(--color-text-muted)"></span>
+        </div>
+        <div class="no-print" style="padding:14px 20px;border-bottom:1px solid #f3f4f6;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div class="form-group" style="margin:0;min-width:150px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">School Year</label>
+            <select id="newPupilsSession" class="form-control" style="padding:7px 10px;font-size:0.82rem"></select>
+          </div>
+          <div class="form-group" style="margin:0;min-width:150px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Term Joined</label>
+            <select id="newPupilsTerm" class="form-control" style="padding:7px 10px;font-size:0.82rem">
+              <option value="">Whole year</option>
+              <option value="term1">First Term</option>
+              <option value="term2">Second Term</option>
+              <option value="term3">Third Term</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:160px">
+            <label style="font-size:0.75rem;font-weight:600;color:#6b7280;margin-bottom:4px;display:block">Search by Name</label>
+            <input type="text" id="newPupilsSearch" class="form-control" placeholder="Type pupil or parent name…" style="padding:7px 10px;font-size:0.82rem" autocomplete="new-password">
+          </div>
+          <button class="btn btn-outline btn-sm" id="printNewPupils" style="flex-shrink:0">&#128424; Print Report</button>
+          <button class="btn btn-outline btn-sm" id="exportNewPupilsCSV" style="flex-shrink:0">&#8595; Export CSV</button>
+        </div>
+        <div class="finance-stats" id="newPupilsStats" style="padding:14px 20px 0;margin-bottom:0"></div>
+        <p id="newPupilsUnknown" class="no-print" style="padding:8px 20px 0;font-size:0.78rem;color:#92400e;display:none"></p>
+        <div style="overflow-x:auto">
+          <table class="finance-table" id="newPupilsTable">
+            <thead>
+              <tr>
+                <th>Admission No.</th>
+                <th>Pupil Name</th>
+                <th>Class Now</th>
+                <th>Joined</th>
+                <th>Parent / Phone</th>
+                <th>Fee Due (Term Joined)</th>
+                <th>Paid</th>
+                <th>Balance</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="newPupilsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Fee Adjustments & Discounts management -->
       <div class="outstanding-card">
         <div class="outstanding-card-header">
@@ -1281,9 +1330,113 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  /* ── New Pupils by Term: who joined each term of a school year, with the
+     fees for the term they joined (from /payments/new-admissions) ── */
+  const npEsc = s => String(s ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  let npData = null;
+  let npShown = [];
+
+  async function loadNewPupils(session) {
+    document.getElementById('newPupilsBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:1.5rem">Loading…</td></tr>';
+    try {
+      npData = await window.RCA_API.call('/payments/new-admissions' + (session ? '?session=' + encodeURIComponent(session) : ''));
+    } catch (e) {
+      npData = null;
+      document.getElementById('newPupilsBody').innerHTML =
+        `<tr><td colspan="9" style="text-align:center;color:#dc2626;padding:1.5rem">Could not load new pupils: ${npEsc(e.message)}</td></tr>`;
+      return;
+    }
+    const sel = document.getElementById('newPupilsSession');
+    sel.innerHTML = (npData.sessions || [npData.session]).map(s =>
+      `<option value="${npEsc(s)}" ${s === npData.session ? 'selected' : ''}>${npEsc(s)}${s === npData.current_session ? ' (this year)' : ''}</option>`).join('');
+    renderNewPupils();
+  }
+
+  function renderNewPupils() {
+    if (!npData) return;
+    const term = document.getElementById('newPupilsTerm').value;
+    const q = document.getElementById('newPupilsSearch').value.trim().toLowerCase();
+    const order = window.SCHOOL_CLASSES || [];
+    npShown = npData.rows
+      .filter(r => !term || r.term === term)
+      .filter(r => !q || `${r.full_name} ${r.parent_name || ''} ${r.admission_no}`.toLowerCase().includes(q))
+      .sort((a, b) => a.term.localeCompare(b.term) || order.indexOf(a.class_name) - order.indexOf(b.class_name) || a.full_name.localeCompare(b.full_name));
+
+    // One card per term (or just the chosen term), plus the year total.
+    const terms = (npData.by_term || []).filter(t => !term || t.term === term);
+    const total = terms.reduce((s, t) => ({ count: s.count + t.count, expected: s.expected + t.expected, paid: s.paid + t.paid }), { count: 0, expected: 0, paid: 0 });
+    document.getElementById('newPupilsStats').innerHTML = terms.map(t => `
+      <div class="finance-stat-card stat-total">
+        <span class="finance-stat-label">${TERM_LABELS[t.term]}</span>
+        <span class="finance-stat-value">${t.count} new</span>
+        <span class="finance-stat-sub">Paid ${fmt(t.paid)} of ${fmt(t.expected)}</span>
+      </div>`).join('') + (term ? '' : `
+      <div class="finance-stat-card stat-paid">
+        <span class="finance-stat-label">Whole Year ${npEsc(npData.session)}</span>
+        <span class="finance-stat-value">${total.count} new</span>
+        <span class="finance-stat-sub">Paid ${fmt(total.paid)} of ${fmt(total.expected)}</span>
+      </div>`);
+
+    const unknownEl = document.getElementById('newPupilsUnknown');
+    unknownEl.style.display = npData.unknown_count ? '' : 'none';
+    unknownEl.textContent = npData.unknown_count
+      ? `${npData.unknown_count} current pupil${npData.unknown_count === 1 ? ' has' : 's have'} no admission date, so they can't be placed in a term. Add the date in the Admission Register to include them. (Pupils added from now on are recorded automatically.)`
+      : '';
+
+    document.getElementById('newPupilsCount').textContent = `${npShown.length} pupil${npShown.length === 1 ? '' : 's'}`;
+    document.getElementById('newPupilsBody').innerHTML = npShown.length ? npShown.map(r => `
+      <tr>
+        <td>${npEsc(r.admission_no)}</td>
+        <td>${npEsc(r.full_name)}${r.pupil_status !== 'active' ? ` <span style="font-size:0.7rem;color:#6b7280">(${npEsc(r.pupil_status)})</span>` : ''}</td>
+        <td>${npEsc(r.class_name)}</td>
+        <td>${TERM_LABELS[r.term]}${r.date_of_admission ? `<div style="font-size:0.72rem;color:#6b7280">${new Date(String(r.date_of_admission).slice(0, 10) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>` : ''}</td>
+        <td>${npEsc(r.parent_name || '—')}${r.parent_phone ? `<div style="font-size:0.72rem;color:#6b7280">${npEsc(r.parent_phone)}</div>` : ''}</td>
+        <td>${r.grand_total == null ? '<span style="color:#9ca3af">No fee schedule</span>' : fmt(r.grand_total)}</td>
+        <td>${fmt(r.amount_paid)}</td>
+        <td>${r.balance == null ? '—' : fmt(r.balance)}</td>
+        <td>${r.status ? `<span class="${BADGE[r.status]}">${STATUS_TEXT[r.status]}</span>` : '—'}</td>
+      </tr>`).join('')
+      : '<tr><td colspan="9" style="text-align:center;color:#9ca3af;padding:1.5rem">No new pupils for this selection.</td></tr>';
+  }
+
+  document.getElementById('newPupilsSession').addEventListener('change', e => loadNewPupils(e.target.value));
+  document.getElementById('newPupilsTerm').addEventListener('change', renderNewPupils);
+  let npDebounce;
+  document.getElementById('newPupilsSearch').addEventListener('input', () => { clearTimeout(npDebounce); npDebounce = setTimeout(renderNewPupils, 300); });
+
+  document.getElementById('printNewPupils').addEventListener('click', () => {
+    if (!npData) return;
+    const win = window.RCA_PRINT.prepare();
+    if (!win) return;
+    const term = document.getElementById('newPupilsTerm').value;
+    window.RCA_PRINT.newPupils({
+      termLabel: TERM_LABELS[term] || 'Whole Year',
+      session: npData.session,
+      rows: npShown,
+      byTerm: (npData.by_term || []).filter(t => !term || t.term === term),
+      win
+    });
+  });
+
+  document.getElementById('exportNewPupilsCSV').addEventListener('click', () => {
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const header = ['School Year','Term Joined','Admission No.','Pupil Name','Class Now','Admission Date','Parent','Parent Phone','Fee Due','Paid','Balance','Status'];
+    const lines = npShown.map(r => [
+      npData.session, TERM_LABELS[r.term], r.admission_no, r.full_name, r.class_name,
+      r.date_of_admission ? String(r.date_of_admission).slice(0, 10) : '', r.parent_name || '', r.parent_phone || '',
+      r.grand_total ?? '', r.amount_paid, r.balance ?? '', r.status ? STATUS_TEXT[r.status] : ''
+    ].map(q).join(','));
+    const csv = [header.join(','), ...lines].join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: 'new_pupils_' + String(npData.session).replace('/', '-') + '.csv' });
+    a.click(); URL.revokeObjectURL(url);
+  });
+
   document.getElementById('applyReportFilter').addEventListener('click', render);
   render();
   initDiscountSection();
+  loadNewPupils();
 });
 </script>
 </body>
