@@ -158,7 +158,7 @@
 .upcoming-strip {
   background: var(--color-primary);
   margin-top: var(--space-2xl);
-  padding-block: var(--space-2xl);
+  padding-top: var(--space-2xl); padding-bottom: var(--space-2xl);
 }
 
 .upcoming-strip .section-title {

@@ -51,9 +51,9 @@
   justify-content: space-between;
   gap: var(--space-md);
   height: var(--nav-height);
-  padding-inline: var(--space-xl);
+  padding-left: var(--space-xl); padding-right: var(--space-xl);
   max-width: var(--container-max);
-  margin-inline: auto;
+  margin-left: auto; margin-right: auto;
   flex-wrap: nowrap;
 }
 
@@ -486,7 +486,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-block: var(--space-lg);
+  padding-top: var(--space-lg); padding-bottom: var(--space-lg);
   font-size: var(--fs-xs);
   color: rgba(255,255,255,0.4);
   flex-wrap: wrap;
@@ -552,7 +552,7 @@
 
   /* Equal space on both sides of the bar; the logo shrinks instead of
      pushing the menu button against the screen edge. */
-  .navbar { padding-inline: var(--space-md); }
+  .navbar { padding-left: var(--space-md); padding-right: var(--space-md); }
   .logo { flex-shrink: 1; min-width: 0; gap: 10px; }
   .logo img { width: 46px; height: 46px; flex-shrink: 0; }
   .logo-text { min-width: 0; }

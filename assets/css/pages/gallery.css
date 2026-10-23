@@ -53,7 +53,7 @@
 .tab-icon { font-size: 1rem; }
 
 /* ---- Section Header ---- */
-.gallery-section { padding-block: var(--space-3xl); }
+.gallery-section { padding-top: var(--space-3xl); padding-bottom: var(--space-3xl); }
 
 .gallery-section-header {
   display: flex;

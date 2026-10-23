@@ -243,7 +243,7 @@ html, body { height: 100%; }
   align-items: center;
   gap: 12px;
   height: 62px;
-  padding-inline: 24px;
+  padding-left: 24px; padding-right: 24px;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   position: sticky;
@@ -860,7 +860,7 @@ html, body { height: 100%; }
 /* Topbar fixes */
 @media (max-width: 768px) {
   .admin-topbar {
-    padding-inline: 12px;
+    padding-left: 12px; padding-right: 12px;
     gap: 8px;
   }
 

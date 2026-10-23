@@ -38,17 +38,17 @@ h1, h2, h3, h4, h5, h6 {
 .container {
   width: 100%;
   max-width: var(--container-max);
-  margin-inline: auto;
-  padding-inline: var(--container-pad);
+  margin-left: auto; margin-right: auto;
+  padding-left: var(--container-pad); padding-right: var(--container-pad);
 }
 
 /* ---- Section ---- */
 .section {
-  padding-block: var(--space-4xl);
+  padding-top: var(--space-4xl); padding-bottom: var(--space-4xl);
 }
 
 .section-sm {
-  padding-block: var(--space-3xl);
+  padding-top: var(--space-3xl); padding-bottom: var(--space-3xl);
 }
 
 /* ---- Section Header ---- */
@@ -93,7 +93,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .section-header.center .section-subtitle {
-  margin-inline: auto;
+  margin-left: auto; margin-right: auto;
 }
 
 /* ---- Grid utilities ---- */
@@ -203,10 +203,10 @@ h1, h2, h3, h4, h5, h6 {
   height: 4px;
   background: var(--color-secondary);
   border-radius: 2px;
-  margin-block: var(--space-md);
+  margin-top: var(--space-md); margin-bottom: var(--space-md);
 }
 
-.divider.center { margin-inline: auto; }
+.divider.center { margin-left: auto; margin-right: auto; }
 
 /* ---- Background utilities ---- */
 .bg-primary  { background: var(--color-primary); color: var(--color-white); }
@@ -281,7 +281,7 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 768px) {
   :root { --container-pad: 1rem; }
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .section { padding-block: var(--space-3xl); }
+  .section { padding-top: var(--space-3xl); padding-bottom: var(--space-3xl); }
   .section-title { font-size: var(--fs-2xl); }
 }
 

@@ -184,7 +184,7 @@
    STATS STRIP
    ============================================ */
 .stats-strip {
-  padding-block: var(--space-3xl);
+  padding-top: var(--space-3xl); padding-bottom: var(--space-3xl);
 }
 
 .stats-grid {
@@ -560,14 +560,14 @@
 /* ============================================
    EVENTS
    ============================================ */
-.events-section { padding-block: var(--space-4xl); }
+.events-section { padding-top: var(--space-4xl); padding-bottom: var(--space-4xl); }
 
 .events-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   max-width: 800px;
-  margin-inline: auto;
+  margin-left: auto; margin-right: auto;
 }
 
 .event-item {
@@ -683,7 +683,7 @@
 /* ============================================
    CTA SECTION
    ============================================ */
-.cta-section { padding-block: var(--space-4xl); }
+.cta-section { padding-top: var(--space-4xl); padding-bottom: var(--space-4xl); }
 
 .cta-content {
   display: flex;
@@ -703,7 +703,7 @@
 /* ============================================
    CONTACT STRIP
    ============================================ */
-.contact-strip { padding-block: var(--space-3xl); }
+.contact-strip { padding-top: var(--space-3xl); padding-bottom: var(--space-3xl); }
 
 .contact-strip-grid {
   display: grid;
@@ -756,6 +756,8 @@
   .why-image img { height: 300px; }
   .why-cta-card { position: static; margin-top: var(--space-xl); max-width: 100%; }
 }
+
+.about-img-accent img { object-position: center 30%; }
 
 @media (max-width: 768px) {
   .hero-title { font-size: 2.2rem; }
@@ -851,3 +853,27 @@
 
 .hero-slide-overlay { z-index: 1; }
 .hero-slide-content { z-index: 2; }
+
+/* Tablets (roughly 561–1024px, e.g. Galaxy Tab / iPad): use the width
+   (last in the file so it wins over the phone rules above at ~600px)
+   instead of stacking everything into tall, half-empty blocks. */
+@media (min-width: 561px) and (max-width: 1024px) {
+  /* A portrait tablet is very tall: a full-screen hero left a big empty
+     band above the text. Cap it to a comfortable height. */
+  .hero { height: auto; min-height: 0 !important; }  /* overrides the inline 100vh */
+  .hero-slider { position: relative !important; height: 620px !important; }
+  .hero-slide { padding-top: 110px; padding-bottom: 70px; }
+  .hero-prev, .hero-next { display: none; }  /* swipe or the dots change slides */
+
+  /* All four numbers in one row, with tighter boxes. */
+  .stats-grid { grid-template-columns: repeat(4, 1fr); gap: var(--space-sm); }
+  .stat-item  { padding: var(--space-lg) var(--space-sm); border-bottom: none; }
+  .stat-item:nth-child(odd) { border-right: 1px solid rgba(255,255,255,0.15); }
+  .stat-item:nth-child(even):not(:last-child) { border-right: 1px solid rgba(255,255,255,0.15); }
+  .stat-icon   { font-size: 1.8rem; }
+  .stat-number { font-size: var(--fs-3xl); }
+  .stat-plus   { font-size: var(--fs-2xl); }
+  .stat-label  { font-size: 0.7rem; }
+
+  .about-images { height: 420px; }
+}
