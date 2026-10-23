@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const canManageAccounts = isIctAdmin || cuRoles.includes('head_teacher');
 
   const ROLE_LABELS = {
-    ict_admin: 'ICT Administrator', head_teacher: 'Head Teacher',
+    proprietor: 'School Proprietor', ict_admin: 'ICT Administrator', head_teacher: 'Head Teacher',
     class_teacher: 'Form Teacher', subject_teacher: 'Subject Teacher',
     accountant: 'Accountant', parent: 'Parent'
   };
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!el) return;
     const counts = { ict: 0, head: 0, teacher: 0, parent: 0, total: allUsers.length };
     allUsers.forEach(u => {
-      if (u.primary_role === 'ict_admin') counts.ict++;
+      if (u.primary_role === 'ict_admin' || u.primary_role === 'proprietor') counts.ict++;
       else if (u.primary_role === 'head_teacher') counts.head++;
       else if (u.primary_role === 'class_teacher' || u.primary_role === 'subject_teacher') counts.teacher++;
       else if (u.primary_role === 'parent') counts.parent++;

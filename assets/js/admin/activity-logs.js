@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const ROLE_LABELS = {
+    proprietor:      'School Proprietor',
     ict_admin:       'ICT Administrator',
     head_teacher:    'Head Teacher',
     class_teacher:   'Form Teacher',

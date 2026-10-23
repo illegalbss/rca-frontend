@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
      accountant, kept for the Finance module.
   */
   const roleLabels = window.RBAC_ROLE_LABELS || {
+    proprietor: 'School Proprietor',
     ict_admin: 'ICT Administrator',
     head_teacher: 'Head Teacher',
     class_teacher: 'Form Teacher',
