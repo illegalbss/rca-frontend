@@ -122,6 +122,7 @@
                   <div style="display:flex;gap:4px;flex-wrap:wrap">
                     ${p.status === 'prepared' || p.status === 'pending' ? btn(p.status === 'pending' ? 'New Code' : 'Issue Code', `data-code="${p.id}"`, 'color:#1d4ed8;border-color:#93c5fd') : ''}
                     ${p.status === 'pending' ? btn('Revoke Code', `data-revoke="${p.id}"`) : ''}
+                    ${p.status === 'active' ? btn('Reset Code', `data-code="${p.id}" title="Parent forgot their password: give them a code to choose a new one"`, 'color:#92400e;border-color:#fcd34d') : ''}
                     ${btn('+ Link Child', `data-link="${p.id}"`)}
                     ${p.status === 'deactivated' ? btn('Reactivate', `data-react="${p.id}"`) : btn('Deactivate', `data-deact="${p.id}"`, 'color:#dc2626;border-color:#fca5a5')}
                   </div>
@@ -360,6 +361,7 @@
   async function issueCode(id) {
     const p = data.parents.find(x => String(x.id) === String(id));
     if (p?.status === 'pending' && !confirm('Issuing a new code cancels the previous one. Continue?')) return;
+    if (p?.status === 'active' && !confirm('Give ' + p.full_name + ' a password reset code? They enter it with their phone number on the Parent Login page ("Use my code") and choose a new password. Their current password keeps working until then.')) return;
     let r;
     try { r = await api(`/${id}/activation-code`, { method: 'POST', body: {} }); }
     catch (e) { alert(e.message); return; }
@@ -372,7 +374,7 @@
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
     m.innerHTML = `
       <div style="background:#fff;border-radius:16px;width:100%;max-width:440px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-        <h3 style="margin:0 0 4px;color:var(--color-primary);font-size:1rem">Activation Code Issued</h3>
+        <h3 style="margin:0 0 4px;color:var(--color-primary);font-size:1rem">${r.reset ? "Password Reset Code Issued" : "Activation Code Issued"}</h3>
         <p style="font-size:0.82rem;color:#6b7280;margin:0 0 14px">For <strong>${esc(r.full_name)}</strong> · phone ${esc(r.phone_display)}</p>
         <div style="font-family:monospace;font-size:1.9rem;font-weight:700;letter-spacing:0.12em;text-align:center;background:#f3f4f6;border-radius:10px;padding:14px;color:#111827">${esc(r.code)}</div>
         <p style="font-size:0.78rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin:12px 0">
@@ -393,16 +395,16 @@
     if (!w) { alert('Please allow pop-ups to print the slip.'); return; }
     const logo = new URL('../assets/images/logo.png', location.href).href;
     const site = 'www.royalcrystalacademy.com.ng/parent-login.html';
-    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Parent Portal Activation</title>
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${r.reset ? "Parent Portal Password Reset" : "Parent Portal Activation"}</title>
       <style>body{font-family:Arial,sans-serif;margin:0;padding:24px;color:#111827}.slip{border:2px dashed #13306b;border-radius:10px;padding:20px;max-width:480px;margin:auto}
       .h{display:flex;align-items:center;gap:10px;border-bottom:2px solid #c9960c;padding-bottom:8px;margin-bottom:12px}.h img{width:48px;height:48px}
       .n{font-family:Georgia,serif;font-weight:700;color:#13306b;font-size:18px;text-transform:uppercase}.code{font-family:monospace;font-size:28px;font-weight:700;letter-spacing:.15em;text-align:center;background:#eef3fb;border-radius:8px;padding:10px;margin:10px 0}
       ol{font-size:13px;padding-left:18px;line-height:1.6}small{color:#6b7280;font-size:11px}</style></head><body>
-      <div class="slip"><div class="h"><img src="${logo}"><div><div class="n">Royal Crystal Academy</div><small>Parent Portal Activation</small></div></div>
-      <p style="font-size:13px;margin:0">Dear <strong>${esc(r.full_name)}</strong>, your activation code is:</p>
+      <div class="slip"><div class="h"><img src="${logo}"><div><div class="n">Royal Crystal Academy</div><small>${r.reset ? "Parent Portal Password Reset" : "Parent Portal Activation"}</small></div></div>
+      <p style="font-size:13px;margin:0">Dear <strong>${esc(r.full_name)}</strong>, your ${r.reset ? "password reset" : "activation"} code is:</p>
       <div class="code">${esc(r.code)}</div>
-      <ol><li>Go to <strong>${site}</strong></li><li>Click <strong>Activate my account</strong></li>
-      <li>Enter your phone number (<strong>${esc(r.phone_display)}</strong>) and this code</li><li>Choose your own password, then sign in</li></ol>
+      <ol><li>Go to <strong>${site}</strong></li><li>Click <strong>Use my code</strong></li>
+      <li>Enter your phone number (<strong>${esc(r.phone_display)}</strong>) and this code</li><li>Choose ${r.reset ? "a new" : "your own"} password, then sign in</li></ol>
       <small>Code expires ${fmtDate(r.expires_at)}. Keep it private — do not share it. School staff will never ask for your password.</small></div>
       <script>window.onload=function(){window.print()}<\/script></body></html>`);
     w.document.close();

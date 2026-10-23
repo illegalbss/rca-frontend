@@ -139,8 +139,30 @@ document.addEventListener('DOMContentLoaded', () => {
   forgotOverlay?.addEventListener('click', e => {
     if (e.target === forgotOverlay) forgotOverlay.classList.remove('open');
   });
-  sendResetBtn?.addEventListener('click', () => {
+  // Sends a real request: the ICT Administrator / Proprietor get a
+  // notification and reset the password in User Management.
+  sendResetBtn?.addEventListener('click', async () => {
+    const email = document.getElementById('reset_email').value.trim();
+    if (!email) { document.getElementById('reset_email').focus(); return; }
+    sendResetBtn.disabled = true;
+    sendResetBtn.textContent = 'Sending…';
+    let msg, ok = false;
+    try {
+      const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
+      const res = await fetch(`${apiUrl}/auth/forgot-password`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email })
+      });
+      const data = await res.json().catch(() => ({}));
+      ok = res.ok;
+      msg = data.message || data.error || 'Something went wrong. Please try again.';
+    } catch (e) {
+      msg = 'Could not reach the school server. Check your internet connection and try again.';
+    }
     resetSuccess.style.display = 'block';
+    resetSuccess.style.color = ok ? '' : '#b91c1c';
+    resetSuccess.textContent = (ok ? '✅ ' : '') + msg;
+    sendResetBtn.disabled = false;
+    sendResetBtn.textContent = 'Send Reset Request';
   });
 
 });

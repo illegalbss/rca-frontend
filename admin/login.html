@@ -123,15 +123,12 @@
     <div class="modal-card" id="forgotModalCard">
       <button class="modal-close" id="forgotModalClose" aria-label="Close">&times;</button>
       <h3>Reset Password</h3>
-      <p class="modal-subtitle">Enter your school email address. The ICT Administrator will send you a reset link.</p>
+      <p class="modal-subtitle">Enter the email address you log in with. The ICT Administrator is told straight away and will give you a new temporary password. Log in with it, then use <strong>Change Password</strong> to choose your own.</p>
       <div class="form-group">
         <label for="reset_email">Email Address</label>
         <input type="email" id="reset_email" class="form-control" placeholder="yourname@royalcrystalacademy.com.ng">
       </div>
-      <div class="reset-success" id="resetSuccess" style="display:none;">
-        ✅ Request sent. The ICT Administrator will respond shortly.<br>
-        <small>(Phase 1 demo — no real email is sent yet.)</small>
-      </div>
+      <div class="reset-success" id="resetSuccess" style="display:none;"></div>
       <button class="btn btn-primary" id="sendResetBtn" style="width:100%">Send Reset Request</button>
     </div>
   </div>

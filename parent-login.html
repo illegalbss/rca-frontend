@@ -361,20 +361,29 @@
         Sign In to Parent Portal →
       </button>
       <p style="text-align:center;font-size:0.85rem;margin-top:14px">
-        First time here? <a href="#" id="showActivateLink" style="color:#1d4ed8;font-weight:600">Activate my account</a>
+        First time here, or the school gave you a code? <a href="#" id="showActivateLink" style="color:#1d4ed8;font-weight:600">Use my code</a>
       </p>
+      <p style="text-align:center;font-size:0.85rem;margin-top:4px">
+        <a href="#" id="forgotLink" style="color:#6b7280">Forgot your password?</a>
+      </p>
+      <div id="forgotBox" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-top:8px;font-size:0.85rem">
+        <p style="margin:0 0 8px;color:#374151">Enter your phone number. The school office is told straight away and will give you a <strong>reset code</strong>. Then tap <strong>Use my code</strong> above to choose a new password.</p>
+        <input type="tel" id="forgotPhone" class="form-control" placeholder="0803 123 4567" autocomplete="tel">
+        <button type="button" class="parent-login-btn" id="forgotSendBtn" style="margin-top:8px">Ask the school for a reset code</button>
+        <p id="forgotMsg" style="margin:8px 0 0;display:none"></p>
+      </div>
     </form>
 
     <!-- Activation: phone + school-issued code, then choose a password -->
     <div id="activatePanel" style="display:none">
       <form id="activateStep1" novalidate>
-        <p style="font-size:0.85rem;color:#374151;margin-bottom:14px">Enter the phone number the school has for you and the <strong>activation code</strong> the school gave you.</p>
+        <p style="font-size:0.85rem;color:#374151;margin-bottom:14px">Enter the phone number the school has for you and the <strong>code</strong> the school gave you (an activation code, or a reset code if you forgot your password).</p>
         <div class="form-group">
           <label for="act_phone">Phone Number</label>
           <input type="tel" id="act_phone" class="form-control" placeholder="0803 123 4567" autocomplete="tel" required>
         </div>
         <div class="form-group">
-          <label for="act_code">Activation Code</label>
+          <label for="act_code">Code from the School</label>
           <input type="text" id="act_code" class="form-control" placeholder="ABCDE-23456" autocomplete="one-time-code" style="text-transform:uppercase;letter-spacing:0.1em" required>
         </div>
         <button type="submit" class="parent-login-btn" id="actVerifyBtn">Continue →</button>
@@ -395,7 +404,7 @@
           <label for="act_email">Email Address (optional)</label>
           <input type="email" id="act_email" class="form-control" placeholder="your@email.com" autocomplete="email">
         </div>
-        <button type="submit" class="parent-login-btn" id="actCompleteBtn">Activate My Account</button>
+        <button type="submit" class="parent-login-btn" id="actCompleteBtn">Save My Password</button>
       </form>
 
       <p style="text-align:center;font-size:0.85rem;margin-top:14px">
@@ -492,10 +501,36 @@ document.addEventListener('DOMContentLoaded', () => {
     step1.style.display = '';
     step2.style.display = 'none';
     activationToken = null;
-    document.querySelector('.parent-card-header h2').textContent = show ? 'Activate Your Account' : 'Parent Login';
-    document.querySelector('.parent-card-header p').textContent = show ? 'Set up your parent portal account' : "Sign in to monitor your child's progress";
+    document.querySelector('.parent-card-header h2').textContent = show ? 'Use Your Code' : 'Parent Login';
+    document.querySelector('.parent-card-header p').textContent = show ? 'Activate your account or set a new password' : "Sign in to monitor your child's progress";
   }
   document.getElementById('showActivateLink').addEventListener('click', e => { e.preventDefault(); showActivation(true); });
+
+  /* ---- Forgot password: tells the school office, who issue a reset code
+     (no SMS/email service is connected, so the code comes from the school). ---- */
+  document.getElementById('forgotLink').addEventListener('click', e => {
+    e.preventDefault();
+    const box = document.getElementById('forgotBox');
+    box.style.display = box.style.display === 'none' ? '' : 'none';
+    const typed = document.getElementById('parent_email')?.value || '';
+    if (/\d{7,}/.test(typed.replace(/\D/g, ''))) document.getElementById('forgotPhone').value = typed;
+  });
+  document.getElementById('forgotSendBtn').addEventListener('click', async () => {
+    const phone = document.getElementById('forgotPhone').value.trim();
+    const msgEl = document.getElementById('forgotMsg');
+    if (!phone) { document.getElementById('forgotPhone').focus(); return; }
+    const b = document.getElementById('forgotSendBtn');
+    b.disabled = true; b.textContent = 'Sending…';
+    let r;
+    try { r = await post('/auth/forgot-password', { email: phone }); }
+    catch (err) { r = { ok: false, data: { error: 'Could not reach the school server. Check your internet connection.' } }; }
+    msgEl.style.display = '';
+    msgEl.style.color = r.ok ? '#065f46' : '#b91c1c';
+    msgEl.textContent = r.ok
+      ? '✅ The school office has been told. When they give you your reset code, tap "Use my code" above.'
+      : (r.data.error || 'Something went wrong. Please try again.');
+    b.disabled = false; b.textContent = 'Ask the school for a reset code';
+  });
   document.getElementById('backToLoginLink').addEventListener('click', e => { e.preventDefault(); showActivation(false); });
 
   step1.addEventListener('submit', async (e) => {
