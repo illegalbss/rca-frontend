@@ -93,6 +93,7 @@
     html, body { margin:0; background:#e5e7eb; font-family:Arial, Helvetica, sans-serif; color:var(--ink); }
     @page { size:A4 portrait; margin:0; }
     .sheet { width:210mm; height:297mm; margin:12px auto; background:#fff; padding:7mm 8mm 0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 2px 12px rgba(0,0,0,.15); position:relative; }
+    @media screen { .sheet { zoom: var(--fit, 1); } }
     @media print { html, body { background:#fff; } .sheet { margin:0; box-shadow:none; } .toolbar { display:none !important; } }
     .toolbar { position:sticky; top:0; z-index:5; display:flex; gap:8px; justify-content:center; align-items:center; padding:10px; background:#111827; color:#fff; font:600 13px Arial; }
     .toolbar button { font:600 13px Arial; padding:8px 16px; border-radius:6px; border:0; cursor:pointer; background:#374151; color:#fff; }
@@ -338,6 +339,7 @@
         <button onclick="window.close()">Close</button>
       </div>
       ${buildDocument(events, startYear)}
+      <script>(function(){function fit(){document.documentElement.style.setProperty('--fit',String(Math.min(1,(window.innerWidth-12)/794)));}fit();window.addEventListener('resize',fit);})();</script>
       </body></html>`);
     win.document.close();
 

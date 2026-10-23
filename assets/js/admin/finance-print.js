@@ -76,6 +76,7 @@
     .sheet { width:210mm; min-height:297mm; margin:12px auto; background:#fff; padding:12mm 12mm 0; display:flex; flex-direction:column; box-shadow:0 2px 12px rgba(0,0,0,.15); }
     .grow { flex:1; }
     @page { size:A4 portrait; margin:0; }
+    @media screen { .sheet { zoom: var(--fit, 1); } }
     @media print { html, body { background:#fff; } .sheet { margin:0; box-shadow:none; } .toolbar { display:none !important; } }
 
     .toolbar { position:sticky; top:0; z-index:5; display:flex; gap:8px; justify-content:center; padding:10px; background:#111827; }
@@ -244,6 +245,8 @@
       <title>${esc(title)}</title><style>${CSS}</style></head><body>
       <div class="toolbar"><button onclick="window.print()">🖨 Print / Save as PDF</button><button class="alt" onclick="window.close()">Close</button></div>
       ${bodyHtml}
+      <!-- On a phone the A4 page is shrunk to fit the screen (screen only; printing stays full size). -->
+      <script>(function(){function fit(){document.documentElement.style.setProperty('--fit',String(Math.min(1,(window.innerWidth-12)/794)));}fit();window.addEventListener('resize',fit);})();</script>
       <script>
         // Print once the badge (used in the header and the seal) has loaded.
         window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });

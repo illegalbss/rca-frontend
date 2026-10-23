@@ -234,10 +234,18 @@
   margin-bottom: var(--space-sm);
 }
 
+/* Three equal columns that always fit the card; on narrow phones the
+   amounts get a little smaller instead of running off the edge. */
 .lookup-balance-row {
-  display: flex;
-  gap: var(--space-xl);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
   font-size: var(--fs-sm);
+}
+.lookup-balance-item { min-width: 0; }
+@media (max-width: 480px) {
+  .lookup-balance-row { gap: 8px; font-size: 0.75rem; }
+  .lookup-balance-item strong { font-size: 1.05rem; }
 }
 
 .lookup-balance-item strong {
