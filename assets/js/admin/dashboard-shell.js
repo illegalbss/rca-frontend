@@ -198,7 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // "ICT Administrator", when greeted). Fall back to the role label when
   // no job_title has been set.
   let roleLabel;
-  if (currentUser.job_title && currentUser.job_title.trim()) {
+  if (/proprietor/i.test(currentUser.job_title || '')) {
+    roleLabel = 'School Proprietor';
+  } else if (currentUser.job_title && currentUser.job_title.trim()) {
     roleLabel = currentUser.job_title.trim();
   } else if (userRoles.includes('class_teacher') && userRoles.includes('subject_teacher')) {
     roleLabel = 'Form & Subject Teacher';
@@ -209,6 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const initials = currentUser.full_name
     .split(' ').map(p => p.charAt(0)).join('').substring(0, 2).toUpperCase();
 
+  // Pages greet people by this title too (e.g. "School Proprietor Dashboard").
+  window.CURRENT_ROLE_LABEL = roleLabel;
   if (roleBadge) roleBadge.textContent = roleLabel;
 
   if (avatar) {

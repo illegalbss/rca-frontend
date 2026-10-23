@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let noticeHTML = '';
     if (ur.includes('ict_admin') || ur.includes('head_teacher')) {
       noticeHTML = `<div style="background:#dbeafe;border:1px solid #93c5fd;color:#1e40af;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem">
-        <strong>Full Access:</strong> As ${ur.includes('ict_admin') ? 'ICT Administrator' : 'Head Teacher'}, you can enter and edit scores for any class and subject.
+        <strong>Full Access:</strong> As ${window.CURRENT_ROLE_LABEL || (ur.includes('ict_admin') ? 'ICT Administrator' : 'Head Teacher')}, you can enter and edit scores for any class and subject.
       </div>`;
     } else if (ur.includes('subject_teacher') && !ur.includes('class_teacher')) {
       noticeHTML = `<div style="background:#fef9c3;border:1px solid #fde68a;color:#713f12;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem">

@@ -458,7 +458,10 @@ document.addEventListener('DOMContentLoaded', async () => {
      ICT ADMINISTRATOR DASHBOARD
      ================================================ */
   function renderICTAdmin() {
-    titleEl.textContent = 'ICT Administrator Dashboard';
+    // Full-access accounts are shown by who they are (job title), e.g. the
+    // School Proprietor, not by the permission level "ICT Administrator".
+    const who = window.CURRENT_ROLE_LABEL || 'ICT Administrator';
+    titleEl.textContent = who + ' Dashboard';
 
     const totalU = allUsers.length || 1;
     const roleSegments = [
@@ -476,7 +479,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     mainEl.innerHTML = `
       <div class="welcome-banner" style="background:linear-gradient(135deg,#4c1d95,#7c3aed)">
         <div>
-          <h2>ICT Administrator — ${user.full_name} 🛡️</h2>
+          <h2>${who} — ${user.full_name} 🛡️</h2>
           <p>${activeAccounts} of ${allUsers.length} accounts active.</p>
         </div>
         <span class="welcome-emoji">💻</span>

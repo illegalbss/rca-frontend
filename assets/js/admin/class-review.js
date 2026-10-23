@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if ((curRoles.includes('head_teacher') || curRoles.includes('ict_admin')) && !curRoles.includes('class_teacher')) {
     const notice = document.createElement('div');
     notice.style.cssText = 'background:#dbeafe;border:1px solid #93c5fd;color:#1e40af;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem';
-    notice.textContent = '👁 Viewing as ' + (curRoles.includes('ict_admin') ? 'ICT Administrator' : 'Head Teacher') + ' — you can view all class reviews. Only Form Teachers can enter behaviour ratings and comments.';
+    notice.textContent = '👁 Viewing as ' + (window.CURRENT_ROLE_LABEL || (curRoles.includes('ict_admin') ? 'ICT Administrator' : 'Head Teacher')) + ' — you can view all class reviews. Only Form Teachers can enter behaviour ratings and comments.';
     document.querySelector('.admin-main').insertBefore(notice, document.querySelector('.approval-banner'));
   }
 
