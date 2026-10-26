@@ -73,6 +73,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="um-stat s-teacher"><span class="um-stat-num">${counts.teacher}</span><span class="um-stat-label">Teachers</span></div>
       <div class="um-stat s-parent"><span class="um-stat-num">${counts.parent}</span><span class="um-stat-label">Parents</span></div>
       <div class="um-stat s-total"><span class="um-stat-num">${counts.total}</span><span class="um-stat-label">Total Accounts</span></div>
+      <div class="um-stat" role="button" tabindex="0" title="Show deactivated accounts" style="cursor:pointer;border-left:4px solid #dc2626"
+           onclick="var s=document.getElementById('umStatusFilter'); s.value='deactivated'; s.dispatchEvent(new Event('change'));">
+        <span class="um-stat-num" style="color:#dc2626">${allUsers.filter(u => u.status === 'deactivated').length}</span><span class="um-stat-label">Deactivated</span></div>
     `;
   }
 
@@ -782,6 +785,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const addParentBtn = document.querySelector('[onclick="showAddParentModal()"]');
     if (addParentBtn) addParentBtn.style.display = 'none';
   }
+
+  // user-management.html?status=deactivated (linked from the Dashboard) opens
+  // the list showing only deactivated accounts, each with a Reactivate button.
+  const wantStatus = new URLSearchParams(location.search).get('status');
+  const statusSel = document.getElementById('umStatusFilter');
+  if (wantStatus && statusSel && [...statusSel.options].some(o => o.value === wantStatus)) statusSel.value = wantStatus;
 
   await refreshAll();
   renderParents();

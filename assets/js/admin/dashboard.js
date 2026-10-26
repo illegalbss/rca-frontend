@@ -100,6 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     u.roles.includes('class_teacher') || u.roles.includes('subject_teacher'));
   const activeStaff  = staffUsers.filter(u => u.status === 'active').length;
   const deactStaff   = staffUsers.filter(u => u.status === 'deactivated').length;
+  // Every deactivated account, staff AND parents (parents were left out before).
+  const deactAll     = allUsers.filter(u => u.status === 'deactivated').length;
 
   // Role breakdown for donut charts
   const roleCount = {};
@@ -526,10 +528,10 @@ document.addEventListener('DOMContentLoaded', async () => {
               <span style="font-size:0.82rem;font-weight:600;color:#065f46">✅ Active Accounts</span>
               <span style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;color:#065f46">${activeStaff + parentUsers.filter(u=>u.status==='active').length}</span>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fee2e2;border-radius:8px">
-              <span style="font-size:0.82rem;font-weight:600;color:#991b1b">🚫 Deactivated</span>
-              <span style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;color:#991b1b">${deactStaff}</span>
-            </div>
+            <a href="user-management.html?status=deactivated" title="See and reactivate these accounts" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#fee2e2;border-radius:8px;text-decoration:none">
+              <span style="font-size:0.82rem;font-weight:600;color:#991b1b">🚫 Deactivated <small style="font-weight:400">— view &amp; reactivate →</small></span>
+              <span style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;color:#991b1b">${deactAll}</span>
+            </a>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f3f4f6;border-radius:8px">
               <span style="font-size:0.82rem;font-weight:600;color:#374151">👥 Total Users</span>
               <span style="font-family:var(--font-heading);font-size:1.2rem;font-weight:700;color:#374151">${allUsers.length}</span>
@@ -547,7 +549,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         `)}
 
         ${card('Security Overview', `
-          ${secRow('Deactivated Accounts',   deactStaff,      deactStaff > 0 ? 'sec-orange' : 'sec-green')}
+          ${secRow('Deactivated Accounts',   deactAll,        deactAll > 0 ? 'sec-orange' : 'sec-green')}
           ${secRow('Active Staff Sessions',  activeStaff,     'sec-green')}
           ${secRow('Total Parent Accounts',  parentUsers.length, 'sec-green')}
           ${secRow('Total Student Records',  totalStudents,   'sec-green')}
