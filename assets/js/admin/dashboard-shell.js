@@ -241,6 +241,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sidebarRole)   sidebarRole.textContent   = roleLabel;
 
   /* --------------------------------------------
+     5b. CURRENT SCHOOL YEAR in the top bar ("Academic Session: …")
+     --------------------------------------------
+     Pages used to have the year typed into their HTML, which went stale
+     every September. Shown from the server's current school year instead. */
+  document.querySelectorAll('.topbar-session').forEach(el => { el.textContent = 'Academic Session: ' + (window.RCA_CONFIG?.SESSION || ''); });
+  window.RCA_API?.call('/settings/session').then(s => {
+    if (!s || !s.current) return;
+    if (window.RCA_CONFIG) window.RCA_CONFIG.SESSION = s.current;
+    document.querySelectorAll('.topbar-session').forEach(el => { el.textContent = 'Academic Session: ' + s.current; });
+  }).catch(() => {});
+
+  /* --------------------------------------------
      6. ICT ENROLLMENT PENDING-APPLICATIONS BADGE
      --------------------------------------------
      In-app notification for new "Enroll Now" submissions from the

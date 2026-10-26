@@ -21,7 +21,10 @@
 
     SCHOOL_NAME:   'Royal Crystal Academy',
     SCHOOL_DOMAIN: 'royalcrystalacademy.com.ng',
-    SESSION:       '2025/2026',
+    // A starting guess from today's date (a school year runs Sept–July);
+    // staff pages replace it with the server's current school year
+    // (dashboard-shell.js, GET /api/settings/session).
+    SESSION:       (() => { const d = new Date(), y = d.getFullYear(); return d.getMonth() >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`; })(),
     // Worked out from today's date (Sept–Dec = First, Jan–Apr = Second,
     // May–Aug = Third) instead of a hardcoded 'term2', which left every
     // term picker on Second Term all year — e.g. the Report Card showing

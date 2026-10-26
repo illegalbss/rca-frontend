@@ -125,6 +125,16 @@
         Only the ICT Administrator can change them — Head Teacher and Accountant can view but not edit.
       </p>
 
+      <!-- School year: shown to all; the ICT Administrator starts the next one each September -->
+      <div id="schoolYearBox" style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:16px 20px;margin-bottom:20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div style="margin:4px 12px 4px 0">
+          <div style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase">Current School Year</div>
+          <div id="schoolYearLabel" style="font-size:1.3rem;font-weight:700;color:var(--color-primary)">…</div>
+          <div style="font-size:0.78rem;color:#6b7280">Scores, payments and report cards are filed under this year.</div>
+        </div>
+        <button class="btn btn-outline" id="startYearBtn" style="display:none;margin:4px 0">Start new school year</button>
+      </div>
+
       <div id="feeScheduleContainer">
         <p style="color:#9ca3af">Loading fee schedule…</p>
       </div>
@@ -150,6 +160,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   const canEdit = roles.includes('ict_admin');
 
   const container = document.getElementById('feeScheduleContainer');
+
+  /* School year box. "Start new school year" (ICT Admin) moves the school
+     to the next year and copies these fees over; do it once each September
+     before any new-year scores or payments are entered. */
+  (async function schoolYear() {
+    const labelEl = document.getElementById('schoolYearLabel');
+    const btn = document.getElementById('startYearBtn');
+    let current = null;
+    try { current = (await window.RCA_API.call('/settings/session')).current; } catch (e) {}
+    labelEl.textContent = current || 'Not set';
+    const m = /^(\d{4})\/(\d{4})$/.exec(current || '');
+    if (!canEdit || !m) return;
+    const next = `${+m[1] + 1}/${+m[2] + 1}`;
+    btn.textContent = `Start the ${next} school year`;
+    btn.style.display = '';
+    btn.onclick = async () => {
+      if (!confirm(`Start the ${next} school year now?\n\n` +
+        `• From now on, new scores, payments and report cards are filed under ${next}.\n` +
+        `• ${current} records stay as they are (history).\n` +
+        `• This term's fee amounts are copied to ${next} — check them below.\n\n` +
+        `Only do this at the start of the new school year (September), after promotion.`)) return;
+      btn.disabled = true; btn.textContent = 'Starting…';
+      try {
+        const r = await window.RCA_API.call('/settings/session/start', { method: 'POST', body: {} });
+        alert(r.message);
+        location.reload();
+      } catch (e) {
+        alert('Could not start the new school year: ' + e.message);
+        btn.disabled = false; btn.textContent = `Start the ${next} school year`;
+      }
+    };
+  })();
 
   if (!window.RCA_API) {
     container.innerHTML = '<p style="color:#dc2626">Cannot reach the server.</p>';
