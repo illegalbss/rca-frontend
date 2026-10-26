@@ -221,8 +221,9 @@
     return await apiCall('/users/me', { method: 'PUT', body: data });
   }
 
-  async function resetPassword(userId) {
-    return await apiCall(`/users/${userId}/reset-password`, { method: 'POST' });
+  // newPassword is optional — without it the server generates one.
+  async function resetPassword(userId, newPassword) {
+    return await apiCall(`/users/${userId}/reset-password`, { method: 'POST', body: newPassword ? { password: newPassword } : {} });
   }
 
   /* ============================================

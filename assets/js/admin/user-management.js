@@ -469,11 +469,23 @@ document.addEventListener('DOMContentLoaded', async () => {
      RESET PASSWORD MODAL
      ============================================================ */
   let resetUserId = null;
+  // Every time it opens the window starts fresh (button visible, empty box),
+  // however it was closed last time — the button used to stay hidden after
+  // one reset, so the next Reset PW looked like it wouldn't load.
   function openResetModal(userId) {
     resetUserId = userId;
     const u = allUsers.find(x => x.id === userId);
-    document.getElementById('resetModalBody').innerHTML =
-      `<p style="font-size:0.85rem;color:#374151">Generate a new temporary password for <strong>${u?.full_name || ''}</strong>? They will need it to log in next.</p>`;
+    document.getElementById('resetModalBody').innerHTML = `
+      <p style="font-size:0.85rem;color:#374151;margin:0 0 10px">Set a new password for <strong>${u?.full_name || ''}</strong>. They log in with it and can then change it under <strong>Change Password</strong>.</p>
+      <label style="font-size:0.78rem;font-weight:600;color:#374151;display:block;margin-bottom:4px">New password (optional)</label>
+      <input type="text" id="resetNewPassword" class="form-control" autocomplete="off" placeholder="Leave empty to create one automatically">
+      <small style="color:#6b7280;font-size:0.72rem">At least 8 characters, with a letter and a number.</small>
+      <div id="resetResult" style="margin-top:10px"></div>`;
+    const btn = document.getElementById('resetConfirmBtn');
+    btn.style.display = '';
+    btn.disabled = false;
+    btn.textContent = 'Set New Password';
+    document.getElementById('resetModalCancelBtn').textContent = 'Cancel';
     document.getElementById('resetModal').classList.add('open');
   }
   function closeResetModal() { document.getElementById('resetModal').classList.remove('open'); }
@@ -483,22 +495,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('resetConfirmBtn')?.addEventListener('click', async () => {
     if (!resetUserId) return;
     const btn = document.getElementById('resetConfirmBtn');
+    const typed = (document.getElementById('resetNewPassword')?.value || '').trim();
+    const out = document.getElementById('resetResult');
+    if (typed && (typed.length < 8 || !/[A-Za-z]/.test(typed) || !/\d/.test(typed))) {
+      out.innerHTML = '<p style="color:#dc2626;font-size:0.8rem;margin:0">The password needs at least 8 characters, with a letter and a number.</p>';
+      return;
+    }
     btn.disabled = true;
+    btn.textContent = 'Saving…';
+    out.innerHTML = '';
     try {
-      const result = await window.RCA_API.resetPassword(resetUserId);
-      document.getElementById('resetModalBody').innerHTML =
-        `<p style="font-size:0.85rem;color:#065f46;background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:12px">
-           ✅ New password: <strong>${result.temp_password}</strong><br>
-           <span style="font-size:0.78rem">Share this with ${result.email} securely.</span>
+      const result = await window.RCA_API.resetPassword(resetUserId, typed);
+      out.innerHTML =
+        `<p style="font-size:0.85rem;color:#065f46;background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:12px;margin:0">
+           ✅ New password: <strong style="font-size:1rem;letter-spacing:0.03em">${result.temp_password}</strong><br>
+           <span style="font-size:0.78rem">Give it to ${result.email} in person or by private message.</span>
          </p>`;
       btn.style.display = 'none';
+      document.getElementById('resetModalCancelBtn').textContent = 'Close';
     } catch (e) {
-      document.getElementById('resetModalBody').innerHTML = `<p style="color:#dc2626;font-size:0.85rem">Could not reset password: ${e.message}</p>`;
+      out.innerHTML = `<p style="color:#dc2626;font-size:0.85rem;margin:0">Could not reset password: ${e.message}</p>`;
+      btn.disabled = false;
+      btn.textContent = 'Set New Password';
     }
-    btn.disabled = false;
   });
   document.getElementById('resetModal')?.addEventListener('click', e => {
-    if (e.target.id === 'resetModal') { closeResetModal(); document.getElementById('resetConfirmBtn').style.display = 'inline-flex'; }
+    if (e.target.id === 'resetModal') closeResetModal();
   });
 
   /* ============================================================
