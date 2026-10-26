@@ -1192,3 +1192,7 @@
   .pp-nav-link { min-height: 48px; font-size: 0.95rem; }
   .pp-sidebar-profile-name { font-size: 0.95rem; }
 }
+
+/* Announcement messages: the general styles remove list bullets; put them back. */
+.pp-ann-body ul { list-style: disc; }
+.pp-ann-body ol { list-style: decimal; }

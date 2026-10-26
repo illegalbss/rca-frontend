@@ -44,24 +44,64 @@
       </article>`;
   }
 
+  // Announcement bodies are written by staff and may contain simple
+  // formatting (paragraphs, bold, lists, a highlighted dates box). Only
+  // those safe pieces are kept before showing it on the public site:
+  // no scripts, links, images, event handlers or style tricks.
+  const SAFE_TAGS = new Set(['P', 'BR', 'STRONG', 'B', 'EM', 'I', 'U', 'UL', 'OL', 'LI', 'DIV', 'SPAN',
+    'H3', 'H4', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD', 'SMALL']);
+  function safeHtml(html) {
+    const doc = new DOMParser().parseFromString(`<div>${html || ''}</div>`, 'text/html');
+    (function clean(node) {
+      [...node.children].forEach(el => {
+        if (!SAFE_TAGS.has(el.tagName)) {
+          // Keep the text of anything not allowed, drop the element itself.
+          el.replaceWith(doc.createTextNode(el.textContent));
+          return;
+        }
+        [...el.attributes].forEach(attr => {
+          const ok = attr.name === 'style' && !/url\s*\(|expression|javascript:|position\s*:/i.test(attr.value);
+          if (!ok) el.removeAttribute(attr.name);
+        });
+        clean(el);
+      });
+    })(doc.body.firstChild);
+    return doc.body.firstChild.innerHTML;
+  }
+
   function announcementCard(a) {
-    // Announcement bodies can contain HTML (newsletters) — strip tags
-    // for this preview-style card; the full version isn't published
-    // on a standalone page yet, so this is a summary only.
-    const plain = String(a.body || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    // A short preview on the card; "Read full announcement" opens the
+    // whole message (with any highlighted dates) right under it.
+    const plain = String(a.body || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
     const excerpt = plain.length > 220 ? plain.slice(0, 220) + '…' : plain;
     return `
-      <article class="card news-card-item" data-category="news">
+      <article class="card news-card-item news-announcement" data-category="news">
         <div class="news-card-body">
           <div class="post-meta">
             <span class="post-date">📅 ${formatDate(a.published_at || a.created_at)}</span>
-            <span class="post-category-tag tag-news">News</span>
+            <span class="post-category-tag tag-news">Announcement</span>
           </div>
           <h3>${escapeHtml(a.title)}</h3>
-          <p>${escapeHtml(excerpt)}</p>
+          <p class="ann-excerpt">${escapeHtml(excerpt)}</p>
+          <div class="ann-full" hidden>${safeHtml(a.body)}</div>
+          <button type="button" class="btn btn-outline btn-sm ann-toggle" aria-expanded="false">Read full announcement</button>
         </div>
       </article>`;
   }
+
+  // Open / close a full announcement (one handler for every card).
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.ann-toggle');
+    if (!btn) return;
+    const card = btn.closest('.news-announcement');
+    const full = card.querySelector('.ann-full');
+    const open = full.hidden;
+    full.hidden = !open;
+    card.querySelector('.ann-excerpt').hidden = open;
+    btn.textContent = open ? 'Show less' : 'Read full announcement';
+    btn.setAttribute('aria-expanded', String(open));
+    card.classList.toggle('is-open', open);
+  });
 
   try {
     const [eventsRes, annRes] = await Promise.all([
@@ -69,20 +109,17 @@
       fetch(`${apiUrl}/public/announcements`).then(r => r.ok ? r.json() : { announcements: [] }).catch(() => ({ announcements: [] }))
     ]);
 
-    const cardsHtml = [
-      ...(eventsRes.events || []).map(eventCard),
-      ...(annRes.announcements || []).map(announcementCard)
-    ].join('');
+    const eventsHtml = (eventsRes.events || []).map(eventCard).join('');
+    // Announcements arrive newest first; they go at the very top of the
+    // grid so the latest notice is the first thing parents see.
+    const annHtml = (annRes.announcements || []).map(announcementCard).join('');
+    const grid = placeholder.parentNode;
+    if (annHtml) grid.insertAdjacentHTML('afterbegin', annHtml);
 
-    if (!cardsHtml) {
-      placeholder.remove();
-      return;
-    }
-
-    // Replace the placeholder with the new cards as direct siblings in
-    // .news-grid (a CSS grid) — nesting them one level deeper inside the
-    // placeholder div would break the grid layout.
-    placeholder.outerHTML = cardsHtml;
+    // Events replace the placeholder as direct siblings in .news-grid (a
+    // CSS grid) — nesting them one level deeper would break the layout.
+    if (eventsHtml) placeholder.outerHTML = eventsHtml;
+    else placeholder.remove();
   } catch (e) {
     placeholder.remove();
   }

@@ -34,6 +34,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     const fs = await window.RCA_API.call('/payments/fee-schedule');
     sessionLabel = fs.terms?.[0]?.session_label || sessionLabel;
   } catch (e) { /* keep the config fallback */ }
+  /* "Next Term Begins" comes from the School Calendar automatically.
+     Among calendar entries that mark the school resuming / reopening / a
+     term beginning (within the coming months):
+       1. one that names the next term ("Second Term Begins", "Resumption
+          for Third Term"…) wins;
+       2. otherwise the earliest one in the months a new term starts
+          (First Term report → Jan–Feb, Second → Apr–May, Third → Sept–Oct).
+     Mid-term resumptions (e.g. 9 November) fall outside those months or
+     after the term's start, so they aren't picked. Falls back to
+     "See School Calendar" when nothing has been entered. */
+  let calendarEvents = [];
+  try { calendarEvents = (await window.RCA_API.getCalendarEvents()) || []; } catch (e) { calendarEvents = []; }
+  const RESUME_RE = /resum|re-?open|begin|start|commence|first day/i;
+  const NEXT_TERM = {
+    term1: { name: /second\s*term|2nd\s*term/i, months: [0, 1] },
+    term2: { name: /third\s*term|3rd\s*term/i,  months: [3, 4] },
+    term3: { name: /first\s*term|1st\s*term/i,  months: [8, 9] }
+  };
+  function nextTermBegins(term) {
+    const next = NEXT_TERM[term];
+    if (!next) return null;
+    const day = d => String(d || '').slice(0, 10);
+    const earliest = new Date(); earliest.setDate(earliest.getDate() - 150);
+    const latest   = new Date(); latest.setDate(latest.getDate() + 300);
+    const found = calendarEvents
+      .filter(e => RESUME_RE.test(e.title || ''))
+      .map(e => ({ e, d: new Date(day(e.event_date || e.date) + 'T00:00:00') }))
+      .filter(x => !isNaN(x.d) && x.d >= earliest && x.d <= latest)
+      .sort((a, b) => a.d - b.d);
+    const hit = found.find(x => next.name.test(x.e.title)) || found.find(x => next.months.includes(x.d.getMonth()));
+    return hit ? hit.d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : null;
+  }
+
   const allClasses      = window.SCHOOL_CLASSES   || [];
   const traits           = window.BEHAVIOR_TRAITS  || [];
   const scoreToGrade    = window.scoreToGrade;
@@ -546,7 +579,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span class="rc-signature-name">Mrs. Ada Nwankwo</span>
           </div>
           <div class="rc-signature">
-            <div class="rc-signature-line rc-signature-date">See School Calendar</div>
+            <div class="rc-signature-line rc-signature-date">${nextTermBegins(term) || 'See School Calendar'}</div>
             <span class="rc-signature-label">Next Term Begins</span>
           </div>
           <div class="rc-stamp">School<br>Stamp</div>
