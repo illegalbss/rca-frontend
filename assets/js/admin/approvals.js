@@ -68,6 +68,12 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <span class="badge-status tone-${info.tone}">${info.label}</span>
         </div>
+        ${record.pupil_count && (record.missing_ft_comments || record.missing_ht_comments) ? `
+        <p style="margin:8px 0 0;padding:8px 12px;border-radius:8px;background:#fffbeb;border:1px solid #fcd34d;color:#92400e;font-size:0.8rem">
+          &#9888; Comments still missing:
+          ${record.missing_ft_comments ? `${record.missing_ft_comments} pupil${record.missing_ft_comments !== 1 ? 's' : ''} without a Form Teacher comment` : ''}${record.missing_ft_comments && record.missing_ht_comments ? ' &middot; ' : ''}${record.missing_ht_comments ? `${record.missing_ht_comments} without a Head Teacher comment` : ''}.
+          These lines print blank on the report card.
+        </p>` : ''}
         <div class="approval-timeline">
           ${timelineItem('Submitted', record.submitted_by_name, record.submitted_at)}
           ${timelineItem('Approved', record.approved_by_name, record.approved_at)}

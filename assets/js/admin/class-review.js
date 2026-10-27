@@ -215,6 +215,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     (data?.behavior || []).forEach(b => { ratingsMap[b.trait_code] = Number(b.rating); });
     const ratingRecord = { ratings: ratingsMap, comment: data?.comment || '' };
 
+    // Approved results: the comment is locked (the server refuses changes
+    // too) until the Head Teacher returns the results.
+    if (window.loadApprovals && !window.RESULT_APPROVALS?.[`${student.class_name}|${term}`]) await window.loadApprovals(term);
+    const commentLocked = window.getApprovalRecord?.(student.class_name, term)?.status === 'approved';
+
     /* --- Academic summary --- */
     const subjectRows = scores.map(r => `<tr>
         <td>${r.subject_name || r.subject_id}</td>
@@ -314,9 +319,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       `}
 
       <div class="comment-section">
-        <h4>Class Teacher's Comment</h4>
-        <textarea id="teacherComment" class="form-control comment-textarea"
-          placeholder="Write a remark about this pupil's overall performance and character this term...">${ratingRecord.comment || ''}</textarea>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+          <h4 style="margin:0">Class Teacher's Comment</h4>
+          ${commentLocked ? '' : '<button type="button" class="btn btn-outline btn-sm" id="chooseCommentBtn" style="font-size:0.78rem">&#128221; Choose Comment</button>'}
+        </div>
+        ${commentLocked ? '<p style="font-size:0.78rem;color:#92400e;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:8px 12px;margin:0 0 8px">&#128274; Results are approved, so this comment is locked. Ask the Head Teacher to return the results if it must change.</p>' : ''}
+        <textarea id="teacherComment" class="form-control comment-textarea" ${commentLocked ? 'readonly' : ''}
+          placeholder="Choose a comment or write a remark about this pupil's behaviour, attitude to learning and progress this term...">${ratingRecord.comment || ''}</textarea>
       </div>
 
       <button class="btn btn-primary save-pupil-btn" id="savePupilBtn">Save This Pupil</button>
@@ -359,6 +368,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     reviewPanel.querySelectorAll('.nursery-field-input').forEach(el => {
       el.addEventListener('input', () => saveStatus_set('Unsaved changes', 'unsaved'));
+    });
+
+    const commentBox = document.getElementById('teacherComment');
+    commentBox.addEventListener('input', () => saveStatus_set('Unsaved changes', 'unsaved'));
+    document.getElementById('chooseCommentBtn')?.addEventListener('click', () => {
+      window.RCA_COMMENTS.open({
+        role: 'form_teacher',
+        pupil: student,
+        currentText: commentBox.value,
+        onInsert: text => {
+          commentBox.value = text;
+          saveStatus_set('Comment added — click Save This Pupil to keep it', 'unsaved');
+          commentBox.focus();
+        }
+      });
     });
 
     /* Save this pupil button */

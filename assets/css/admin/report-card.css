@@ -310,6 +310,7 @@
 .rc-remark-text {
   font-size: 12px;
   font-style: italic;
+  overflow-wrap: anywhere;
 }
 
 /* --- Affective & Behavioural / Nursery records: 2 columns --- */

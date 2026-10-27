@@ -216,56 +216,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* --------------------------------------------
      GENERATE A REMARK SENTENCE BASED ON THE AVERAGE
      -------------------------------------------- */
-  // Encouraging wording for Pre-Nursery, whatever the scores.
-  const PRE_NURSERY_REMARKS = {
-    A: 'A wonderful term! A bright, happy learner who is doing very well.',
-    B: 'A lovely term. Growing in confidence and learning well every day.',
-    C: 'A good term. Enjoying school and making steady progress.',
-    D: 'Settling in well and learning new things every day. Keep it up!',
-    E: 'A cheerful little learner who is growing and trying hard.',
-    F: 'A cheerful little learner who is growing and trying hard.'
-  };
-  const PRE_NURSERY_HT = {
-    A: 'An excellent start. We are very proud of this little one!',
-    B: 'A very good term. Well done, and keep shining!',
-    C: 'Good progress this term. We look forward to more next term.',
-    D: 'A happy term of learning and play. Well done!',
-    E: 'Growing well in confidence. We are proud of every step.',
-    F: 'Growing well in confidence. We are proud of every step.'
-  };
-
-  function generateRemark(average, preNursery) {
-    // Derive the remark from the SAME grade boundaries used everywhere
-    // else (via scoreToGrade), rather than a second hardcoded threshold
-    // list that could quietly drift out of sync with the real scale.
-    const grade = scoreToGrade(average);
-    if (preNursery) return PRE_NURSERY_REMARKS[grade] || PRE_NURSERY_REMARKS.C;
-
-    const REMARKS_BY_GRADE = {
-      A: 'An excellent result. Keep up the outstanding work!',
-      B: 'A very good result this term. Well done.',
-      C: 'A good result. There is room for improvement with more effort.',
-      D: 'A pass, but performance needs to improve next term.',
-      E: 'A weak pass. Needs considerably more effort and support next term.',
-      F: 'This result needs serious improvement. Extra support is strongly recommended.'
-    };
-
-    return REMARKS_BY_GRADE[grade] || REMARKS_BY_GRADE.F;
-  }
-
-  function generateHtComment(average, preNursery) {
-    const grade = scoreToGrade(average);
-    if (preNursery) return PRE_NURSERY_HT[grade] || PRE_NURSERY_HT.C;
-    const HT_COMMENTS = {
-      A: 'An outstanding performance. This pupil is a credit to the school. Keep it up!',
-      B: 'A commendable result. I encourage this pupil to sustain the momentum.',
-      C: 'A satisfactory result. With greater dedication, much more can be achieved.',
-      D: 'There is potential here that has not yet been fully realised. More effort is needed.',
-      E: 'A weak result. This pupil needs close support and much more effort next term.',
-      F: 'I urge this pupil and their parents/guardians to take academics more seriously next term.'
-    };
-    return HT_COMMENTS[grade] || HT_COMMENTS.F;
-  }
+  // There is no automatic remark: a report card shows only the comments
+  // the Form Teacher and Head Teacher chose or wrote (comment library on
+  // Class Review / the Head Teacher's Edit). An empty one prints blank.
+  const escText = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const noCommentYet = hint =>
+    `<span class="no-print" style="color:#9ca3af;font-style:normal">No comment yet.${hint ? ' ' + hint : ''}</span>`;
 
   function ordinal(n) {
     const suffixes = ['th', 'st', 'nd', 'rd'];
@@ -554,6 +510,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     const isNursery = isNurseryClass(className);
 
+    // Approved results keep the comments that were approved: no editing
+    // until the Head Teacher returns them (the server enforces this too).
+    if (window.loadApprovals && !window.RESULT_APPROVALS?.[`${className}|${term}`]) {
+      try { await window.loadApprovals(term); } catch (e) { /* server still enforces the lock */ }
+    }
+    const commentsLocked = window.getApprovalRecord?.(className, term)?.status === 'approved';
+
     const behaviorMap = {};
     (summary.behavior || []).forEach(b => { behaviorMap[b.trait_code] = Number(b.rating); });
 
@@ -581,7 +544,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ['Pupil Name', student.full_name],
       ['Admission No', student.admission_no],
       ['Class', className],
-      ['Gender', student.gender === 'male' ? 'Male' : 'Female'],
+      ['Gender', /^m/i.test(student.gender || '') ? 'Male' : /^f/i.test(student.gender || '') ? 'Female' : '—'],
       ...(preNursery ? [] : [['Position in Class', `${ordinal(position)} of ${classSize}`]]),
       ['Overall Grade', `<span class="grade-${summary.overallGrade}">${summary.overallGrade}</span> — ${gradeWord(summary.overallGrade, preNursery)}`]
     ];
@@ -646,12 +609,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="rc-remarks-grid">
         <div class="rc-remark-box">
           <span class="rc-remarks-label">Class Teacher's Remark:</span>
-          <span class="rc-remark-text">${summary.comment ? `"${summary.comment}"` : generateRemark(summary.average, preNursery)}</span>
+          <span class="rc-remark-text">${summary.comment ? `"${escText(summary.comment)}"` : noCommentYet('The Form Teacher adds this on the Class Review page.')}</span>
         </div>
         <div class="rc-remark-box" id="htCommentBlock">
           <span class="rc-remarks-label">Head Teacher's Comment:</span>
-          <span class="rc-remark-text" id="htCommentText">${summary.ht_comment ? `"${summary.ht_comment}"` : generateHtComment(summary.average, preNursery)}</span>
-          ${canEditHtComment ? `<button id="editHtCommentBtn" class="no-print" style="margin-top:6px;padding:2px 10px;font-size:0.72rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">✏️ Edit</button>` : ''}
+          <span class="rc-remark-text" id="htCommentText">${summary.ht_comment ? `"${escText(summary.ht_comment)}"` : noCommentYet(canEditHtComment && !commentsLocked ? 'Click Edit to choose or write one.' : '')}</span>
+          ${canEditHtComment && !commentsLocked ? `<button id="editHtCommentBtn" class="no-print" style="margin-top:6px;padding:2px 10px;font-size:0.72rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">✏️ Edit</button>` : ''}
+          ${canEditHtComment && commentsLocked ? `<span class="no-print" style="display:block;margin-top:6px;font-size:0.72rem;color:#92400e">🔒 Results approved, so comments are locked. Return the results on the Approvals page to change them.</span>` : ''}
         </div>
       </div>
 
@@ -689,12 +653,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       const current = summary.ht_comment || '';
       block.innerHTML = `
         <span class="rc-remarks-label">Head Teacher's Comment:</span>
-        <textarea id="htCommentInput" class="no-print" rows="2" style="width:100%;margin-top:6px;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;font-family:inherit">${current}</textarea>
-        <div class="no-print" style="margin-top:6px;display:flex;gap:8px">
+        <textarea id="htCommentInput" class="no-print" rows="3" style="width:100%;margin-top:6px;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;font-family:inherit;box-sizing:border-box">${escText(current)}</textarea>
+        <div class="no-print" style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="chooseHtCommentBtn" style="padding:5px 14px;font-size:0.75rem;background:#fff;border:1px solid var(--color-primary);color:var(--color-primary);border-radius:6px;cursor:pointer">📝 Choose Comment</button>
           <button id="saveHtCommentBtn" style="padding:5px 14px;font-size:0.75rem;background:var(--color-primary);color:#fff;border:none;border-radius:6px;cursor:pointer">Save</button>
           <button id="cancelHtCommentBtn" style="padding:5px 14px;font-size:0.75rem;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer">Cancel</button>
         </div>
       `;
+      document.getElementById('chooseHtCommentBtn').addEventListener('click', () => {
+        const input = document.getElementById('htCommentInput');
+        window.RCA_COMMENTS.open({
+          role: 'head_teacher',
+          pupil: { ...student, class_name: className },
+          currentText: input.value,
+          onInsert: text => { input.value = text; input.focus(); }
+        });
+      });
       document.getElementById('cancelHtCommentBtn').addEventListener('click', () => renderReportCard());
       document.getElementById('saveHtCommentBtn').addEventListener('click', async () => {
         const newComment = document.getElementById('htCommentInput').value.trim();
