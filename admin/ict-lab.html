@@ -36,6 +36,10 @@
     }
     .ict-tab-btn:hover { background: #f3f4f6; color: #374151; }
     .ict-tab-btn.active { background: #7c3aed; color: #fff; }
+    /* score boxes: no browser up/down arrows */
+    .ict-score-input::-webkit-inner-spin-button, .ict-score-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .ict-score-input { -moz-appearance: textfield; appearance: textfield; }
+    .ict-score-input:focus { outline: 2px solid #7c3aed; outline-offset: 1px; }
     .ict-tab-pane { display: none; }
     .ict-tab-pane.active { display: block; }
 

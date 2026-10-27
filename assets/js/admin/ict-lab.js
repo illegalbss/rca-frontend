@@ -281,6 +281,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     function scoreColor(s) { return s >= 70 ? '#065f46' : s >= 50 ? '#92400e' : '#991b1b'; }
     function scoreBg(s)    { return s >= 70 ? '#d1fae5' : s >= 50 ? '#fef3c7' : '#fee2e2'; }
 
+    function pupilAverage(adm, skills) {
+      const all = [...skills.map(sk => scoreOf(adm, sk.id)), scoreOf(adm, 'practical')].filter(v => v > 0);
+      return all.length ? Math.round(all.reduce((a, b) => a + b, 0) / all.length) : 0;
+    }
+    function avgBadge(avg) {
+      return `<span style="background:${scoreBg(avg)};color:${scoreColor(avg)};padding:3px 10px;border-radius:6px;font-size:0.78rem;font-weight:700">${avg}%</span>`;
+    }
+
+    function wireScoreInputs(tbody, skills) {
+      const inputs = [...tbody.querySelectorAll('.ict-score-input')];
+      inputs.forEach((inp, i) => {
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') { e.preventDefault(); (inputs[i + 1] || inp).focus(); if (!inputs[i + 1]) inp.blur(); }
+        });
+        inp.addEventListener('change', async () => {
+          const adm = inp.dataset.adm, skill = inp.dataset.skill;
+          const raw = inp.value.trim();
+          const old = scoreOf(adm, skill);
+          const score = raw === '' ? 0 : Number(raw);
+          if (!Number.isInteger(score) || score < 0 || score > 100) {
+            alert('Please type a whole number from 0 to 100.');
+            inp.value = old || '';
+            return;
+          }
+          inp.style.borderColor = '#9ca3af';
+          try {
+            await window.RCA_API.call(`/ict-lab/progress/${encodeURIComponent(adm)}/${skill}`, {
+              method: 'PUT', body: { score, term: currentTerm }
+            });
+          } catch (e) {
+            alert('Could not save score: ' + e.message);
+            inp.value = old || '';
+            inp.style.borderColor = '#dc2626';
+            return;
+          }
+          if (!progress[adm]) progress[adm] = {};
+          progress[adm][skill] = score;
+          inp.style.borderColor = score ? scoreColor(score) : '#d1d5db';
+          inp.style.background  = score ? scoreBg(score) : '#fff';
+          inp.style.color       = score ? scoreColor(score) : '#111827';
+          const avgCell = tbody.querySelector(`[data-avg-for="${CSS.escape(adm)}"]`);
+          if (avgCell) avgCell.innerHTML = avgBadge(pupilAverage(adm, skills));
+          const status = document.getElementById('progressSaveStatus');
+          if (status) status.textContent = `✓ Saved at ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+        });
+      });
+    }
+
     function renderTable() {
       const clsStudents = ictStudents
         .filter(s => s.class_name === selectedClass)
@@ -302,33 +350,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (clsStudents.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${skills.length + 3}" style="text-align:center;padding:24px;color:#9ca3af">No pupils in this class.</td></tr>`;
       } else {
+        // Each score is a box you type into; it saves when you leave the box
+        // (or press Enter, which also moves to the next box).
+        const cell = (s, skillId) => {
+          const score = scoreOf(s.admission_no, skillId);
+          return `<td style="padding:8px 10px;border-bottom:1px solid #f3f4f6;text-align:center">
+            ${canEdit
+              ? `<input type="number" inputmode="numeric" min="0" max="100" class="ict-score-input"
+                  data-adm="${s.admission_no}" data-skill="${skillId}" value="${score || ''}" placeholder="0–100"
+                  aria-label="${s.full_name} ${skillId} score"
+                  style="width:68px;padding:6px 4px;border:1.5px solid ${score ? scoreColor(score) : '#d1d5db'};border-radius:8px;text-align:center;font-weight:700;font-size:0.85rem;background:${score ? scoreBg(score) : '#fff'};color:${score ? scoreColor(score) : '#111827'}">`
+              : `<span style="background:${scoreBg(score)};color:${scoreColor(score)};padding:2px 8px;border-radius:6px;font-size:0.75rem;font-weight:700;display:inline-block;min-width:32px">${score || '—'}</span>`}
+          </td>`;
+        };
         tbody.innerHTML = clsStudents.map(s => {
-          const skillScores = skills.map(sk => scoreOf(s.admission_no, sk.id));
-          const practical = scoreOf(s.admission_no, 'practical');
-          const allScores = [...skillScores, practical];
-          const scoredCount = allScores.filter(v => v > 0).length;
-          const avg = scoredCount > 0 ? Math.round(allScores.reduce((a,b)=>a+b,0) / scoredCount) : 0;
-
+          const avg = pupilAverage(s.admission_no, skills);
           return `<tr>
             <td style="padding:9px 14px;border-bottom:1px solid #f3f4f6;font-weight:600;font-size:0.8rem;white-space:nowrap">${s.full_name}</td>
-            ${skills.map(sk => {
-              const score = scoreOf(s.admission_no, sk.id);
-              return `<td style="padding:9px 14px;border-bottom:1px solid #f3f4f6;text-align:center">
-                <span ${canEdit ? `onclick="window._ictEditScore('${s.admission_no}','${sk.id}',${score})" style="cursor:pointer"` : ''}
-                  title="${canEdit ? 'Click to edit' : ''}"
-                  style="background:${scoreBg(score)};color:${scoreColor(score)};padding:2px 8px;border-radius:6px;font-size:0.75rem;font-weight:700;display:inline-block;min-width:32px">${score || '—'}</span>
-              </td>`;
-            }).join('')}
-            <td style="padding:9px 14px;border-bottom:1px solid #f3f4f6;text-align:center">
-              <span ${canEdit ? `onclick="window._ictEditScore('${s.admission_no}','practical',${practical})" style="cursor:pointer"` : ''}
-                title="${canEdit ? 'Click to edit' : ''}"
-                style="background:${scoreBg(practical)};color:${scoreColor(practical)};padding:2px 8px;border-radius:6px;font-size:0.75rem;font-weight:700;display:inline-block;min-width:32px">${practical || '—'}</span>
-            </td>
-            <td style="padding:9px 14px;border-bottom:1px solid #f3f4f6;text-align:center">
-              <span style="background:${scoreBg(avg)};color:${scoreColor(avg)};padding:3px 10px;border-radius:6px;font-size:0.78rem;font-weight:700">${avg}%</span>
-            </td>
+            ${skills.map(sk => cell(s, sk.id)).join('')}
+            ${cell(s, 'practical')}
+            <td style="padding:9px 14px;border-bottom:1px solid #f3f4f6;text-align:center" data-avg-for="${s.admission_no}">${avgBadge(avg)}</td>
           </tr>`;
         }).join('');
+        wireScoreInputs(tbody, skills);
       }
 
       const countEl = document.getElementById('progressCount');
@@ -365,14 +409,16 @@ document.addEventListener('DOMContentLoaded', async () => {
               ${cls}
             </button>`).join('')}
         </div>
-        <div style="position:relative;flex:1;min-width:180px">
-          <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af">🔍</span>
-          <input type="search" id="progressSearch" placeholder="Search pupil…" class="form-control" style="padding-left:32px">
+        <div style="flex:1;min-width:180px">
+          <input type="search" id="progressSearch" placeholder="Search pupil name…" class="form-control" aria-label="Search pupil">
         </div>
         <span id="progressCount" style="font-size:0.78rem;color:#6b7280;background:#f3f4f6;padding:5px 12px;border-radius:999px"></span>
         <button onclick="window.print()" class="btn btn-outline" style="font-size:0.78rem">🖨 Print Report</button>
       </div>
-      ${canEdit ? '<p style="font-size:0.75rem;color:#9ca3af;margin-bottom:10px">Click any score to edit it.</p>' : ''}
+      ${canEdit ? `<p style="font-size:0.8rem;color:#374151;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <span>✏️ Type each score (0–100) in the boxes below. It saves by itself when you move to the next box or press Enter.</span>
+        <span id="progressSaveStatus" style="color:#059669;font-weight:600"></span>
+      </p>` : ''}
 
       <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);overflow:hidden">
         <div style="overflow-x:auto">
@@ -417,23 +463,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     renderTable();
   }
-
-  window._ictEditScore = async function(admissionNo, skillCode, current) {
-    const input = prompt(`Score (0–100):`, current || '');
-    if (input === null) return;
-    const score = parseInt(input, 10);
-    if (isNaN(score) || score < 0 || score > 100) { alert('Please enter a number between 0 and 100.'); return; }
-
-    try {
-      await window.RCA_API.call(`/ict-lab/progress/${encodeURIComponent(admissionNo)}/${skillCode}`, {
-        method: 'PUT', body: { score, term: currentTerm }
-      });
-    } catch (e) { alert('Could not save score: ' + e.message); return; }
-
-    if (!progress[admissionNo]) progress[admissionNo] = {};
-    progress[admissionNo][skillCode] = score;
-    renderProgress();
-  };
 
   /* ================================================
      TAB 4: COMPUTER LAB (real, editable)
