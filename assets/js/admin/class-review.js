@@ -201,6 +201,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const scores = data?.scores || [];
     const isNursery = isNurseryClass(student.class_name);
     const nurseryRecord = data?.nursery_record || {};
+    // Automatic numbers used on the report card when the two attendance
+    // boxes below are left empty: Times School Opened from the School
+    // Calendar (else the register), Times Present from the register.
+    const regAtt = data?.attendance || {};
+    const autoOpened  = regAtt.calendar_opened ?? (regAtt.opened || null);
+    const autoPresent = regAtt.opened ? regAtt.present : null;
+    const regHint = n => (n != null ? `Auto: ${n} (leave empty to use this)` : 'Leave empty to fill automatically');
 
     const ratingsMap = {};
     // Number(): the database may return the rating as text ("4"), which
@@ -283,11 +290,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           `).join('')}
           <div class="form-group">
             <label class="form-label" style="font-size:0.8rem">Number of Times School Opened</label>
-            <input type="number" class="form-control nursery-field-input" data-field="times_school_opened" value="${nurseryRecord.times_school_opened ?? ''}">
+            <input type="number" class="form-control nursery-field-input" data-field="times_school_opened" value="${nurseryRecord.times_school_opened ?? ''}" placeholder="${regHint(autoOpened)}">
           </div>
           <div class="form-group">
             <label class="form-label" style="font-size:0.8rem">Number of Times Present</label>
-            <input type="number" class="form-control nursery-field-input" data-field="times_present" value="${nurseryRecord.times_present ?? ''}">
+            <input type="number" class="form-control nursery-field-input" data-field="times_present" value="${nurseryRecord.times_present ?? ''}" placeholder="${regHint(autoPresent)}">
           </div>
         </div>
       </div>

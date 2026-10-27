@@ -109,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       comment: data?.comment || null,
       ht_comment: data?.ht_comment || null,
       nursery_record: data?.nursery_record || null,
+      attendance: data?.attendance || null,   // from the attendance register
       average,
       totalScore,
       overallGrade: scoreToGrade(average),
@@ -335,26 +336,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
-  function renderAttendanceSection(summary, classSize) {
+  /* Attendance on the report card, filled in automatically:
+       Times School Opened — a number typed by the teacher, else the school
+         days counted from the School Calendar (term start → end, minus
+         holidays and breaks), else the days the class register was taken;
+       Times Present — a typed number, else the attendance register
+         (present or late).
+     "Edit attendance" (form teacher / Head Teacher / ICT Admin) types or
+     clears the numbers; Times School Opened can be set for the whole class. */
+  function attendanceValues(summary) {
     const nr = summary.nursery_record || {};
+    const att = summary.attendance || {};
+    const opened = nr.times_school_opened ?? att.calendar_opened ?? (att.opened ? att.opened : null);
+    const openedFrom = nr.times_school_opened != null ? 'typed' : att.calendar_opened != null ? 'calendar' : att.opened ? 'register' : null;
+    const present = nr.times_present ?? (att.opened ? att.present : null);
+    const presentFrom = nr.times_present != null ? 'typed' : att.opened ? 'register' : null;
+    return { opened, openedFrom, present, presentFrom };
+  }
+
+  function renderAttendanceSection(summary, classSize, className) {
+    const v = attendanceValues(summary);
+    const FROM = { typed: 'typed in', calendar: 'from the School Calendar', register: 'from the attendance register' };
     const cells = [
-      ['Number in Class', classSize],
-      ['Times School Opened', nr.times_school_opened ?? '—'],
-      ['Times Present', nr.times_present ?? '—']
+      ['Number in Class', classSize, null],
+      ['Times School Opened', v.opened ?? '—', v.openedFrom],
+      ['Times Present', v.present ?? '—', v.presentFrom]
     ];
     return `
-      <div class="rc-section">
+      <div class="rc-section" id="rcAttendanceBlock">
         <div class="rc-section-title">Attendance</div>
         <div class="rc-attendance-grid">
-          ${cells.map(([label, value]) => `
+          ${cells.map(([label, value, from]) => `
             <div class="rc-attendance-cell">
               <span class="rc-attendance-label">${label}</span>
               <span class="rc-attendance-value">${value}</span>
+              ${from ? `<span class="no-print" style="font-size:0.62rem;color:#9ca3af">${FROM[from]}</span>` : ''}
             </div>
           `).join('')}
         </div>
+        ${className && canEditNurseryRecord(className) ? `<button id="editAttendanceBtn" class="no-print" style="margin-top:8px;padding:2px 10px;font-size:0.72rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">✏️ Edit attendance</button>` : ''}
       </div>
     `;
+  }
+
+  function wireAttendanceEdit(admissionNo, term, summary, className) {
+    document.getElementById('editAttendanceBtn')?.addEventListener('click', () => {
+      const nr = summary.nursery_record || {};
+      const v = attendanceValues(summary);
+      const block = document.getElementById('rcAttendanceBlock');
+      const input = (id, val, hint) => `<input type="number" min="0" id="${id}" value="${val ?? ''}" placeholder="${hint}" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.8rem;box-sizing:border-box">`;
+      block.innerHTML = `
+        <div class="rc-section-title">Attendance</div>
+        <div class="no-print" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <label style="font-size:0.75rem">Times School Opened
+            ${input('af_opened', nr.times_school_opened, v.openedFrom && v.openedFrom !== 'typed' ? `Auto: ${v.opened}` : 'Leave empty for auto')}</label>
+          <label style="font-size:0.75rem">Times Present
+            ${input('af_present', nr.times_present, v.presentFrom && v.presentFrom !== 'typed' ? `Auto: ${v.present}` : 'Leave empty for auto')}</label>
+        </div>
+        <p class="no-print" style="font-size:0.7rem;color:#6b7280;margin:6px 0 0">Leave a box empty to use the automatic number (School Calendar / attendance register).</p>
+        <div class="no-print" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="afSave" style="padding:5px 14px;font-size:0.75rem;background:var(--color-primary);color:#fff;border:none;border-radius:6px;cursor:pointer">Save for this pupil</button>
+          <button id="afClass" style="padding:5px 14px;font-size:0.75rem;background:#fff;border:1px solid var(--color-primary);color:var(--color-primary);border-radius:6px;cursor:pointer">Use this "Times School Opened" for the whole class</button>
+          <button id="afCancel" style="padding:5px 14px;font-size:0.75rem;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer">Cancel</button>
+        </div>`;
+      const val = id => document.getElementById(id).value.trim();
+      document.getElementById('afCancel').onclick = () => renderReportCard();
+      document.getElementById('afSave').onclick = async e => {
+        e.target.disabled = true; e.target.textContent = 'Saving…';
+        try {
+          await window.RCA_API.call(`/students/${encodeURIComponent(admissionNo)}/review`, {
+            method: 'PUT', body: { term, nursery_record: { times_school_opened: val('af_opened'), times_present: val('af_present') } }
+          });
+        } catch (err) { alert('Could not save attendance: ' + err.message); e.target.disabled = false; e.target.textContent = 'Save for this pupil'; return; }
+        delete resultsCache[`${admissionNo}|${term}`];
+        renderReportCard();
+      };
+      document.getElementById('afClass').onclick = async e => {
+        const n = val('af_opened');
+        if (!confirm(n === '' ? `Clear the typed "Times School Opened" for everyone in ${className}? Their report cards will use the School Calendar instead.`
+                              : `Set "Times School Opened" to ${n} for every pupil in ${className}?`)) return;
+        e.target.disabled = true; e.target.textContent = 'Saving…';
+        try {
+          const r = await window.RCA_API.call('/students/class-attendance', { method: 'POST', body: { class_name: className, term, times_school_opened: n } });
+          alert(r.message);
+        } catch (err) { alert('Could not save: ' + err.message); e.target.disabled = false; e.target.textContent = 'Use this "Times School Opened" for the whole class'; return; }
+        Object.keys(resultsCache).forEach(k => { if (k.endsWith('|' + term)) delete resultsCache[k]; });
+        renderReportCard();
+      };
+    });
   }
 
   function wireNurseryEditButton(admissionNo, term, summary, className, classSize) {
@@ -560,7 +629,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       ${isNursery ? renderNurseryRecordsSection(summary, className) : renderBehaviourSection(behaviorMap)}
 
-      ${renderAttendanceSection(summary, classSize)}
+      ${renderAttendanceSection(summary, classSize, className)}
 
       <div class="rc-footer">
         <div class="rc-grade-legend">
@@ -619,6 +688,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (isNursery) wireNurseryEditButton(admissionNo, term, summary, className, classSize);
+    wireAttendanceEdit(admissionNo, term, summary, className);
   }
 
   /* --------------------------------------------
