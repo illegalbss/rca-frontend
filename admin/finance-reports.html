@@ -491,8 +491,23 @@
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const allClasses  = window.SCHOOL_CLASSES || [];
-  const fmt         = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
+  // Basic 3 is split into arms (3A / 3B) for teaching, but the bursar
+  // tracks fees for it as one class — every list on this page shows the
+  // arms together under "Basic 3".
+  const MERGED_FEE_CLASSES = ['Basic 3'];
+  const feeClass = c => {
+    const level = window.classLevel ? window.classLevel(c) : c;
+    return MERGED_FEE_CLASSES.includes(level) ? level : c;
+  };
+  const allClasses  = [...new Set((window.SCHOOL_CLASSES || []).map(feeClass))];
+  const armsOf      = cls => (window.SCHOOL_CLASSES || []).filter(c => feeClass(c) === cls && c !== cls);
+  // Rows from the API carry the real arm; relabel them and, when a merged
+  // class is picked, filter here (the API only matches exact class names).
+  const mergeRows   = (rows, cls) => rows
+    .map(r => ({ ...r, class_name: feeClass(r.class_name) }))
+    .filter(r => !cls || r.class_name === cls);
+  const apiClass    = cls => (cls && armsOf(cls).length ? '' : cls);
+  const fmt        = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
   const BADGE = { paid: 'badge-paid', partial: 'badge-partial', unpaid: 'badge-unpaid' };
 
@@ -507,6 +522,18 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---- Fetch real aggregated report from the backend ---- */
   async function fetchReport(term, className) {
     if (!window.RCA_API) return null;
+    if (className && armsOf(className).length) {
+      // Merged class: add up each arm's report.
+      const parts = (await Promise.all(armsOf(className).map(a => fetchReport(term, a)))).filter(Boolean);
+      if (!parts.length) return null;
+      const sum = k => parts.reduce((s, p) => s + Number(p[k] || 0), 0);
+      const out = { by_class: [] };
+      ['total_expected', 'total_paid', 'total_outstanding', 'paid_count', 'partial_count', 'unpaid_count', 'total_records']
+        .forEach(k => { out[k] = sum(k); });
+      out.collection_rate = out.total_expected > 0 ? Math.round(out.total_paid / out.total_expected * 100) : 0;
+      parts.forEach(p => out.by_class.push(...(p.by_class || [])));
+      return out;
+    }
     const params = new URLSearchParams({ term, class: className });
     try {
       return await window.RCA_API.call('/payments/report?' + params.toString());
@@ -561,8 +588,13 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     /* Collection by class bar chart */
-    const classEntries = byClass
-      .map(c => [c.class_name, c])
+    const merged = {};
+    byClass.forEach(c => {
+      const k = feeClass(c.class_name);
+      merged[k] = merged[k] || { paid: 0 };
+      merged[k].paid += Number(c.paid || 0);
+    });
+    const classEntries = Object.entries(merged)
       .sort((a,b) => b[1].paid - a[1].paid)
       .slice(0, 11);
     const maxPaid = Math.max(...classEntries.map(([,v]) => v.paid), 1);
@@ -632,12 +664,12 @@ document.addEventListener('DOMContentLoaded', () => {
   async function fetchDebtors(term, className, status, search) {
     if (!window.RCA_API) return [];
     const params = new URLSearchParams({ term });
-    if (className) params.set('class', className);
+    if (apiClass(className)) params.set('class', apiClass(className));
     if (status) params.set('status', status);
     if (search) params.set('search', search);
     try {
       const data = await window.RCA_API.call('/payments/debtors?' + params.toString());
-      return data.debtors || [];
+      return mergeRows(data.debtors || [], className);
     } catch (e) {
       console.warn('Could not load debtors:', e.message);
       return [];
@@ -752,7 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 'any' (full + part) is filtered here; the API takes a single status
     const params = new URLSearchParams({ term });
-    if (cls) params.set('class', cls);
+    if (apiClass(cls)) params.set('class', apiClass(cls));
     if (search) params.set('search', search);
     if (show && show !== 'any' && show !== 'owing') params.set('status', show);
 
@@ -782,6 +814,8 @@ document.addEventListener('DOMContentLoaded', () => {
       body.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#dc2626;padding:2rem">Could not load: ${e.message}</td></tr>`;
       return;
     }
+    // Keep the API's class-then-name order with the arms merged.
+    rows = mergeRows(rows, cls).sort((a, b) => a.class_name.localeCompare(b.class_name) || a.full_name.localeCompare(b.full_name));
     if (show === 'any') rows = rows.filter(r => r.amount_paid > 0);
     if (show === 'owing') rows = rows.filter(r => r.status !== 'paid');
     paidCache = rows;
@@ -937,7 +971,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nameQ        = document.getElementById('discountSearch').value.trim().toLowerCase();
 
     let rows = discountCache;
-    if (classFilter) rows = rows.filter(r => r.class_name === classFilter);
+    if (classFilter) rows = rows.filter(r => feeClass(r.class_name) === classFilter);
     if (nameQ) rows = rows.filter(r => r.full_name.toLowerCase().includes(nameQ));
     if (showFilter === 'siblings')     rows = rows.filter(r => r.sibling_count >= 2);
     if (showFilter === 'discounted')   rows = rows.filter(r => r.has_approved_discount);
