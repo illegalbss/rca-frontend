@@ -158,6 +158,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // ICT & Coding Clubs is not in use yet: pupils who pay are recorded on
+  // the ICT Practical Programme page instead. The menu link is hidden and
+  // the page sends you there. Its data is kept — delete these lines to
+  // bring the Clubs page back.
+  const ICT_CLUBS_HIDDEN = true;
+  if (ICT_CLUBS_HIDDEN) {
+    if (/\/ict-clubs\.html$/.test(window.location.pathname)) {
+      window.location.replace('ict-enrollment.html');
+      return;
+    }
+    document.querySelectorAll('a[href="ict-clubs.html"]').forEach(a => a.remove());
+  }
+
   document.querySelectorAll('.sidebar-link[data-roles]').forEach(link => {
     const allowedRoles = link.getAttribute('data-roles').split(',');
     if (allowedRoles.includes('all')) return;
