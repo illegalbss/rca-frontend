@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function getSkills(cls){ return getGroup(cls) === 'GROUP2' ? skills2 : skills1; }
 
   const cu = window.CURRENT_USER;
-  const canEdit = cu && (cu.roles || [cu.role]).some(r => ['ict_admin','head_teacher'].includes(r));
+  const canEdit = cu && (cu.roles || [cu.role]).some(r => r === 'ict_admin');
 
   let allStudents = [];
   let ictStudents  = [];

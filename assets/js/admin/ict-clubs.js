@@ -15,7 +15,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
 
   const cu = window.CURRENT_USER;
-  const canEdit = cu && (cu.roles || [cu.role]).some(r => ['ict_admin','head_teacher'].includes(r));
+  const canEdit = cu && (cu.roles || [cu.role]).some(r => r === 'ict_admin');
 
   const STATUS_COLORS = {
     completed: { bg:'#d1fae5', color:'#065f46' },

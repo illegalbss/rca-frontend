@@ -150,6 +150,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // userRoles: the array of roles this user has (e.g. ['class_teacher','subject_teacher'])
   const userRoles = currentUser.roles || [currentRole];
 
+  // The ICT department pages (ICT Lab, ICT Clubs, ICT Enrollment) belong to
+  // the ICT Admin alone; anyone else opening one is sent to the dashboard.
+  // The server refuses their requests as well.
+  if (/\/ict-(lab|clubs|enrollment)\.html$/.test(window.location.pathname) && !userRoles.includes('ict_admin')) {
+    window.location.replace('dashboard.html');
+    return;
+  }
+
   document.querySelectorAll('.sidebar-link[data-roles]').forEach(link => {
     const allowedRoles = link.getAttribute('data-roles').split(',');
     if (allowedRoles.includes('all')) return;
@@ -277,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
      so a badge next to the sidebar link (visible on every admin page)
      plus the Activity Logs entry (see ictEnrollments.js) are it.
   */
-  if (window.RCA_API && (userRoles.includes('ict_admin') || userRoles.includes('head_teacher'))) {
+  if (window.RCA_API && userRoles.includes('ict_admin')) {
     window.RCA_API.call('/ict-enrollments')
       .then(data => {
         const badge = document.getElementById('ictEnrollBadge');
