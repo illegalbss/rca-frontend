@@ -61,6 +61,79 @@ document.addEventListener('DOMContentLoaded', async () => {
   // otherwise the standard fee — mirrors feeFor() in the backend.
   const pupilFee = a => (a && a.custom_fee != null ? Number(a.custom_fee) : fee);
 
+  // Linking an application to the pupil's school record (admission_no) is
+  // what lets the ICT Lab score them and their parents see the scores.
+  // Same matching as the server: same words in any order, same class level.
+  const levelKey = c => String(c || '').trim().replace(/^(.*\d)\s*[A-Z]$/i, '$1').toLowerCase();
+  const nameKey  = n => String(n || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean).sort().join(' ');
+  const escHtml  = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function suggestedPupil(a) {
+    const hits = allStudents.filter(s => nameKey(s.full_name) === nameKey(a.pupil_full_name) && levelKey(s.class_name) === levelKey(a.class_name));
+    return hits.length === 1 ? hits[0] : null;
+  }
+  function pupilLinkHtml(a) {
+    const btn = (label, extra = '') => `<button class="btn btn-sm btn-outline" style="font-size:0.7rem;padding:2px 10px" onclick="window._ictChoosePupil(${a.id})"${extra}>${label}</button>`;
+    if (a.admission_no) {
+      const s = allStudents.find(x => x.admission_no === a.admission_no);
+      return `<div style="margin-top:6px;font-size:0.78rem;color:#065f46">🔗 Pupil record: <strong>${escHtml(s ? s.full_name : a.admission_no)}</strong>${s ? ` (${escHtml(s.class_name)} · ${escHtml(s.admission_no)})` : ''} ${btn('Change')}</div>`;
+    }
+    const sug = suggestedPupil(a);
+    if (sug) {
+      return `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">Not linked yet. Suggested pupil: <strong>${escHtml(sug.full_name)}</strong> (${escHtml(sug.class_name)} · ${escHtml(sug.admission_no)})
+        <button class="btn btn-sm btn-primary" style="font-size:0.7rem;padding:2px 10px" onclick="window._ictLinkPupil(${a.id},'${escHtml(sug.admission_no)}')">Link</button> ${btn('Choose another')}</div>`;
+    }
+    return `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">⚠ Not linked to a pupil record. Link it so you can score this pupil and the parent can see it. ${btn('Choose pupil')}</div>`;
+  }
+
+  window._ictLinkPupil = async function (id, admissionNo) {
+    try {
+      await window.RCA_API.call(`/ict-enrollments/${id}`, { method: 'PUT', body: { admission_no: admissionNo || null } });
+    } catch (e) { alert('Could not link pupil: ' + e.message); return; }
+    await loadAll();
+    render();
+  };
+
+  window._ictChoosePupil = function (id) {
+    const a = applications.find(x => x.id === id);
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:14px;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:16px 18px;border-bottom:1px solid #f3f4f6">
+          <div style="font-weight:700;color:var(--color-primary);font-size:0.95rem">Link ${escHtml(a.pupil_full_name)} to a pupil record</div>
+          <div style="font-size:0.75rem;color:#6b7280;margin-top:2px">Applied as: ${escHtml(a.pupil_full_name)} · ${escHtml(a.class_name)}</div>
+          <input type="search" id="ictLinkSearch" class="form-control" placeholder="Search pupil name or admission no…" style="margin-top:10px" value="${escHtml(a.pupil_full_name.split(' ')[0])}">
+        </div>
+        <div id="ictLinkResults" style="overflow-y:auto;flex:1;padding:6px 0"></div>
+        <div style="padding:12px 18px;border-top:1px solid #f3f4f6;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+          ${a.admission_no ? '<button class="btn btn-outline btn-sm" id="ictLinkClear" style="color:#dc2626">Unlink</button>' : ''}
+          <button class="btn btn-outline btn-sm" id="ictLinkCancel">Cancel</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => modal.remove();
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    modal.querySelector('#ictLinkCancel').addEventListener('click', close);
+    modal.querySelector('#ictLinkClear')?.addEventListener('click', () => { close(); window._ictLinkPupil(id, null); });
+    const search = modal.querySelector('#ictLinkSearch');
+    const results = modal.querySelector('#ictLinkResults');
+    const show = () => {
+      const q = search.value.trim().toLowerCase();
+      const list = allStudents
+        .filter(s => !q || s.full_name.toLowerCase().includes(q) || s.admission_no.toLowerCase().includes(q))
+        .sort((x, y) => (levelKey(y.class_name) === levelKey(a.class_name)) - (levelKey(x.class_name) === levelKey(a.class_name)) || x.full_name.localeCompare(y.full_name))
+        .slice(0, 30);
+      results.innerHTML = list.length ? list.map(s => `
+        <div class="ict-link-row" data-adm="${escHtml(s.admission_no)}" style="padding:9px 18px;cursor:pointer;font-size:0.84rem;border-bottom:1px solid #f9fafb">
+          <strong>${escHtml(s.full_name)}</strong> <span style="color:#9ca3af">— ${escHtml(s.class_name)} · ${escHtml(s.admission_no)}</span>
+        </div>`).join('') : '<p style="padding:14px 18px;color:#9ca3af;font-size:0.82rem">No pupils found.</p>';
+      results.querySelectorAll('.ict-link-row').forEach(row => row.addEventListener('click', () => { close(); window._ictLinkPupil(id, row.dataset.adm); }));
+    };
+    search.addEventListener('input', show);
+    show();
+    search.focus();
+  };
+
   function applicationCardHtml(a) {
     const ec = ENROLL_COLORS[a.enrollment_status] || ENROLL_COLORS.pending_approval;
     const pc = PAY_COLORS[a.payment_status] || PAY_COLORS.pending;
@@ -83,6 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <strong>${a.parent_name || 'Parent/Guardian'}</strong> · ${a.parent_phone}${a.parent_email ? ' · ' + a.parent_email : ''}
           ${a.notes ? `<div style="color:#9ca3af;font-size:0.75rem;margin-top:4px">"${a.notes}"</div>` : ''}
           <div style="margin-top:6px;font-size:0.78rem">Price: <strong>${fmt(pupilFee(a))}</strong>${a.custom_fee != null ? ' <span style="background:#ede9fe;color:#6d28d9;padding:1px 8px;border-radius:20px;font-size:0.68rem;font-weight:700">CUSTOM</span>' : ' <span style="color:#9ca3af">(standard)</span>'}</div>
+          ${a.enrollment_status !== 'rejected' ? pupilLinkHtml(a) : ''}
         </div>
 
         <div style="display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #f3f4f6;padding-top:12px">

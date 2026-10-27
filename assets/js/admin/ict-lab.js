@@ -42,19 +42,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   let maintenance  = [];
   let schedule     = [];
   let progress     = {}; // { admission_no: { skill_code: score } }
-  let currentTerm  = 'term2';
+  let currentTerm  = window.RCA_CONFIG?.CURRENT_TERM || 'term1';
+  let paidNotLinked = 0;
+  let lastProgressClass = null;   // keep the chosen class after saving a score
+  let needsUpdate   = false;
 
+  // Student Progress lists only pupils on the ICT Practical Programme who
+  // have paid and whose application is linked to their school record
+  // (ICT Practical Programme page). Their parents see these scores.
   async function loadAll() {
-    const [students, comp, maint, sched, prog] = await Promise.all([
-      window.RCA_API.getStudents(),
+    const [practical, comp, maint, sched, prog] = await Promise.all([
+      window.RCA_API.call('/ict-lab/practical-pupils'),
       window.RCA_API.call('/ict-lab/computers'),
       window.RCA_API.call('/ict-lab/maintenance'),
       window.RCA_API.call('/ict-lab/schedule'),
       window.RCA_API.call(`/ict-lab/progress?term=${currentTerm}`)
     ]);
-    allStudents = students || [];
-    ICT_CLASSES = (window.SCHOOL_CLASSES || ICT_LEVELS).filter(isIctClass);
-    ictStudents = allStudents.filter(s => isIctClass(s.class_name));
+    ictStudents   = practical.pupils || [];
+    allStudents   = ictStudents;
+    paidNotLinked = practical.paid_not_linked || 0;
+    needsUpdate   = !!practical.needs_update;
+    const order = window.SCHOOL_CLASSES || [];
+    ICT_CLASSES = [...new Set(ictStudents.map(s => s.class_name))]
+      .sort((a, b) => (order.indexOf(a) + 1 || 999) - (order.indexOf(b) + 1 || 999) || a.localeCompare(b));
     computers   = comp.computers || [];
     maintenance = maint.maintenance || [];
     schedule    = sched.schedule || [];
@@ -62,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     progress = {};
     (prog.progress || []).forEach(row => {
       if (!progress[row.admission_no]) progress[row.admission_no] = {};
-      progress[row.admission_no][row.skill_code] = row.score;
+      progress[row.admission_no][row.skill_code] = Number(row.score);
     });
   }
 
@@ -112,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div style="overflow-x:auto;margin-bottom:20px;-webkit-overflow-scrolling:touch">
         <div style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:14px;min-width:600px">
           ${[
-            { num: ictStudents.length,  label:'ICT Pupils (Basic 3–6)', color:'#7c3aed', icon:'👥' },
+            { num: ictStudents.length,  label:'Practical Programme Pupils (paid)', color:'#7c3aed', icon:'👥' },
             { num: workingPCs,          label:'Working Computers',       color:'#16a34a', icon:'💻' },
             { num: faultyPCs+maintPCs,  label:'Needing Attention',       color:'#dc2626', icon:'⚠️' },
             { num: overallAvg + '%',    label:'Average ICT Score',       color:'#1d4ed8', icon:'📊' }
@@ -130,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);overflow:hidden">
           <div style="padding:14px 18px;border-bottom:1px solid #f3f4f6;font-family:var(--font-heading);font-weight:700;font-size:0.875rem;color:#111827">📈 Class ICT Performance</div>
           <div style="padding:16px 18px">
+            ${ICT_CLASSES.length ? '' : '<div style="color:#9ca3af;font-size:0.78rem;padding:6px 0">No paid Practical Programme pupils yet.</div>'}
             ${ICT_CLASSES.map(cls => {
               const avg = avgScores[cls];
               const color = avg>=70?'#16a34a':avg>=50?'#d97706':'#dc2626';
@@ -263,7 +274,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      TAB 3: STUDENT PROGRESS (real, editable)
      ================================================ */
   function renderProgress() {
-    let selectedClass = ICT_CLASSES[0] || 'Basic 3A';
+    let selectedClass = ICT_CLASSES.includes(lastProgressClass) ? lastProgressClass : ICT_CLASSES[0];
     let searchTerm    = '';
 
     function scoreColor(s) { return s >= 70 ? '#065f46' : s >= 50 ? '#92400e' : '#991b1b'; }
@@ -323,9 +334,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (countEl) countEl.textContent = `${clsStudents.length} pupils`;
     }
 
+    const TERM_NAMES = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+    const notices = [
+      needsUpdate ? '⚠ The database needs a one-time update before pupils can be listed here (see the ICT Practical Programme page).' : '',
+      paidNotLinked ? `⚠ ${paidNotLinked} paid pupil${paidNotLinked !== 1 ? 's are' : ' is'} not linked to a school record yet, so not listed. Link them on the <a href="ict-enrollment.html">ICT Practical Programme</a> page.` : ''
+    ].filter(Boolean);
+
+    if (!ictStudents.length) {
+      document.getElementById('tab-progress').innerHTML = `
+        ${notices.map(n => `<p style="background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:12px">${n}</p>`).join('')}
+        <div style="background:#fff;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,0.07);padding:28px;text-align:center;color:#6b7280;font-size:0.88rem">
+          No pupils to score yet. Only pupils who have <strong>paid</strong> for the ICT Practical Programme appear here.<br>
+          Approve their application, record the payment and link it to the pupil on the <a href="ict-enrollment.html">ICT Practical Programme</a> page.
+        </div>`;
+      return;
+    }
+
     document.getElementById('tab-progress').innerHTML = `
+      ${notices.map(n => `<p style="background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:12px">${n}</p>`).join('')}
+      <p style="font-size:0.8rem;color:#374151;margin:0 0 12px">Pupils who have paid for the ICT Practical Programme. Scores you record here appear in their parents' portal (Results page) for the term shown.</p>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-        <div style="display:flex;gap:6px">
+        <select id="ictProgressTerm" class="form-control" style="width:auto">
+          ${Object.entries(TERM_NAMES).map(([v, l]) => `<option value="${v}"${v === currentTerm ? ' selected' : ''}>${l}</option>`).join('')}
+        </select>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${ICT_CLASSES.map(cls => `
             <button onclick="window._ictSelectClass('${cls}',this)"
               class="ict-class-tab-btn" data-cls="${cls}"
@@ -353,6 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
 
     window._ictSelectClass = function(cls, btn) {
+      lastProgressClass = cls;
       selectedClass = cls;
       document.querySelectorAll('.ict-class-tab-btn').forEach(b => {
         b.style.background = b.dataset.cls === cls ? '#ede9fe' : '#fff';
@@ -361,6 +394,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
       renderTable();
     };
+
+    document.getElementById('ictProgressTerm').addEventListener('change', async e => {
+      currentTerm = e.target.value;
+      let prog;
+      try { prog = await window.RCA_API.call(`/ict-lab/progress?term=${currentTerm}`); }
+      catch (err) { alert('Could not load scores: ' + err.message); return; }
+      progress = {};
+      (prog.progress || []).forEach(row => {
+        if (!progress[row.admission_no]) progress[row.admission_no] = {};
+        progress[row.admission_no][row.skill_code] = Number(row.score);
+      });
+      renderTable();
+      renderDashboard();
+      renderReports();
+    });
 
     document.getElementById('progressSearch').addEventListener('input', e => {
       searchTerm = e.target.value.trim().toLowerCase();

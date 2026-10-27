@@ -772,6 +772,47 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ============================================
      RESULTS PAGE
      ============================================ */
+  // ICT Practical Programme scores — only for a child on the programme
+  // (paid). Not tied to school fees or result approval: the ICT Admin's
+  // scores show as soon as they are recorded.
+  async function renderIctProgress(child, term) {
+    const box = document.getElementById('ictProgressContent');
+    if (!box) return;
+    box.innerHTML = '';
+    let data;
+    try {
+      data = await window.RCA_API.call(`/students/${encodeURIComponent(child.admission_no)}/ict-progress?term=${term}`);
+    } catch (e) { return; }
+    if (!data || !data.enrolled || selectedResultChild !== child) return;
+
+    const level = (window.classLevel ? window.classLevel(child.class_name) : child.class_name);
+    const skillSet = (window.ICT_SKILLS || {})[['Basic 5', 'Basic 6'].includes(level) ? 'GROUP2' : 'GROUP1'] || [];
+    const skills = [...skillSet, { id: 'practical', label: 'Practical', icon: '🛠' }];
+    const scoreOf = id => (data.scores.find(s => s.skill_code === id) || {}).score;
+    const scored = skills.map(s => scoreOf(s.id)).filter(v => v > 0);
+    const avg = scored.length ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length) : null;
+    const rating = v => v >= 70 ? 'Excellent' : v >= 60 ? 'Very Good' : v >= 50 ? 'Good' : v >= 40 ? 'Fair' : 'Developing';
+    const color = v => v >= 70 ? '#059669' : v >= 50 ? '#d97706' : '#dc2626';
+
+    box.innerHTML = `
+      <div class="pp-card" style="padding:18px 20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+          <div style="font-weight:700;color:#111827">💻 ICT Practical Programme — ${TERM_LABELS[term]}</div>
+          ${avg !== null ? `<span style="background:#7c3aed;color:#fff;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:700">Average: ${avg}% · ${rating(avg)}</span>` : ''}
+        </div>
+        ${scored.length ? skills.map(s => {
+          const v = scoreOf(s.id);
+          return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:3px">
+              <span>${s.icon} ${s.label}</span>
+              <span style="font-weight:700;color:${v ? color(v) : '#9ca3af'}">${v ? v + '% · ' + rating(v) : 'Not yet assessed'}</span>
+            </div>
+            <div style="height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden"><div style="width:${v || 0}%;height:100%;background:${v ? color(v) : 'transparent'}"></div></div>
+          </div>`;
+        }).join('') : `<p style="color:#9ca3af;font-size:0.84rem;margin:0">No ICT scores recorded yet for ${TERM_LABELS[term]}.</p>`}
+      </div>`;
+  }
+
   async function renderResults(child) {
     selectedResultChild = child;
     const content = document.getElementById('resultContent');
@@ -779,6 +820,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!content || !child) return;
 
     const term = termSelect ? termSelect.value : CURRENT_TERM;
+    renderIctProgress(child, term);
     content.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Checking payment status…</p>';
 
     try {
