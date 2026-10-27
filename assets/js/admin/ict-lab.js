@@ -337,7 +337,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const TERM_NAMES = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
     const notices = [
-      needsUpdate ? '⚠ The database needs a one-time update before pupils can be listed here (see the ICT Practical Programme page).' : '',
       paidNotLinked ? `⚠ ${paidNotLinked} paid pupil${paidNotLinked !== 1 ? 's are' : ' is'} not linked to a school record yet, so not listed. Link them on the <a href="ict-enrollment.html">ICT Practical Programme</a> page.` : ''
     ].filter(Boolean);
 

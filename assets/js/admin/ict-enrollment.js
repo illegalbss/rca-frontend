@@ -77,12 +77,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const s = allStudents.find(x => x.admission_no === a.admission_no);
       return `<div style="margin-top:6px;font-size:0.78rem;color:#065f46">🔗 Pupil record: <strong>${escHtml(s ? s.full_name : a.admission_no)}</strong>${s ? ` (${escHtml(s.class_name)} · ${escHtml(s.admission_no)})` : ''} ${btn('Change')}</div>`;
     }
+    // A clear match is linked automatically by the server; nothing to do.
     const sug = suggestedPupil(a);
     if (sug) {
-      return `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">Not linked yet. Suggested pupil: <strong>${escHtml(sug.full_name)}</strong> (${escHtml(sug.class_name)} · ${escHtml(sug.admission_no)})
-        <button class="btn btn-sm btn-primary" style="font-size:0.7rem;padding:2px 10px" onclick="window._ictLinkPupil(${a.id},'${escHtml(sug.admission_no)}')">Link</button> ${btn('Choose another')}</div>`;
+      return `<div style="margin-top:6px;font-size:0.78rem;color:#065f46">🔗 Pupil record: <strong>${escHtml(sug.full_name)}</strong> (${escHtml(sug.class_name)} · ${escHtml(sug.admission_no)}) <span style="color:#6b7280">— matched automatically</span> ${btn('Change')}</div>`;
     }
-    return `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">⚠ Not linked to a pupil record. Link it so you can score this pupil and the parent can see it. ${btn('Choose pupil')}</div>`;
+    return `<div style="margin-top:6px;font-size:0.78rem;color:#92400e">⚠ Could not find this pupil in the school records (the name or class may be spelt differently). Click "Choose pupil" and pick the right one so you can record their ICT scores. ${btn('Choose pupil')}</div>`;
   }
 
   window._ictLinkPupil = async function (id, admissionNo) {
@@ -106,7 +106,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>
         <div id="ictLinkResults" style="overflow-y:auto;flex:1;padding:6px 0"></div>
         <div style="padding:12px 18px;border-top:1px solid #f3f4f6;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-          ${a.admission_no ? '<button class="btn btn-outline btn-sm" id="ictLinkClear" style="color:#dc2626">Unlink</button>' : ''}
           <button class="btn btn-outline btn-sm" id="ictLinkCancel">Cancel</button>
         </div>
       </div>`;
@@ -114,7 +113,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const close = () => modal.remove();
     modal.addEventListener('click', e => { if (e.target === modal) close(); });
     modal.querySelector('#ictLinkCancel').addEventListener('click', close);
-    modal.querySelector('#ictLinkClear')?.addEventListener('click', () => { close(); window._ictLinkPupil(id, null); });
     const search = modal.querySelector('#ictLinkSearch');
     const results = modal.querySelector('#ictLinkResults');
     const show = () => {
