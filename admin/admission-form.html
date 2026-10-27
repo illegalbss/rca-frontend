@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Don't let phones turn the school's numbers/emails into blue links -->
+  <meta name="format-detection" content="telephone=no, email=no, address=no">
   <title>Admission Form | Royal Crystal Academy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Times+New+Roman:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -212,6 +214,22 @@
       text-transform: uppercase;
     }
 
+    /* Keep everything black ink, on screen and on paper: Chrome's autofill
+       painted filled-in answers light blue (and the form prints colours
+       exactly, so the blue went onto the paper); ticked boxes and
+       auto-detected phone numbers came out blue too. */
+    .field-input:-webkit-autofill,
+    .field-input:-webkit-autofill:hover,
+    .field-input:-webkit-autofill:focus {
+      -webkit-text-fill-color: #111;
+      -webkit-box-shadow: 0 0 0 1000px #fff inset;
+      box-shadow: 0 0 0 1000px #fff inset;
+      transition: background-color 9999s ease-out 0s;
+    }
+    .field-input:autofill { background: transparent; color: #111; }
+    input[type="checkbox"], input[type="radio"] { accent-color: #111; }
+    .form-paper a, .form-paper a[href^="tel"] { color: inherit; text-decoration: none; }
+
     .field-input::placeholder {
       text-transform: none;
       color: #c0c0c0;
@@ -365,10 +383,15 @@
         border-bottom: 1px solid #111;
         font-size: 8.5pt;
         padding: 1px 2px;
-        background: transparent;
+        background: transparent !important;
+        color: #111 !important;
+        -webkit-text-fill-color: #111 !important;
+        box-shadow: none !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+      .form-paper * { color: #111; }
+      .form-paper a { color: #111 !important; text-decoration: none !important; }
 
       .checkbox-row    { margin-bottom: 6px; }
       .checkbox-q      { font-size: 7.5pt; }
