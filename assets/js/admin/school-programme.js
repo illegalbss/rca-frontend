@@ -117,7 +117,7 @@
   let _activeProg  = null;    // programme object being viewed / edited
   let _editWeeks   = [];      // deep copy of weeks during editing
   let _fSession    = currentSession();
-  let _fTerm       = 'term3'; // default to current term
+  let _fTerm       = (window.RCA_CONFIG && window.RCA_CONFIG.CURRENT_TERM) || 'term1'; // the current term
 
   /* ============================================================
      MAIN ENTRY POINT
@@ -265,14 +265,60 @@
       }).join('');
     }).join('');
 
+    // Phones: one card per week, each day on its own line (date · day,
+    // activity, time) — the six-column table was squeezed and scrolled
+    // sideways there. Wider screens keep the table below.
+    const weekCards = weeks.map(week => {
+      const days = week.rows.map(row => {
+        const t = ACTIVITY_TYPES[row.type] || ACTIVITY_TYPES.normal;
+        const strong = ['holiday', 'exam', 'closing'].includes(row.type);
+        const tinted = row.type && row.type !== 'normal';
+        return `<div class="sp-day"${tinted ? ` style="background:${t.color}10;border-left:3px solid ${t.color}"` : ''}>
+            <div class="sp-day-top"><span class="sp-day-name">${row.day || ''}</span><span class="sp-day-date">${row.date || ''}</span></div>
+            <div class="sp-day-act" style="color:${t.color};font-weight:${strong ? 700 : tinted ? 600 : 500}">${row.activity || ''}</div>
+            ${row.time ? `<div class="sp-day-time">🕒 ${row.time}</div>` : ''}
+          </div>`;
+      }).join('');
+      const first = (week.rows[0] || {}).date, last = (week.rows[week.rows.length - 1] || {}).date;
+      return `<div class="sp-week">
+          <div class="sp-week-head"><span>Week ${week.week_no}</span>${first ? `<small>${first}${last && last !== first ? ' – ' + last : ''}</small>` : ''}</div>
+          ${days}
+        </div>`;
+    }).join('');
+
     container.innerHTML = `
+      <style>
+        .sp-card-view { display:none; }
+        .sp-week { background:#fff; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden; margin-bottom:12px; }
+        .sp-week-head { background:#1a3a5c; color:#fff; padding:8px 12px; font-weight:700; font-size:0.9rem; display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; }
+        .sp-week-head small { font-weight:400; font-size:0.75rem; color:#dbe4f0; }
+        .sp-day { padding:8px 12px; border-top:1px solid #f1f5f9; }
+        .sp-day-top { display:flex; justify-content:space-between; font-size:0.72rem; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+        .sp-day-act { font-size:0.9rem; margin-top:2px; line-height:1.35; }
+        .sp-day-time { font-size:0.75rem; color:#6b7280; margin-top:2px; }
+        .sp-card-title { text-align:center; margin-bottom:12px; }
+        .sp-card-title h2 { font-size:1.05rem; font-weight:800; color:#1a3a5c; text-transform:uppercase; margin:0 0 2px; }
+        .sp-card-title div { font-size:0.78rem; font-weight:700; color:#374151; text-transform:uppercase; }
+        @media (max-width: 700px) {
+          .sp-table-view { display:none; }
+          .sp-card-view  { display:block; }
+        }
+      </style>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <button onclick="window._spBackToList()" style="padding:7px 14px;background:#fff;border:1px solid #d1d5db;border-radius:8px;font-size:0.82rem;cursor:pointer;font-weight:600">← Back to List</button>
         ${canManage ? `<button onclick="window._spEdit('${prog.id}')" style="padding:7px 14px;background:#fff;border:1px solid #d1d5db;border-radius:8px;font-size:0.82rem;cursor:pointer;font-weight:600">✏️ Edit</button>` : ''}
         <button onclick="window._spPrint('${prog.id}')" style="padding:7px 14px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.82rem;cursor:pointer;font-weight:600">🖨️ Print Programme</button>
       </div>
 
-      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:28px;overflow-x:auto">
+      <div class="sp-card-view">
+        <div class="sp-card-title">
+          <h2>School Programme of Events</h2>
+          <div>${TERM_LABELS[prog.term]} — ${prog.session}</div>
+        </div>
+        ${weekCards || '<p style="text-align:center;color:#6b7280">No weeks in this programme yet.</p>'}
+      </div>
+
+      <div class="sp-table-view" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:28px;overflow-x:auto">
         <!-- Header -->
         <div style="text-align:center;margin-bottom:18px">
           <h2 style="font-size:1.3rem;font-weight:800;color:#1a3a5c;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Royal Crystal Academy</h2>
@@ -695,11 +741,17 @@
     const legend = Object.values(ACTIVITY_TYPES)
       .map(t => `<span><i style="background:${t.color}"></i>${t.label}</span>`).join('');
 
-    const printWin = window.open('', '_blank');
+    // On phones / in the installed app this opens in the in-app viewer
+    // (pop-up windows there open blank or not at all).
+    const printWin = window.RCA_PWA?.openDocWindow ? window.RCA_PWA.openDocWindow() : window.open('', '_blank');
     if (!printWin) { alert('Please allow pop-ups for this site to print the programme.'); return; }
+    printWin.document.open();
     printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>School Programme — ${TERM_LABELS[prog.term]} ${esc(prog.session)}</title>
       <style>
+        /* On a phone the A4 page is shrunk to the screen width (screen only). */
+        @media screen { .sw { zoom: var(--screen, 1); } }
         * { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
         @page { size:A4 portrait; margin:8mm; }
         html, body { margin:0; background:#e5e7eb; }
@@ -736,6 +788,7 @@
         .meta { font-size:8.5px; color:#6b7280; margin-top:4px; }
       </style></head><body>
       <div class="toolbar"><button onclick="window.print()">🖨 Print / Save as PDF</button><button class="alt" onclick="window.close()">Close</button></div>
+      <div class="sw">
       <div class="doc">
         <div class="head">
           <img src="${logoUrl}" alt="Royal Crystal Academy badge">
@@ -764,7 +817,13 @@
           <div class="sign"><div>Head Teacher</div></div>
         </div>
       </div>
+      </div>
       <script>
+        function fitScreen() {
+          document.documentElement.style.setProperty('--screen', String(Math.min(1, (window.innerWidth - 12) / 780)));
+        }
+        fitScreen();
+        window.addEventListener('resize', fitScreen);
         // Fit to at most two A4 pages: printable height per page is
         // 297mm − 2×8mm margins = 281mm ≈ 1062px. Budget a little under
         // two pages for the repeated table header and for whole weeks
