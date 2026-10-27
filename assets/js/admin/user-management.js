@@ -194,25 +194,85 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Printing whichever .um-cred-section happened to be toggled open was
-  // fragile — if both the staff and parent sections were ever open at
-  // once (or neither), the print output wouldn't reliably match what was
-  // clicked. This forces exactly the requested section visible and every
-  // other .um-cred-section hidden for the print, then restores whatever
-  // was on screen before once the print dialog closes.
+  // Credentials print as their own A4 document (not a print of this page):
+  // printing the page cut columns off on phones and in the app, so parents'
+  // names and their children went missing. Every column fits and wraps here.
+  // Prints whatever the list's search box is filtering to (all if empty).
   window.printCredSection = function (sectionId) {
-    document.querySelectorAll('.um-cred-section').forEach(el => {
-      el.dataset.prevDisplay = el.style.display;
-      el.style.display = (el.id === sectionId) ? 'block' : 'none';
-    });
-    const restore = () => {
-      document.querySelectorAll('.um-cred-section').forEach(el => {
-        el.style.display = el.dataset.prevDisplay || 'none';
-      });
-      window.removeEventListener('afterprint', restore);
-    };
-    window.addEventListener('afterprint', restore);
-    window.print();
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isParents = sectionId === 'parentCredentialsSection';
+    const q = (document.getElementById(isParents ? 'parentCredSearch' : 'credSearch')?.value || '').trim().toLowerCase();
+    let head, rows, title, count;
+
+    if (isParents) {
+      const list = allRealParents
+        .filter(p => !q || p.full_name.toLowerCase().includes(q) || (p.email || '').toLowerCase().includes(q)
+          || (p.children || []).some(c => c.full_name.toLowerCase().includes(q)))
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+      title = 'Parent Login Credentials';
+      count = `${list.length} parent account${list.length === 1 ? '' : 's'}`;
+      head = '<th style="width:4%">S/N</th><th style="width:22%">Parent / Guardian</th><th style="width:14%">Phone</th><th style="width:24%">Login Email</th><th>Children (Class · Adm. No.)</th><th style="width:9%">Status</th>';
+      rows = list.map((p, i) => `<tr><td>${i + 1}</td><td><b>${esc(p.full_name)}</b></td><td>${esc(p.phone || '—')}</td><td class="mail">${esc(p.email || '—')}</td>
+        <td>${(p.children || []).length ? p.children.map(c => `<div>${esc(c.full_name)} <small>${esc(c.class_name || '')}${c.admission_no ? ' · ' + esc(c.admission_no) : ''}</small></div>`).join('') : '—'}</td>
+        <td>${esc(p.status)}</td></tr>`).join('');
+    } else {
+      const list = allUsers.filter(u => u.primary_role !== 'parent')
+        .filter(u => !q || u.full_name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+        .sort((a, b) => a.full_name.localeCompare(b.full_name));
+      title = 'Staff Login Credentials';
+      count = `${list.length} staff account${list.length === 1 ? '' : 's'}`;
+      head = '<th style="width:5%">S/N</th><th style="width:13%">Staff ID</th><th style="width:25%">Full Name</th><th style="width:22%">Job Title</th><th>Login Email</th><th style="width:10%">Status</th>';
+      rows = list.map((u, i) => `<tr><td>${i + 1}</td><td>${esc(u.staff_id || '—')}</td><td><b>${esc(u.full_name)}</b></td>
+        <td>${esc(u.job_title || ROLE_LABELS[u.primary_role] || '')}</td><td class="mail">${esc(u.email)}</td><td>${esc(u.status)}</td></tr>`).join('');
+    }
+
+    const w = window.RCA_PWA?.openDocWindow ? window.RCA_PWA.openDocWindow() : window.open('', '_blank');
+    if (!w) { alert('Please allow pop-ups for this site to print the list.'); return; }
+    const logo = new URL('../assets/images/logo.png', location.href).href;
+    const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    w.document.open();
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>${title} — Royal Crystal Academy</title><style>
+        * { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+        html, body { margin:0; background:#e5e7eb; font-family:Arial, Helvetica, sans-serif; color:#1f2937; font-size:11px; }
+        @page { size:A4 portrait; margin:12mm 10mm; }
+        .toolbar { position:sticky; top:0; z-index:5; display:flex; gap:8px; justify-content:center; padding:8px; background:#111827; }
+        .toolbar button { font:700 13px Arial; padding:8px 16px; border:0; border-radius:8px; cursor:pointer; background:#c9960c; color:#fff; }
+        .toolbar button.alt { background:#374151; }
+        .sheet { width:210mm; margin:12px auto; background:#fff; padding:12mm 10mm; box-shadow:0 2px 12px rgba(0,0,0,.15); }
+        @media screen { .sheet { zoom: var(--fit, 1); } }
+        @media print { html, body { background:#fff; } .toolbar { display:none; } .sheet { width:auto; margin:0; padding:0; box-shadow:none; } }
+        .hd { display:flex; align-items:center; gap:12px; border-bottom:3px solid #c9960c; padding-bottom:8px; margin-bottom:10px; }
+        .hd img { width:52px; height:52px; object-fit:contain; }
+        .hd .n { font-family:Georgia, serif; font-weight:700; color:#6B0F1A; font-size:20px; text-transform:uppercase; }
+        .hd .m { font-style:italic; color:#9a7a10; font-size:12px; }
+        h1 { font-size:16px; color:#13306b; margin:0 0 2px; }
+        .meta { color:#6b7280; margin-bottom:10px; }
+        table { width:100%; border-collapse:collapse; table-layout:fixed; }
+        thead { display:table-header-group; }      /* header repeats on every page */
+        th { background:#13306b; color:#fff; text-align:left; padding:6px; font-size:10px; text-transform:uppercase; }
+        td { padding:6px; border-bottom:1px solid #d6deeb; vertical-align:top; word-wrap:break-word; overflow-wrap:anywhere; }
+        tr:nth-child(even) td { background:#f5f8fd; }
+        tr { page-break-inside:avoid; break-inside:avoid; }
+        td.mail { font-family:Consolas, monospace; font-size:10px; }
+        td small { color:#6b7280; }
+        .note { margin-top:10px; color:#6b7280; font-size:10px; }
+      </style></head><body>
+      <div class="toolbar"><button onclick="window.print()">🖨 Print / Save as PDF</button><button class="alt" onclick="window.close()">Close</button></div>
+      <div class="sheet">
+        <div class="hd"><img src="${logo}" alt=""><div><div class="n">Royal Crystal Academy</div><div class="m">Moral, Excellence &amp; Greatness</div></div></div>
+        <h1>${title}</h1>
+        <div class="meta">${count}${q ? ` · search: “${esc(q)}”` : ''} · printed ${today}</div>
+        <table><thead><tr>${head}</tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center;padding:16px">Nothing to print.</td></tr>'}</tbody></table>
+        <div class="note">${isParents
+          ? 'Parents log in at royalcrystalacademy.com.ng/parent-login.html with their email or phone number. First-time parents use the activation code from the school.'
+          : 'Staff log in at royalcrystalacademy.com.ng/admin/login.html. Passwords are not shown — use Reset PW in User Management to set a new one.'}
+          Keep this list private.</div>
+      </div>
+      <script>(function(){function fit(){document.documentElement.style.setProperty('--fit',String(Math.min(1,(window.innerWidth-12)/794)));}fit();window.addEventListener('resize',fit);
+        window.addEventListener('load',function(){setTimeout(function(){window.print();},300);});})();<\/script>
+      </body></html>`);
+    w.document.close();
   };
 
   /* ============================================================
