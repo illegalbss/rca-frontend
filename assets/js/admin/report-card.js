@@ -73,6 +73,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const gradeToLabel    = window.gradeToLabel;
   const ratingValueToLabel = window.ratingValueToLabel;
   const isNurseryClass  = window.isNurseryClass || (c => !!c && c.includes('Nursery'));
+  // Pre-Nursery report cards are kept positive (Head Teacher's policy): no
+  // class position, no "Negative Traits" line, and only encouraging
+  // automatic remarks. A remark the teacher writes is shown as written.
+  const isPreNursery    = c => /^pre-?\s*nursery/i.test(c || '');
+  const PRE_NURSERY_GRADE_WORDS = { A: 'Excellent', B: 'Very Good', C: 'Good', D: 'Fair', E: 'Developing', F: 'Still Growing' };
+  const gradeWord = (g, preNursery) => (preNursery && PRE_NURSERY_GRADE_WORDS[g]) || gradeToLabel(g);
 
   const cu = window.CURRENT_USER;
   const canEditHtComment = cu && (cu.roles || [cu.role]).some(r => ['ict_admin', 'head_teacher'].includes(r));
@@ -210,11 +216,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* --------------------------------------------
      GENERATE A REMARK SENTENCE BASED ON THE AVERAGE
      -------------------------------------------- */
-  function generateRemark(average) {
+  // Encouraging wording for Pre-Nursery, whatever the scores.
+  const PRE_NURSERY_REMARKS = {
+    A: 'A wonderful term! A bright, happy learner who is doing very well.',
+    B: 'A lovely term. Growing in confidence and learning well every day.',
+    C: 'A good term. Enjoying school and making steady progress.',
+    D: 'Settling in well and learning new things every day. Keep it up!',
+    E: 'A cheerful little learner who is growing and trying hard.',
+    F: 'A cheerful little learner who is growing and trying hard.'
+  };
+  const PRE_NURSERY_HT = {
+    A: 'An excellent start. We are very proud of this little one!',
+    B: 'A very good term. Well done, and keep shining!',
+    C: 'Good progress this term. We look forward to more next term.',
+    D: 'A happy term of learning and play. Well done!',
+    E: 'Growing well in confidence. We are proud of every step.',
+    F: 'Growing well in confidence. We are proud of every step.'
+  };
+
+  function generateRemark(average, preNursery) {
     // Derive the remark from the SAME grade boundaries used everywhere
     // else (via scoreToGrade), rather than a second hardcoded threshold
     // list that could quietly drift out of sync with the real scale.
     const grade = scoreToGrade(average);
+    if (preNursery) return PRE_NURSERY_REMARKS[grade] || PRE_NURSERY_REMARKS.C;
 
     const REMARKS_BY_GRADE = {
       A: 'An excellent result. Keep up the outstanding work!',
@@ -228,8 +253,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     return REMARKS_BY_GRADE[grade] || REMARKS_BY_GRADE.F;
   }
 
-  function generateHtComment(average) {
+  function generateHtComment(average, preNursery) {
     const grade = scoreToGrade(average);
+    if (preNursery) return PRE_NURSERY_HT[grade] || PRE_NURSERY_HT.C;
     const HT_COMMENTS = {
       A: 'An outstanding performance. This pupil is a credit to the school. Keep it up!',
       B: 'A commendable result. I encourage this pupil to sustain the momentum.',
@@ -272,7 +298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ['learning_ability', 'Learning Ability'],
       ['positive_traits', 'Positive Personality Traits'],
       ['negative_traits', 'Negative Traits']
-    ];
+    ].filter(([key]) => !(key === 'negative_traits' && isPreNursery(className)));
 
     return `
       <div class="rc-section" id="nurseryRecordsBlock">
@@ -437,7 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ['learning_ability', 'Learning Ability'],
         ['positive_traits', 'Positive Personality Traits'],
         ['negative_traits', 'Negative Traits']
-      ];
+      ].filter(([key]) => !(key === 'negative_traits' && isPreNursery(className)));
       block.innerHTML = `
         <div class="rc-section-title">Cognitive &amp; Behavioural Records</div>
         <div class="rc-nursery-grid no-print">
@@ -550,13 +576,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       `).join('')
       : `<tr><td colspan="6" class="rc-empty-cell">No scores recorded for this term.</td></tr>`;
 
+    const preNursery = isPreNursery(className);
     const infoItems = [
       ['Pupil Name', student.full_name],
       ['Admission No', student.admission_no],
       ['Class', className],
       ['Gender', student.gender === 'male' ? 'Male' : 'Female'],
-      ['Position in Class', `${ordinal(position)} of ${classSize}`],
-      ['Overall Grade', `<span class="grade-${summary.overallGrade}">${summary.overallGrade}</span> — ${gradeToLabel(summary.overallGrade)}`]
+      ...(preNursery ? [] : [['Position in Class', `${ordinal(position)} of ${classSize}`]]),
+      ['Overall Grade', `<span class="grade-${summary.overallGrade}">${summary.overallGrade}</span> — ${gradeWord(summary.overallGrade, preNursery)}`]
     ];
 
     reportCardEl.innerHTML = `
@@ -596,7 +623,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         </table>
       </div>
 
-      <div class="rc-summary-grid">
+      <div class="rc-summary-grid"${preNursery ? ' style="grid-template-columns:repeat(3,1fr)"' : ''}>
         <div class="rc-summary-box">
           <span class="rc-summary-num">${summary.subjectsCount}</span>
           <span class="rc-summary-label">Subjects Taken</span>
@@ -609,20 +636,21 @@ document.addEventListener('DOMContentLoaded', async () => {
           <span class="rc-summary-num">${summary.average.toFixed(1)}%</span>
           <span class="rc-summary-label">Average Score</span>
         </div>
+        ${preNursery ? '' : `
         <div class="rc-summary-box">
           <span class="rc-summary-num">${ordinal(position)}</span>
           <span class="rc-summary-label">Class Position (of ${classSize})</span>
-        </div>
+        </div>`}
       </div>
 
       <div class="rc-remarks-grid">
         <div class="rc-remark-box">
           <span class="rc-remarks-label">Class Teacher's Remark:</span>
-          <span class="rc-remark-text">${summary.comment ? `"${summary.comment}"` : generateRemark(summary.average)}</span>
+          <span class="rc-remark-text">${summary.comment ? `"${summary.comment}"` : generateRemark(summary.average, preNursery)}</span>
         </div>
         <div class="rc-remark-box" id="htCommentBlock">
           <span class="rc-remarks-label">Head Teacher's Comment:</span>
-          <span class="rc-remark-text" id="htCommentText">${summary.ht_comment ? `"${summary.ht_comment}"` : generateHtComment(summary.average)}</span>
+          <span class="rc-remark-text" id="htCommentText">${summary.ht_comment ? `"${summary.ht_comment}"` : generateHtComment(summary.average, preNursery)}</span>
           ${canEditHtComment ? `<button id="editHtCommentBtn" class="no-print" style="margin-top:6px;padding:2px 10px;font-size:0.72rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">✏️ Edit</button>` : ''}
         </div>
       </div>
@@ -634,7 +662,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="rc-footer">
         <div class="rc-grade-legend">
           <span class="rc-legend-title">Grading Key:</span>
-          ${buildGradeLegend()}
+          ${buildGradeLegend(preNursery)}
         </div>
 
         <div class="rc-signatures">
@@ -699,7 +727,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      grading policy ever changes again, this legend updates itself
      automatically with zero edits needed here.
   */
-  function buildGradeLegend() {
+  function buildGradeLegend(preNursery) {
     const boundaries = window.GRADE_BOUNDARIES || [];
 
     return boundaries.map((band, index) => {
@@ -707,7 +735,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // (or 100 for the very top band, since there's no band above A)
       const upperBound = index === 0 ? 100 : boundaries[index - 1].min - 1;
       const rangeLabel = band.min === upperBound ? `${band.min}` : `${band.min}-${upperBound}`;
-      return `<span class="legend-item"><strong class="grade-${band.grade}">${band.grade}</strong> = ${rangeLabel} ${band.label}</span>`;
+      return `<span class="legend-item"><strong class="grade-${band.grade}">${band.grade}</strong> = ${rangeLabel} ${preNursery ? gradeWord(band.grade, true) : band.label}</span>`;
     }).join('');
   }
 

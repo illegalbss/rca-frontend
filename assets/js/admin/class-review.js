@@ -282,7 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <h4>Cognitive &amp; Behavioural Records</h4>
         <p style="font-size:0.78rem;color:#6b7280;margin-bottom:12px">Nursery classes use this instead of the 1-5 trait ratings — matches the school's paper Nursery report card.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-          ${NURSERY_FIELDS.map(([key, label]) => `
+          ${NURSERY_FIELDS.filter(([key]) => !(key === 'negative_traits' && /^pre-?\s*nursery/i.test(student.class_name || ''))).map(([key, label]) => `
             <div class="form-group">
               <label class="form-label" style="font-size:0.8rem">${label}</label>
               <textarea class="form-control nursery-field-input" data-field="${key}" rows="2" style="font-size:0.85rem">${nurseryRecord[key] || ''}</textarea>
