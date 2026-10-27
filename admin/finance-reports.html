@@ -837,7 +837,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const fs = await window.RCA_API.call('/payments/fee-schedule');
       sessionLabel = fs.terms?.[0]?.session_label || null;
     } catch (e) { /* fall through */ }
-    return sessionLabel || '2025/2026';
+    return sessionLabel || window.RCA_CONFIG?.SESSION || '';
   }
 
   document.getElementById('printPaidList').addEventListener('click', async () => {

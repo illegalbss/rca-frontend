@@ -15,6 +15,23 @@
 })();
 
 /* ============================================
+   EVERY TERM PICKER STARTS ON THE CURRENT TERM
+   ============================================
+   Pages had a fixed term pre-selected in their HTML (Score Entry opened on
+   Third Term, Report Cards / Class Review on Second Term), so a teacher who
+   didn't touch the dropdown saved First Term scores under the wrong term.
+   Runs as soon as this script loads (pages load it after their HTML), before
+   the page's own script reads the dropdown. */
+(function currentTermEverywhere() {
+  const term = window.RCA_CONFIG && window.RCA_CONFIG.CURRENT_TERM;
+  if (!term) return;
+  document.querySelectorAll('select').forEach(sel => {
+    const values = [...sel.options].map(o => o.value);
+    if (values.includes('term1') && values.includes('term2') && values.includes('term3')) sel.value = term;
+  });
+})();
+
+/* ============================================
    DASHBOARD SHELL — dashboard-shell.js
    ============================================
    Runs on EVERY admin page. Five jobs:

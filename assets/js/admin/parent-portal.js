@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const fmt = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
-  const SESSION = '2025/2026';
+  const SESSION = window.RCA_CONFIG?.SESSION || '';   // school year (updated from the server by dashboard-shell.js)
   // The term the school is in now (from the date — see config.js).
   const CURRENT_TERM = window.RCA_CONFIG?.CURRENT_TERM || 'term1';
 
@@ -408,7 +408,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     attPanel.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Loading…</p>';
     window.RCA_API.call(`/attendance/summary/${encodeURIComponent(c.admission_no)}`)
       .then(data => {
-        const thisTerm = (data.summary || []).find(r => r.term === 'term2');
+        const thisTerm = (data.summary || []).find(r => r.term === CURRENT_TERM);
         if (!thisTerm) { attPanel.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">No attendance recorded yet this term.</p>'; return; }
         attPanel.innerHTML = `
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;text-align:center">
@@ -677,7 +677,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const titleEl = document.getElementById('payFeeCategoriesTitle');
     const el = document.getElementById('payFeeCategories');
     if (!el) return;
-    const current = feeData.terms.term2 || feeData.terms.term1 || feeData.terms.term3;
+    const current = feeData.terms[CURRENT_TERM] || feeData.terms.term1 || feeData.terms.term2 || feeData.terms.term3;
     if (titleEl) titleEl.textContent = `Fee Categories (${current ? TERM_LABELS[TERMS_ORDER.find(t => feeData.terms[t] === current)] : 'Current Term'})`;
     el.innerHTML = current && current.lines.length
       ? current.lines.map(l => `<div class="pp-fee-cat-row"><span>${l.label}</span><span>${fmt(l.amount)}</span></div>`).join('')
@@ -778,7 +778,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const termSelect = document.getElementById('resultTermSelect');
     if (!content || !child) return;
 
-    const term = termSelect ? termSelect.value : 'term2';
+    const term = termSelect ? termSelect.value : CURRENT_TERM;
     content.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Checking payment status…</p>';
 
     try {
@@ -871,7 +871,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const data = await window.RCA_API.call(`/attendance/summary/${encodeURIComponent(child.admission_no)}`);
       const rows = data.summary || [];
-      const thisTerm = rows.find(r => r.term === 'term2');
+      const thisTerm = rows.find(r => r.term === CURRENT_TERM);
 
       if (!thisTerm) {
         content.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">No attendance recorded yet this term.</p>';
