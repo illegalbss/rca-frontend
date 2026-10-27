@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const fmt = window.formatNaira || (n => '₦' + Number(n).toLocaleString());
   const TERM_LABELS = { term1: 'First Term', term2: 'Second Term', term3: 'Third Term' };
+  const escText = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const SESSION = window.RCA_CONFIG?.SESSION || '';   // school year (updated from the server by dashboard-shell.js)
   // The term the school is in now (from the date — see config.js).
   const CURRENT_TERM = window.RCA_CONFIG?.CURRENT_TERM || 'term1';
@@ -846,7 +847,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             </tr>`).join('')}
           </tbody>
         </table>
-        ${resultsData.comment ? `<p style="margin-top:14px;font-size:0.82rem;color:#374151"><strong>Class Teacher's Remark:</strong> "${resultsData.comment}"</p>` : ''}
+        ${resultsData.comment ? `<p style="margin-top:14px;font-size:0.82rem;color:#374151"><strong>Class Teacher's Remark:</strong> "${escText(resultsData.comment)}"</p>` : ''}
+        ${resultsData.ht_comment ? `<p style="margin-top:8px;font-size:0.82rem;color:#374151"><strong>Head Teacher's Comment:</strong> "${escText(resultsData.ht_comment)}"</p>` : ''}
       `;
     } catch (e) {
       content.innerHTML = `<p style="color:#dc2626;font-size:0.85rem">Could not check results access: ${e.message}</p>`;
