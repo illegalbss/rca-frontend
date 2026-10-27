@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Student Progress lists only pupils on the ICT Practical Programme who
   // have paid and whose application is linked to their school record
-  // (ICT Practical Programme page). Their parents see these scores.
+  // (ICT Practical Programme page). The scores stay in the ICT Lab only:
+  // they are not shown on results, report cards or the parent portal.
   async function loadAll() {
     const [practical, comp, maint, sched, prog] = await Promise.all([
       window.RCA_API.call('/ict-lab/practical-pupils'),
@@ -352,7 +353,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('tab-progress').innerHTML = `
       ${notices.map(n => `<p style="background:#fffbeb;border:1px solid #fcd34d;color:#92400e;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:12px">${n}</p>`).join('')}
-      <p style="font-size:0.8rem;color:#374151;margin:0 0 12px">Pupils who have paid for the ICT Practical Programme. Scores you record here appear in their parents' portal (Results page) for the term shown.</p>
+      <p style="font-size:0.8rem;color:#374151;margin:0 0 12px">Pupils who have paid for the ICT Practical Programme. These scores are kept here in the ICT Lab only; they do not appear on results, report cards or the parent portal.</p>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
         <select id="ictProgressTerm" class="form-control" style="width:auto">
           ${Object.entries(TERM_NAMES).map(([v, l]) => `<option value="${v}"${v === currentTerm ? ' selected' : ''}>${l}</option>`).join('')}
