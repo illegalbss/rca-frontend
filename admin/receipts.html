@@ -57,10 +57,10 @@
       <a href="approvals.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Approvals</a>
       <a href="report-card.html" class="sidebar-link" data-roles="ict_admin,head_teacher"><i class="icon">&#9675;</i> Report Cards</a>
       <p class="sidebar-section-label">Finance</p>
-      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
-      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Record Payment</a>
-      <a href="receipts.html" class="sidebar-link active" data-roles="ict_admin,head_teacher,accountant,parent"><i class="icon">&#9632;</i> Receipts</a>
-      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,head_teacher,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
+      <a href="fees.html" class="sidebar-link" data-roles="ict_admin,accountant"><i class="icon">&#9675;</i> Fee Schedule</a>
+      <a href="payments.html" class="sidebar-link" data-roles="ict_admin,accountant"><i class="icon">&#9675;</i> Record Payment</a>
+      <a href="receipts.html" class="sidebar-link active" data-roles="ict_admin,accountant,parent"><i class="icon">&#9632;</i> Receipts</a>
+      <a href="finance-reports.html" class="sidebar-link" data-roles="ict_admin,accountant"><i class="icon">&#9675;</i> Finance Reports</a>
       <a href="payment-settings.html" class="sidebar-link" data-roles="ict_admin"><i class="icon">○</i> Payment Settings</a>
       <p class="sidebar-section-label">Communications</p>
       <a href="announcements.html" class="sidebar-link" data-roles="ict_admin,head_teacher,class_teacher,subject_teacher,accountant,parent"><i class="icon">○</i> Announcements</a>
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // same FINANCE_ROLES) — parents also use this page, so hide them there.
   const cu = window.CURRENT_USER;
   const canManagePayments = !!cu && (cu.roles || [cu.primary_role || cu.role])
-    .some(r => ['ict_admin', 'head_teacher', 'accountant'].includes(r));
+    .some(r => ['ict_admin', 'accountant'].includes(r));
 
   /* ---- Fetch real payments from the backend ---- */
   async function fetchPayments(term, admFilter) {

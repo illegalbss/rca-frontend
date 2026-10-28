@@ -36,7 +36,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const SESSION = (window.RCA_CONFIG && window.RCA_CONFIG.SESSION) || '';
   const now     = new Date();
   const today   = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const isFinance = ['ict_admin', 'head_teacher', 'accountant'].some(r => roles.includes(r));
+  // The Head Teacher does not see school money (fees, payments, totals).
+  const isFinance = ['ict_admin', 'accountant'].some(r => roles.includes(r));
   const safe = p => Promise.resolve(p).catch(() => null);
 
   mainEl.innerHTML = '<p style="padding:40px;color:#6b7280">Loading the latest figures…</p>';
@@ -405,7 +406,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ${card('Quick Actions', `
           <div class="quick-actions">
             ${qaBtn('✓ Approve Results',   'qa-green',  'approvals.html')}
-            ${qaBtn('📊 Finance Reports',   'qa-blue',   'finance-reports.html')}
+            ${qaBtn('📝 Class Review',      'qa-blue',   'class-review.html')}
             ${qaBtn('📋 Report Cards',      'qa-purple', 'report-card.html')}
             ${qaBtn('👥 Manage Students',   'qa-orange', 'students.html')}
           </div>
@@ -413,35 +414,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="dash-grid-2">
-        ${card('Fee Collection — ' + TERM_LABEL, `
-          ${termReport ? '' : '<p style="color:#9ca3af;font-size:0.8rem;margin:0 0 8px">Fee figures could not be loaded.</p>'}
-          ${sysRow('Total Expected', fmt(totalExpected))}
-          ${sysRow('Total Collected', fmt(totalPaid), 'color:#16a34a;font-weight:700')}
-          ${sysRow('Outstanding Balance', fmt(totalBalance), 'color:#dc2626;font-weight:700')}
-          <div style="margin:10px 0 4px">
-            <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:#6b7280;margin-bottom:4px">
-              <span>Collection Rate</span><span>${collRate}%</span>
-            </div>
-            <div style="height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden">
-              <div style="width:${collRate}%;height:100%;background:linear-gradient(90deg,#16a34a,#059669);border-radius:4px"></div>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px">
-            <div style="text-align:center;background:#d1fae5;border-radius:8px;padding:8px">
-              <div style="font-weight:700;color:#065f46">${paidFull}</div>
-              <div style="font-size:0.68rem;color:#6b7280">Paid Full</div>
-            </div>
-            <div style="text-align:center;background:#fef3c7;border-radius:8px;padding:8px">
-              <div style="font-weight:700;color:#92400e">${paidPartial}</div>
-              <div style="font-size:0.68rem;color:#6b7280">Partial</div>
-            </div>
-            <div style="text-align:center;background:#fee2e2;border-radius:8px;padding:8px">
-              <div style="font-weight:700;color:#991b1b">${paidNone}</div>
-              <div style="font-size:0.68rem;color:#6b7280">Unpaid</div>
-            </div>
-          </div>
-        `, {label:'Finance Reports', href:'finance-reports.html'})}
-
         ${card('Upcoming Events', upcomingEvents.length
           ? upcomingEvents.map(e => sysRow('📅 ' + fmtDay(e.event_date) + (e.end_date && day(e.end_date) !== day(e.event_date) ? ' – ' + fmtDay(e.end_date) : ''),
               String(e.title || '').replace(/[<>&]/g, ''))).join('')

@@ -158,6 +158,18 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // School money (fees, payments, receipts, finance reports, payment
+  // settings) is for the ICT Admin and the accountant only — the Head
+  // Teacher and teachers are sent to the dashboard. Parents keep their own
+  // receipts. The server refuses these requests as well.
+  const MONEY_PAGE = /\/(fees|payments|finance-reports|payment-settings|receipts)\.html$/;
+  if (MONEY_PAGE.test(window.location.pathname)
+      && !userRoles.some(r => r === 'ict_admin' || r === 'accountant')
+      && !(/\/receipts\.html$/.test(window.location.pathname) && userRoles.includes('parent'))) {
+    window.location.replace(userRoles.includes('parent') && userRoles.length === 1 ? 'parent-portal.html' : 'dashboard.html');
+    return;
+  }
+
   // ICT & Coding Clubs is not in use yet: pupils who pay are recorded on
   // the ICT Practical Programme page instead. The menu link is hidden and
   // the page sends you there. Its data is kept — delete these lines to
