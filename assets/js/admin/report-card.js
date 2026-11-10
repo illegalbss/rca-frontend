@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="rc-header">
         <img src="../assets/images/logo.png" alt="Royal Crystal Academy badge">
         <div class="rc-school-name">Royal Crystal Academy</div>
-        <div class="rc-school-meta">20/21 Amaigbo Lane, Uwani, Enugu State</div>
+        <div class="rc-school-meta">20/22 Amaigbo Lane, Uwani, Enugu State</div>
         <div class="rc-school-meta">Tel: 08036721390 / 09080061094</div>
         <div class="rc-title">${termLabel} Report Card &bull; ${sessionLabel} Session</div>
       </div>

@@ -20,7 +20,7 @@
     name: 'Royal Crystal Academy',
     tagline: 'Nursery & Primary School',
     motto: 'Moral, Excellence & Greatness',
-    address: '20/21 Amaigbo Lane, Uwani, Enugu State',
+    address: '20/22 Amaigbo Lane, Uwani, Enugu State',
     phones: '08036721390 / 09080061094',
     email: 'royalcrystalacademy12@gmail.com',
     website: 'www.royalcrystalacademy.com.ng'
