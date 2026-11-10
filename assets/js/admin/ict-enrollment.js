@@ -743,6 +743,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     selectedPupil = null;
     amountInput.value = ictFeeAmountForTerm(termSelect.value);
+    const attemptTracker = window.RCA_PAYMENT.createAttempt();
 
     searchInput.addEventListener('input', () => {
       const q = searchInput.value.trim().toLowerCase();
@@ -800,30 +801,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      submitBtn.disabled = true;
+      const pupil = selectedPupil;
+      const term = termSelect.value;
+      const method = document.getElementById('ictPayMethod').value;
+      const attempt = attemptTracker.begin([pupil.admission_no, term, amount, method]);
+
+      window.RCA_PAYMENT.setBusy(submitBtn, true);
       try {
-        await window.RCA_API.call('/payments', {
-          method: 'POST',
-          body: {
-            admission_no: selectedPupil.admission_no,
-            amount,
-            fee_type: 'ict_fee',
-            term: termSelect.value,
-            payment_method: document.getElementById('ictPayMethod').value
-          }
-        });
+        await window.RCA_PAYMENT.savePayment({
+          admission_no: pupil.admission_no,
+          amount,
+          fee_type: 'ict_fee',
+          term,
+          payment_method: method,
+          reference: attempt.receiptNo
+        }, attempt.isRetry);
       } catch (e) {
-        errorBox.textContent = 'Could not record payment: ' + e.message;
-        errorBox.style.display = 'block';
-        submitBtn.disabled = false;
+        window.RCA_PAYMENT.setBusy(submitBtn, false);
+        window.RCA_PAYMENT.showSaveError(errorBox, e.message, () => submitBtn.click());
         return;
       }
+      attemptTracker.done();
+
+      // The save is confirmed; only the status chip depends on this lookup.
+      let balance = Math.max(ictFeeAmountForTerm(term) - amount, 0);
+      try {
+        const qs = new URLSearchParams({ admission_no: pupil.admission_no, term });
+        balance = (await window.RCA_API.call('/payments/lookup?' + qs.toString())).ict_fee_balance;
+      } catch (e) { /* keep the estimate from this payment alone */ }
 
       selectedPupil = null;
       searchInput.value = '';
       selectedInfo.textContent = '✅ Payment recorded.';
-      submitBtn.disabled = false;
+      window.RCA_PAYMENT.setBusy(submitBtn, false);
       loadAndRenderIctFeeReport();
+      sessionStorage.setItem('rca_last_receipt', JSON.stringify({ admission_no: pupil.admission_no, term, receipt_no: attempt.receiptNo }));
+      window.showPaymentSuccess({
+        amount,
+        studentName: pupil.full_name,
+        className: pupil.class_name,
+        receiptNo: attempt.receiptNo,
+        term,
+        status: balance > 0 ? 'partial' : 'paid',
+        balance
+      });
     });
   }
 

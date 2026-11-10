@@ -471,6 +471,7 @@
 <script src="../assets/js/admin/sample-users.js"></script>
 <script src="../assets/js/admin/finance-data.js"></script>
 <script src="../assets/js/admin/localstorage.js"></script>
+<script src="../assets/js/admin/payment-success.js"></script>
 <script src="../assets/js/admin/dashboard-shell.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function () {
@@ -751,6 +752,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (e.key === 'Enter') document.getElementById('lookupBtn').click();
   });
 
+  // Remembers an unconfirmed payment so trying again can't record it twice.
+  var feeAttempt = window.RCA_PAYMENT.createAttempt();
+  var ictAttempt = window.RCA_PAYMENT.createAttempt();
+
   document.getElementById('savePaymentBtn').addEventListener('click', function () {
     var amount = parseFloat(document.getElementById('payAmount').value);
     var errEl  = document.getElementById('paymentError');
@@ -765,25 +770,26 @@ document.addEventListener('DOMContentLoaded', async function () {
     var parentName = document.getElementById('payParentName').value.trim();
     var notes      = document.getElementById('payNotes').value.trim();
     var customReceipt = document.getElementById('payReceiptNo').value.trim();
-    var receiptNo  = customReceipt || ('RCA-RCP-' + Date.now().toString().slice(-6));
+    var attempt = feeAttempt.begin([currentAdmNo, currentTerm, amount, method, date], customReceipt);
+    var receiptNo = attempt.receiptNo;
+    var saveBtn = document.getElementById('savePaymentBtn');
+    var paymentStatus = (currentLookup.schoolFeesPaid + amount) >= currentLookup.schoolFeesTotal ? 'paid' : 'partial';
 
-    document.getElementById('savePaymentBtn').disabled = true;
+    window.RCA_PAYMENT.setBusy(saveBtn, true);
 
-    window.RCA_API.call('/payments', {
-      method: 'POST',
-      body: {
-        admission_no: currentAdmNo,
-        amount: amount,
-        fee_type: 'school_fees',
-        term: currentTerm,
-        session: currentLookup.session,
-        payment_date: date,
-        payment_method: method,
-        reference: receiptNo,
-        status: (currentLookup.schoolFeesPaid + amount) >= currentLookup.schoolFeesTotal ? 'paid' : 'partial'
-      }
-    }).then(function() {
-      document.getElementById('savePaymentBtn').disabled = false;
+    window.RCA_PAYMENT.savePayment({
+      admission_no: currentAdmNo,
+      amount: amount,
+      fee_type: 'school_fees',
+      term: currentTerm,
+      session: currentLookup.session,
+      payment_date: date,
+      payment_method: method,
+      reference: receiptNo,
+      status: paymentStatus
+    }, attempt.isRetry).then(function() {
+      feeAttempt.done();
+      window.RCA_PAYMENT.setBusy(saveBtn, false);
 
       window.SESSION_PAYMENTS.unshift({
         admission_no:  currentAdmNo,
@@ -809,10 +815,18 @@ document.addEventListener('DOMContentLoaded', async function () {
       document.getElementById('paymentFormCard').style.display = 'none';
       document.getElementById('successCard').style.display     = 'block';
       renderRecentPayments();
+      window.showPaymentSuccess({
+        amount: amount,
+        studentName: currentLookup.full_name,
+        className: currentLookup.class_name,
+        receiptNo: receiptNo,
+        term: currentTerm,
+        status: paymentStatus,
+        balance: Math.max(currentLookup.schoolFeesBalance - amount, 0)
+      });
     }).catch(function(e) {
-      document.getElementById('savePaymentBtn').disabled = false;
-      errEl.textContent = 'Could not save payment: ' + e.message;
-      errEl.style.display = 'block';
+      window.RCA_PAYMENT.setBusy(saveBtn, false);
+      window.RCA_PAYMENT.showSaveError(errEl, e.message, function () { saveBtn.click(); });
     });
   });
 
@@ -863,35 +877,44 @@ document.addEventListener('DOMContentLoaded', async function () {
     var method = document.getElementById('ictFeeMethod').value;
     var date   = document.getElementById('ictFeeDate').value || new Date().toISOString().split('T')[0];
     var customReceipt = document.getElementById('ictFeeReceipt').value.trim();
-    var receiptNo = customReceipt || ('RCA-RCP-' + Date.now().toString().slice(-6));
+    var attempt = ictAttempt.begin([currentAdmNo, currentTerm, amount, method, date], customReceipt);
+    var receiptNo = attempt.receiptNo;
 
     var btn = document.getElementById('saveIctFeeBtn');
-    btn.disabled = true;
+    window.RCA_PAYMENT.setBusy(btn, true);
 
     var ictPaidSoFar = currentLookup.ict_fee_paid || 0;
     var ictTotal     = currentLookup.ict_fee_amount || 0;
 
-    window.RCA_API.call('/payments', {
-      method: 'POST',
-      body: {
-        admission_no: currentAdmNo,
-        amount: amount,
-        fee_type: 'ict_fee',
-        term: currentTerm,
-        session: currentLookup.session,
-        payment_date: date,
-        payment_method: method,
-        reference: receiptNo,
-        status: (ictPaidSoFar + amount) >= ictTotal ? 'paid' : 'partial'
-      }
-    }).then(function() {
-      btn.disabled = false;
+    var ictStatus = (ictPaidSoFar + amount) >= ictTotal ? 'paid' : 'partial';
+    window.RCA_PAYMENT.savePayment({
+      admission_no: currentAdmNo,
+      amount: amount,
+      fee_type: 'ict_fee',
+      term: currentTerm,
+      session: currentLookup.session,
+      payment_date: date,
+      payment_method: method,
+      reference: receiptNo,
+      status: ictStatus
+    }, attempt.isRetry).then(function() {
+      ictAttempt.done();
+      window.RCA_PAYMENT.setBusy(btn, false);
       closeIctFeeModal();
       doLookup(currentAdmNo, currentTerm);
+      sessionStorage.setItem('rca_last_receipt', JSON.stringify({ admission_no: currentAdmNo, term: currentTerm, receipt_no: receiptNo }));
+      window.showPaymentSuccess({
+        amount: amount,
+        studentName: currentLookup.full_name,
+        className: currentLookup.class_name,
+        receiptNo: receiptNo,
+        term: currentTerm,
+        status: ictStatus,
+        balance: Math.max(ictTotal - ictPaidSoFar - amount, 0)
+      });
     }).catch(function(e) {
-      btn.disabled = false;
-      alertEl.textContent = 'Could not save payment: ' + e.message;
-      alertEl.style.display = 'block';
+      window.RCA_PAYMENT.setBusy(btn, false);
+      window.RCA_PAYMENT.showSaveError(alertEl, e.message, function () { btn.click(); });
     });
   });
 
