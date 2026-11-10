@@ -150,8 +150,14 @@
     document.addEventListener('keydown', onKey, true);
     closeBtn.addEventListener('click', close);
     printBtn.addEventListener('click', () => {
-      if (onPrint) onPrint();
-      else window.location.href = 'receipts.html';
+      if (onPrint) { onPrint(); return; }
+      // The Receipts page opens the payment saved in rca_last_receipt;
+      // print:true makes it bring up the print dialog straight away.
+      try {
+        const last = JSON.parse(sessionStorage.getItem('rca_last_receipt') || 'null');
+        if (last) sessionStorage.setItem('rca_last_receipt', JSON.stringify({ ...last, print: true }));
+      } catch (e) { /* the receipt still opens; the bursar can press Print there */ }
+      window.location.href = 'receipts.html';
     });
     closeBtn.focus({ preventScroll: true });
 

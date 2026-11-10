@@ -277,10 +277,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const payment = currentRows.find(r => r.id === id);
     if (!payment) return;
 
+    const esc          = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const naira        = Math.floor(payment.amount);
     const kobo         = String(Math.round((payment.amount - naira) * 100)).padStart(2, '0');
     const receivedFrom = payment.parent_name || ('Parent / Guardian of ' + payment.full_name);
-    const beingFor     = `${TERM_LABELS[payment.term] || payment.term} School Fees — ${payment.session || '2025/2026'} Academic Session — ${payment.full_name} (${payment.class_name})`;
+    const feeName      = payment.fee_type === 'ict_fee' ? 'Result Access Fee (ICT/Portal)' : 'School Fees';
+    const termLabel    = TERM_LABELS[payment.term] || payment.term || '';
+    const beingFor     = `${termLabel} ${feeName}${payment.session ? ' — ' + payment.session + ' Academic Session' : ''} — ${payment.full_name} (${payment.class_name})`;
+    const paidOn       = payment.payment_date
+      ? new Date(String(payment.payment_date).substring(0, 10) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '';
 
     const card = document.getElementById('receiptCard');
     card.style.cssText = 'padding:0;background:transparent;border:none;box-shadow:none;border-radius:0';
@@ -328,28 +334,40 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="receipt-physical-badge">
           <span class="receipt-physical-badge-title">Official Receipt</span>
         </div>
-        <div class="receipt-physical-serial">${payment.reference || ''}</div>
+        <div class="receipt-physical-serial">${esc(payment.reference)}</div>
 
         <div class="receipt-physical-body">
+          <div class="receipt-details">
+            <div><span>School</span><strong>Royal Crystal Academy</strong></div>
+            <div><span>Receipt No.</span><strong>${esc(payment.reference) || '—'}</strong></div>
+            <div><span>Pupil</span><strong>${esc(payment.full_name)}</strong><small>${esc(payment.admission_no)}</small></div>
+            <div><span>Class</span><strong>${esc(payment.class_name)}</strong></div>
+            <div><span>Term</span><strong>${esc(termLabel)}${payment.session ? ' · ' + esc(payment.session) : ''}</strong></div>
+            <div><span>Amount</span><strong>${esc(fmt(payment.amount))}</strong><small>${esc(feeName)}</small></div>
+          </div>
           <div class="receipt-physical-row">
             <div class="receipt-physical-field-inline">
               <span class="receipt-physical-label">Received from:</span>
-              <span class="receipt-physical-value">${receivedFrom}</span>
+              <span class="receipt-physical-value">${esc(receivedFrom)}</span>
             </div>
             <div class="receipt-physical-field-inline receipt-physical-field-date">
               <span class="receipt-physical-label">Date:</span>
-              <span class="receipt-physical-value">${payment.payment_date ? String(payment.payment_date).substring(0, 10) : ''}</span>
+              <span class="receipt-physical-value">${esc(paidOn)}</span>
             </div>
           </div>
           <div class="receipt-physical-field">
             <span class="receipt-physical-label">The sum of:</span>
-            <span class="receipt-physical-value">${numberToWords(payment.amount)}</span>
+            <span class="receipt-physical-value">${esc(numberToWords(payment.amount))}</span>
             <span class="receipt-physical-suffix">Naira</span>
           </div>
           <div class="receipt-physical-field">
             <span class="receipt-physical-label">Being payment for:</span>
-            <span class="receipt-physical-value">${beingFor}</span>
+            <span class="receipt-physical-value">${esc(beingFor)}</span>
             <span class="receipt-physical-suffix">Kobo</span>
+          </div>
+          <div class="receipt-physical-field">
+            <span class="receipt-physical-label">Received by:</span>
+            <span class="receipt-physical-value">${esc(payment.recorded_by_name || '')}</span>
           </div>
 
           <div class="receipt-physical-amount-box">
@@ -479,7 +497,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const rows = await fetchPayments(lr.term, lr.admission_no);
         renderTable(rows, lr.term, '');
         const match = rows.find(r => r.reference === lr.receipt_no);
-        if (match) showReceiptById(match.id);
+        if (match) {
+          showReceiptById(match.id);
+          // "Print receipt" after a payment: open the print dialog straight away.
+          if (lr.print) setTimeout(() => window.print(), 400);
+        }
         return;
       } catch(e) { /* fall through to default load */ }
     }

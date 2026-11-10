@@ -565,6 +565,31 @@
   margin-bottom: 13px;
 }
 
+/* Key details at a glance: school, receipt no., pupil, class, term, amount */
+.receipt-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border: 1px solid #c7d0e0;
+  border-radius: 6px;
+  background: #f7f9fc;
+}
+.receipt-details > div { display: flex; flex-direction: column; min-width: 0; }
+.receipt-details span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #556;
+}
+.receipt-details strong { font-size: 0.9rem; color: #111; overflow-wrap: anywhere; }
+.receipt-details small { font-size: 0.72rem; color: #556; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .receipt-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .receipt-physical-field {
   display: flex;
   align-items: baseline;
@@ -700,6 +725,14 @@
   .receipt-physical-org-name { color: #1a3a6b !important; }
   .receipt-physical-amount-naira { color: #1a3a6b !important; border-color: #1a3a6b !important; }
   .receipt-physical-hash { color: #1a3a6b !important; }
+  /* Only the receipt prints, in one piece, with the details box keeping its tint */
+  #receiptListSection { display: none !important; }
+  .receipt-physical { break-inside: avoid; page-break-inside: avoid; }
+  .receipt-details {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   @page { margin: 1cm; }
 
 }
