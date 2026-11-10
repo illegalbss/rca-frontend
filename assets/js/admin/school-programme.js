@@ -174,11 +174,16 @@
 
     let body;
     if (filtered.length === 0) {
+      const prepared = canManage && preparedFor(_fSession, _fTerm);
       body = `
         <div style="text-align:center;padding:64px 24px;color:#6b7280">
           <div style="font-size:3rem;margin-bottom:14px">📅</div>
           <h3 style="color:#374151;margin-bottom:8px;font-size:1.05rem">No Programme for ${TERM_LABELS[_fTerm]} ${_fSession}</h3>
-          <p style="font-size:0.85rem">${canManage ? 'Click "+ New Programme" to create it.' : 'The programme has not been created yet.'}</p>
+          ${prepared ? `
+            <p style="font-size:0.85rem;margin-bottom:14px">A ${TERM_LABELS[_fTerm]} programme has been prepared (${prepared.weeks.length} weeks, following the state calendar and the First Term pattern).</p>
+            <button id="spAddPrepared" style="padding:10px 20px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.88rem;cursor:pointer;font-weight:600">➕ Add the prepared ${TERM_LABELS[_fTerm]} programme</button>
+            <p style="font-size:0.78rem;margin-top:10px">You can edit any line afterwards, or click "+ New Programme" to start from blank instead.</p>`
+          : `<p style="font-size:0.85rem">${canManage ? 'Click "+ New Programme" to create it.' : 'The programme has not been created yet.'}</p>`}
         </div>`;
     } else {
       body = filtered.map(p => {
@@ -220,6 +225,30 @@
       </div>
       <!-- Programme cards -->
       ${body}`;
+
+    document.getElementById('spAddPrepared')?.addEventListener('click', async e => {
+      const prepared = preparedFor(_fSession, _fTerm);
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Adding…';
+      try {
+        await window.RCA_API.createSchoolProgramme({ session_label: prepared.session, term: prepared.term, weeks: prepared.weeks });
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = `➕ Add the prepared ${TERM_LABELS[_fTerm]} programme`;
+        alert('Could not add the programme: ' + err.message);
+        return;
+      }
+      await loadProgrammes();
+      renderList();
+      showToast(`${TERM_LABELS[prepared.term]} programme added ✓`);
+    });
+  }
+
+  // A programme prepared in advance (prepared-programmes.js) for this
+  // session and term, if any.
+  function preparedFor(session, term) {
+    return (window.RCA_PREPARED_PROGRAMMES || []).find(p => p.session === session && p.term === term) || null;
   }
 
   window._spSetSession = s => { _fSession = s; renderList(); };
@@ -795,7 +824,7 @@
           <div>
             <div class="name">Royal Crystal Academy</div>
             <div class="motto">Moral, Excellence &amp; Greatness</div>
-            <div class="sub">20/21 Amaigbo Lane, Uwani, Enugu State &nbsp;·&nbsp; 08036721390 / 09080061094</div>
+            <div class="sub">20/22 Amaigbo Lane, Uwani, Enugu State &nbsp;·&nbsp; 08036721390 / 09080061094</div>
           </div>
         </div>
         <div class="banner">
