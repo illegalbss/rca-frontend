@@ -235,6 +235,68 @@ document.addEventListener('DOMContentLoaded', async () => {
      DASHBOARD STAT CARDS — children count, outstanding balance
      (summed across all children, current term), most recent payment
      ============================================ */
+  /* ---- This term's fees per child, split into school fees and the
+     Result Access Fee (the ICT/Portal fee). Results unlock only when both
+     are paid — when the school's "require full payment" setting is on. ---- */
+  const termFeesCache = {};
+  function getTermFees(child) {
+    if (!termFeesCache[child.admission_no]) {
+      termFeesCache[child.admission_no] = window.RCA_API.call(
+        `/payments/lookup?admission_no=${encodeURIComponent(child.admission_no)}&term=${CURRENT_TERM}`
+      ).then(l => {
+        const accessFee = Number(l.ict_fee_amount || 0), accessPaid = Number(l.ict_fee_paid || 0);
+        const schoolTotal = Number(l.grand_total || 0) - accessFee, schoolPaid = Number(l.amount_paid || 0) - accessPaid;
+        return {
+          lookup: l,
+          schoolBalance: Math.max(schoolTotal - schoolPaid, 0),
+          accessFee,
+          accessBalance: Math.max(accessFee - accessPaid, 0)
+        };
+      });
+      termFeesCache[child.admission_no].catch(() => { delete termFeesCache[child.admission_no]; });
+    }
+    return termFeesCache[child.admission_no];
+  }
+  let resultLockSetting = null;
+  function resultsNeedFees() {
+    if (!resultLockSetting) {
+      resultLockSetting = window.RCA_API.call('/settings/payment')
+        .then(s => s?.enable_result_unlock !== false)
+        .catch(() => true);
+    }
+    return resultLockSetting;
+  }
+
+  const CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="8" fill="#15803d"/><path d="M4.5 8.3l2.3 2.3 4.7-4.9" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function feeStatusLines(f, needed) {
+    const school = f.schoolBalance <= 0
+      ? `<span class="pp-fee-line paid">${CHECK_SVG} Fees paid</span>`
+      : `<span class="pp-fee-line owing">School fees: ${fmt(f.schoolBalance)} owing</span>`;
+    const access = f.accessFee > 0
+      ? (f.accessBalance <= 0
+          ? `<span class="pp-fee-line paid">${CHECK_SVG} Result Access Fee paid</span>`
+          : `<span class="pp-fee-line owing">Result Access Fee: not paid · ${fmt(f.accessBalance)}</span>`)
+      : '';
+    const allPaid = f.schoolBalance <= 0 && f.accessBalance <= 0;
+    const note = needed && !allPaid ? `<span class="pp-fee-note">Both must be paid to see ${TERM_LABELS[CURRENT_TERM]} results.</span>` : '';
+    return school + access + note;
+  }
+
+  // Fills every "[data-fee-for]" spot for each child once its fees load.
+  // On failure the spot stays empty rather than showing a wrong status.
+  async function renderChildFeeStatus() {
+    const needed = await resultsNeedFees();
+    myChildren.forEach(c => {
+      getTermFees(c).then(f => {
+        document.querySelectorAll(`[data-fee-for="${CSS.escape(c.admission_no)}"]`).forEach(el => {
+          el.innerHTML = feeStatusLines(f, needed);
+          el.setAttribute('aria-label', `${TERM_LABELS[CURRENT_TERM]} fees`);
+        });
+      }).catch(() => {});
+    });
+  }
+
   async function renderDashStats() {
     const wrap = document.getElementById('dashStats');
     if (!wrap) return;
@@ -275,9 +337,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let mostRecent = null;
     await Promise.all(myChildren.map(async (c) => {
       try {
-        const lookup = await window.RCA_API.call(
-          `/payments/lookup?admission_no=${encodeURIComponent(c.admission_no)}&term=${CURRENT_TERM}`
-        );
+        const { lookup } = await getTermFees(c);
         totalBalance += Number(lookup.balance || 0);
         sessionLabel = sessionLabel || lookup.session || '';
       } catch (e) { balanceFailed = true; }
@@ -322,6 +382,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="pp-child-avatar-lg">${c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase()}</div>
             <div class="pp-child-dash-name">${c.full_name}</div>
             <div class="pp-child-dash-meta">${c.class_name}</div>
+            <div class="pp-fee-status" data-fee-for="${c.admission_no}"></div>
             <button class="pp-view-profile-btn" onclick="event.stopPropagation();window._openChildDetail('${c.admission_no}')">View Profile</button>
           </div>`).join('')
       : '<p style="color:#9ca3af;font-size:0.82rem">No children linked to your account yet.</p>';
@@ -474,6 +535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div>
           <div style="font-weight:700;color:#111827">${c.full_name}</div>
           <div style="font-size:0.8rem;color:#6b7280">${c.class_name} • ${c.admission_no} • ${(c.gender||'').toLowerCase()==='male'?'Male':'Female'}</div>
+          <div class="pp-fee-status left" data-fee-for="${c.admission_no}"></div>
         </div>
       </div>
     `).join('');
@@ -799,10 +861,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         );
 
         if (feeData.status !== 'paid') {
+          // Both the term's school fees and the Result Access Fee (the
+          // ICT/Portal fee) must be paid; show each so parents know which.
+          const accessFee = Number(feeData.ict_fee_amount || 0);
+          const accessBal = Math.max(accessFee - Number(feeData.ict_fee_paid || 0), 0);
+          const schoolBal = Math.max(Number(feeData.balance || 0) - accessBal, 0);
+          const row = (label, bal) => `<li style="display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid #fde68a">
+              <span>${label}</span>
+              <strong>${bal > 0 ? fmt(bal) + ' to pay' : '✓ Paid'}</strong></li>`;
           content.innerHTML = `
-            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:20px;text-align:center;color:#92400e">
-              🔒 Results for ${TERM_LABELS[term]} are locked until school fees are paid in full.<br>
-              <span style="font-size:0.8rem">Outstanding balance: ${fmt(feeData.balance)}</span>
+            <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:18px 20px;color:#92400e">
+              <p style="margin:0 0 10px;text-align:center">🔒 Results for ${TERM_LABELS[term]} open once both of these are paid:</p>
+              <ul style="list-style:none;margin:0;padding:0;font-size:0.88rem">
+                ${row(`School fees — ${TERM_LABELS[term]}`, schoolBal)}
+                ${accessFee > 0 ? row('Result Access Fee (ICT/Portal)', accessBal) : ''}
+              </ul>
             </div>`;
           return;
         }
@@ -1448,6 +1521,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderChildrenList();
   renderDashStats();
   renderDashChildCards();
+  renderChildFeeStatus();
   renderPaymentsOverviewStats();
   buildChildTabs('payChildTabs', 'payChildSelector', renderFeeSummary);
   buildChildTabs('resultChildTabs', 'resultChildSelector', renderResults);

@@ -473,6 +473,32 @@
   text-align: center;
 }
 
+/* This term's fee status on each child (static — no animation) */
+.pp-fee-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  margin: 6px 0 2px;
+}
+.pp-fee-status:empty { display: none; }
+.pp-fee-status.left { align-items: flex-start; }
+.pp-fee-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.pp-fee-line svg { flex: none; }
+.pp-fee-line.paid  { color: #15803d; }
+.pp-fee-line.owing { color: #b45309; }
+.pp-fee-note {
+  font-size: 0.68rem;
+  color: #6b7280;
+}
+
 .pp-view-profile-btn {
   font-size: 0.75rem;
   color: var(--color-primary);
