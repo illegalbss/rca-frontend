@@ -559,8 +559,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Average of all scores entered this term in my classes
     const myOverview = myClasses.map(c => overviewByClass[c]).filter(Boolean);
     const myEntries  = myOverview.reduce((s, c) => s + c.entries, 0);
-    const myClassAvg = myEntries
-      ? Math.round(myOverview.reduce((s, c) => s + c.average * c.entries, 0) / myEntries)
+    // Averages count only subjects whose exam is in (CA-only = exam pending).
+    const myDone     = myOverview.reduce((s, c) => s + (c.completed ?? c.entries), 0);
+    const myClassAvg = myDone
+      ? Math.round(myOverview.reduce((s, c) => s + c.average * (c.completed ?? c.entries), 0) / myDone)
       : 0;
 
     // Tasks: one per subject+class combo

@@ -901,12 +901,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      const total = scores.reduce((sum, s) => sum + Number(s.final_score || 0), 0);
-      const average = (total / scores.length).toFixed(1);
+      // A subject whose exam isn't in yet shows its CA only, without a grade.
+      const pending = s => window.isExamPending ? window.isExamPending(s) : false;
+      const complete = scores.filter(s => !pending(s));
+      const total = complete.reduce((sum, s) => sum + Number(s.final_score || 0), 0);
+      const average = complete.length ? (total / complete.length).toFixed(1) : null;
 
       content.innerHTML = `
         <div style="margin-bottom:14px;text-align:center">
-          <span style="background:var(--color-primary);color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:700">Average: ${average}%</span>
+          <span style="background:var(--color-primary);color:#fff;padding:6px 16px;border-radius:20px;font-size:0.85rem;font-weight:700">${average !== null ? `Average: ${average}%` : 'Exams not yet entered'}</span>
         </div>
         <table class="data-table" style="width:100%">
           <thead><tr><th>Subject</th><th>CA (/40)</th><th>Exam (/60)</th><th>Total (/100)</th><th>Grade</th></tr></thead>
@@ -914,9 +917,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             ${scores.map(s => `<tr>
               <td>${s.subject_name || s.subject_id}</td>
               <td>${Number(s.ca_total)}</td>
-              <td>${Number(s.exam)}</td>
+              ${pending(s) ? `<td>—</td><td>—</td><td style="font-size:0.75rem;color:#92400e">Exam pending</td>` : `<td>${Number(s.exam)}</td>
               <td><strong>${Number(s.final_score)}</strong></td>
-              <td>${s.grade}</td>
+              <td>${s.grade}</td>`}
             </tr>`).join('')}
           </tbody>
         </table>

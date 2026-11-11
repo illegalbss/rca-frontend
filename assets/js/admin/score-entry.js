@@ -214,8 +214,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       };
       // No saved row means nothing has been entered: the boxes stay empty
       // rather than showing a 0 that a Save would record as a real score.
-      const saved = r.final_score !== null && r.final_score !== undefined;
-      results[r.admission_no][subjectId] = { ...blank, ...computeFinalScore(blank), entered: saved, saved };
+      const saved = r.ca_total !== null && r.ca_total !== undefined;
+      // Saved with CA only: the exam hasn't been written yet ("exam pending").
+      const examPending = saved && (r.final_score === null || r.final_score === undefined);
+      results[r.admission_no][subjectId] = { ...blank, ...computeFinalScore(blank), entered: saved, saved, examPending };
     });
     return true;
   }
@@ -278,7 +280,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     tableBody.innerHTML = students.map(student => {
       const r = getResultRecord(student.admission_no, subjectId);
-      const box = k => (r.entered ? r[k] : '');
+      const box = k => (r.entered && !(k === 'exam' && r.examPending) ? r[k] : '');
+      const done = r.entered && !r.examPending;   // has a total and grade
       return `
         <tr class="score-row" data-admission="${student.admission_no}" data-class="${student.class_name}" data-saved="${r.saved ? '1' : ''}">
           <td class="col-avatar" data-label=""><div class="row-avatar">${getInitials(student.full_name)}</div></td>
@@ -289,8 +292,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           <td data-label="Mid-term /${caMax.midterm}"><input type="number" class="score-input ca-input" data-component="midterm" min="0" max="${caMax.midterm}" value="${box('midterm')}"></td>
           <td class="ca-total-col" data-label="CA Total /40"><span class="computed-value ca-total-display">${r.entered ? r.caTotal : '—'}</span></td>
           <td data-label="Exam /${examMax}"><input type="number" class="score-input exam-input ca-input" data-component="exam" min="0" max="${examMax}" value="${box('exam')}"></td>
-          <td class="final-col" data-label="Final /100"><span class="computed-value final-score-display ${!r.entered ? '' : r.finalScore >= 40 ? 'above-pass' : 'below-pass'}">${r.entered ? r.finalScore : '—'}</span></td>
-          <td data-label="Grade"><span class="grade-pill ${r.entered ? r.grade : ''} grade-display">${r.entered ? r.grade : '—'}</span></td>
+          <td class="final-col" data-label="Final /100"><span class="computed-value final-score-display ${!done ? '' : r.finalScore >= 40 ? 'above-pass' : 'below-pass'}">${done ? r.finalScore : '—'}</span></td>
+          <td data-label="Grade"><span class="grade-pill ${done ? r.grade : ''} grade-display">${done ? r.grade : r.entered ? 'Exam pending' : '—'}</span></td>
         </tr>
       `;
     }).join('');
@@ -374,18 +377,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         Object.assign(record, computed);
         // A row counts as entered once any of its boxes holds a value (a typed 0 counts).
         record.entered = [...row.querySelectorAll('.ca-input')].some(i => i.value.trim() !== '');
+        // CA typed but the exam box empty: no total or grade until the exam is in.
+        record.examPending = record.entered && row.querySelector('[data-component="exam"]').value.trim() === '';
+        const done = record.entered && !record.examPending;
 
         // Update just this row's read-only cells - not the whole table
         row.querySelector('.ca-total-display').textContent = record.entered ? record.caTotal : '—';
 
         const finalDisplay = row.querySelector('.final-score-display');
-        finalDisplay.textContent = record.entered ? record.finalScore : '—';
-        finalDisplay.classList.toggle('above-pass', record.entered && record.finalScore >= 40);
-        finalDisplay.classList.toggle('below-pass', record.entered && record.finalScore < 40);
+        finalDisplay.textContent = done ? record.finalScore : '—';
+        finalDisplay.classList.toggle('above-pass', done && record.finalScore >= 40);
+        finalDisplay.classList.toggle('below-pass', done && record.finalScore < 40);
 
         const gradeDisplay = row.querySelector('.grade-display');
-        gradeDisplay.textContent = record.entered ? record.grade : '—';
-        gradeDisplay.className = `grade-pill ${record.entered ? record.grade : ''} grade-display`;
+        gradeDisplay.textContent = done ? record.grade : record.entered ? 'Exam pending' : '—';
+        gradeDisplay.className = `grade-pill ${done ? record.grade : ''} grade-display`;
 
         markUnsaved();
         renderSummary(classSelect.value, subjectId);
@@ -405,7 +411,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // Only pupils with a score count: blanks must not pull the average down.
-    const records = studentsInClass.map(s => getResultRecord(s.admission_no, subjectId)).filter(r => r.entered);
+    const records = studentsInClass.map(s => getResultRecord(s.admission_no, subjectId)).filter(r => r.entered && !r.examPending);
     const average = records.length ? records.reduce((sum, r) => sum + r.finalScore, 0) / records.length : 0;
     const passCount = records.filter(r => r.finalScore >= 40).length;
     const passRate = records.length ? Math.round((passCount / records.length) * 100) : 0;
@@ -469,7 +475,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         assessment: parseInt(inputs[1]?.value) || 0,
         project:    parseInt(inputs[2]?.value) || 0,
         midterm:    parseInt(inputs[3]?.value) || 0,
-        exam:       parseInt(inputs[4]?.value) || 0
+        // Empty exam box = exam not written yet; a typed 0 is a real score.
+        exam:       inputs[4]?.value.trim() === '' ? null : (parseInt(inputs[4]?.value) || 0)
       };
       const name = row.querySelector('.pupil-name-cell')?.childNodes[0]?.textContent.trim() || studentId;
       jobs.push(window.RCA_API.saveScore(studentId, subjectCode, term, scores)
