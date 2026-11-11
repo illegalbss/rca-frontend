@@ -210,6 +210,13 @@
 .mini-subject-table th, .mini-subject-table td {
   padding: 0.35rem var(--space-sm);
   border-bottom: 1px solid var(--color-border);
+  text-align: center;
+}
+
+/* Subject names read from the left; each score sits under its heading. */
+.mini-subject-table th:first-child,
+.mini-subject-table td:first-child {
+  text-align: left;
 }
 
 .mini-subject-table th {
