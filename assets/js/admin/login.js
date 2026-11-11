@@ -43,8 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const role = user.primary_role || user.role;
     if (role === 'parent') {
-      window.location.href = 'parent-portal.html';
+      // A password set by the school must be replaced first.
+      window.location.href = user.must_change_password ? '../parent-login.html?change=1' : 'parent-portal.html';
     } else {
+      // Staff with a password set by an admin get the Change Password box
+      // on the dashboard, which can't be closed until they choose their own.
       window.location.href = 'dashboard.html';
     }
   }

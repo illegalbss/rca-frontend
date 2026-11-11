@@ -413,6 +413,28 @@
       <p style="text-align:center;font-size:0.75rem;color:#9ca3af;margin-top:6px">No activation code? Contact the school office to get one.</p>
     </div>
 
+    <!-- First login with a password set by the school: choose your own -->
+    <form id="changePanel" novalidate style="display:none">
+      <p style="font-size:0.85rem;color:#374151;margin-bottom:14px"><strong>Choose your new password.</strong> The school set your current password, so please choose your own before you continue.</p>
+      <div class="form-group">
+        <label for="chg_current">Current Password</label>
+        <input type="password" id="chg_current" class="form-control" autocomplete="current-password" required>
+      </div>
+      <div class="form-group">
+        <label for="chg_password">New Password</label>
+        <input type="password" id="chg_password" class="form-control" autocomplete="new-password" required>
+        <small style="color:#6b7280;font-size:0.75rem">At least 8 characters, with a letter and a number.</small>
+      </div>
+      <div class="form-group">
+        <label for="chg_password2">Confirm New Password</label>
+        <input type="password" id="chg_password2" class="form-control" autocomplete="new-password" required>
+      </div>
+      <button type="submit" class="parent-login-btn" id="chgSaveBtn">Save My New Password</button>
+      <p style="text-align:center;font-size:0.85rem;margin-top:14px">
+        <a href="#" id="chgSignOutLink" style="color:#6b7280">Sign out</a>
+      </p>
+    </form>
+
     <div class="divider"><span>Are you a staff member?</span></div>
     <a href="admin/login.html" class="staff-link">🏫 Go to Staff Portal</a>
 
@@ -481,6 +503,12 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('rca_user_data', JSON.stringify(data.user));
         sessionStorage.setItem('rca_demo_role', 'parent');
         sessionStorage.setItem('rca_demo_name', data.user.full_name);
+        if (data.user.must_change_password) {
+          btn.textContent = 'Sign In to Parent Portal →';
+          btn.disabled = false;
+          showChangePassword(pwd);
+          return;
+        }
         window.location.href = 'admin/parent-portal.html';
         return;
       }
@@ -492,6 +520,72 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Sign In to Parent Portal →';
     btn.disabled = false;
   });
+
+  /* ---- First login with a password set by the school: choose a new one.
+     Every other request is refused by the server until this is done. ---- */
+  const changePanel = document.getElementById('changePanel');
+  function showChangePassword(currentPassword) {
+    clearMessages();
+    form.style.display = 'none';
+    actPanel.style.display = 'none';
+    changePanel.style.display = '';
+    const cur = document.getElementById('chg_current');
+    if (currentPassword) cur.value = currentPassword;
+    (currentPassword ? document.getElementById('chg_password') : cur).focus();
+  }
+  changePanel.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMessages();
+    const current = document.getElementById('chg_current').value;
+    const next    = document.getElementById('chg_password').value;
+    const again   = document.getElementById('chg_password2').value;
+    if (!current || !next || !again) { showError('Please fill in all three boxes.'); return; }
+    if (next.length < 8 || !/[A-Za-z]/.test(next) || !/\d/.test(next)) { showError('Your new password needs at least 8 characters, with a letter and a number.'); return; }
+    if (next !== again) { showError('The two new passwords do not match.'); return; }
+    if (next === current) { showError('Choose a new password that is different from the one the school gave you.'); return; }
+
+    const saveBtn = document.getElementById('chgSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+      const res = await fetch(apiUrl + '/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (sessionStorage.getItem('rca_token') || '') },
+        body: JSON.stringify({ currentPassword: current, newPassword: next })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showError(res.status === 401 && !data.error?.includes('Current password')
+          ? 'Your session has ended. Please sign in again.'
+          : (data.error || 'Could not save your new password. Please try again.'));
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save My New Password';
+        return;
+      }
+      try {
+        const u = JSON.parse(sessionStorage.getItem('rca_user_data') || '{}');
+        u.must_change_password = false;
+        sessionStorage.setItem('rca_user_data', JSON.stringify(u));
+      } catch (err) { /* the server has already cleared it */ }
+      window.location.href = 'admin/parent-portal.html';
+    } catch (err) {
+      showError('Could not reach the school server. Please check your internet connection and try again.');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save My New Password';
+    }
+  });
+  document.getElementById('chgSignOutLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    ['rca_token', 'rca_user_data', 'rca_demo_role', 'rca_demo_name'].forEach(k => sessionStorage.removeItem(k));
+    changePanel.style.display = 'none';
+    form.style.display = '';
+    clearMessages();
+  });
+  // Sent here because the server asked for a new password (?change=1).
+  if (new URLSearchParams(window.location.search).get('change') === '1') {
+    if (sessionStorage.getItem('rca_token')) showChangePassword();
+    else showError('Please sign in, then choose your new password.');
+  }
 
   /* ---- Activation ---- */
   function showActivation(show) {

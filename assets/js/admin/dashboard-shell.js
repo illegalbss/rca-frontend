@@ -499,13 +499,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalHtml = `
       <div id="changePasswordModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;display:none;align-items:center;justify-content:center;padding:20px">
         <div style="background:#fff;border-radius:16px;width:100%;max-width:380px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-          <h3 style="margin:0 0 14px;color:var(--color-primary,#1e3a5f);font-size:1rem">Change Password</h3>
+          <h3 id="cpwTitle" style="margin:0 0 14px;color:var(--color-primary,#1e3a5f);font-size:1rem">Change Password</h3>
+          <p id="cpwForcedNote" style="display:none;margin:-6px 0 14px;font-size:0.8rem;color:#374151">Your password was set by the school. Please choose your own password to continue.</p>
           <div id="cpwAlert" style="display:none;background:#fef2f2;color:#dc2626;padding:8px 12px;border-radius:8px;font-size:0.8rem;margin-bottom:12px"></div>
           <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Current Password</label>
           <input type="password" id="cpwCurrent" class="form-control" style="margin-bottom:12px;width:100%;box-sizing:border-box">
           <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">New Password</label>
           <input type="password" id="cpwNew" class="form-control" style="margin-bottom:4px;width:100%;box-sizing:border-box">
-          <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 12px">At least 8 characters.</p>
+          <p style="font-size:0.72rem;color:#9ca3af;margin:0 0 12px">At least 8 characters, with at least one letter and one number.</p>
           <label style="display:block;font-size:0.78rem;font-weight:600;color:#374151;margin-bottom:4px">Confirm New Password</label>
           <input type="password" id="cpwConfirm" class="form-control" style="margin-bottom:16px;width:100%;box-sizing:border-box">
           <div style="display:flex;gap:10px">
@@ -520,7 +521,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const cpwAlert   = document.getElementById('cpwAlert');
     const cpwSaveBtn = document.getElementById('cpwSaveBtn');
 
+    // Forced mode: a password given by an admin must be replaced; the box
+    // can't be closed and the page behind it isn't usable until then.
+    let cpwForced = false;
+    window.RCA_forcePasswordChange = function () {
+      cpwForced = true;
+      document.getElementById('cpwTitle').textContent = 'Choose your new password';
+      document.getElementById('cpwForcedNote').style.display = 'block';
+      document.getElementById('cpwCancelBtn').style.display = 'none';
+      cpwModal.style.zIndex = '10000';
+      cpwModal.style.display = 'flex';
+      document.getElementById('cpwCurrent').focus();
+    };
+
     function closeCpwModal() {
+      if (cpwForced) return;
       cpwModal.style.display = 'none';
       cpwAlert.style.display = 'none';
       document.getElementById('cpwCurrent').value = '';
@@ -545,8 +560,8 @@ document.addEventListener('DOMContentLoaded', () => {
         cpwAlert.style.display = 'block';
         return;
       }
-      if (next.length < 8) {
-        cpwAlert.textContent = 'New password must be at least 8 characters.';
+      if (next.length < 8 || !/[A-Za-z]/.test(next) || !/\d/.test(next)) {
+        cpwAlert.textContent = 'New password must be at least 8 characters, with at least one letter and one number.';
         cpwAlert.style.display = 'block';
         return;
       }
@@ -560,6 +575,17 @@ document.addEventListener('DOMContentLoaded', () => {
       cpwSaveBtn.textContent = 'Saving…';
       try {
         await window.RCA_API.changePassword(current, next);
+        if (cpwForced) {
+          // Done: clear the flag and reload so the page loads its data.
+          try {
+            const u = JSON.parse(sessionStorage.getItem('rca_user_data') || '{}');
+            u.must_change_password = false;
+            sessionStorage.setItem('rca_user_data', JSON.stringify(u));
+          } catch (err) { /* the server has already cleared it */ }
+          alert('Password changed. Use your new password next time you log in.');
+          window.location.reload();
+          return;
+        }
         closeCpwModal();
         alert('Password changed successfully. Use it next time you log in.');
       } catch (e) {
@@ -570,6 +596,14 @@ document.addEventListener('DOMContentLoaded', () => {
         cpwSaveBtn.textContent = 'Save';
       }
     });
+
+    // Signed in with a password set by an admin: change it before anything else.
+    // (Parents are sent to the parent login's own screen by api.js instead.)
+    try {
+      const u = JSON.parse(sessionStorage.getItem('rca_user_data') || '{}');
+      const r = u.roles || [u.primary_role];
+      if (u.must_change_password && !r.every(x => x === 'parent')) window.RCA_forcePasswordChange();
+    } catch (e) { /* the server still refuses other requests until it is changed */ }
   }
 
 });

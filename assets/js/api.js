@@ -45,6 +45,27 @@
     if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
   }
 
+  // The server refuses everything until a password given by an admin is
+  // replaced. Staff get the Change Password box (dashboard-shell.js) on the
+  // page they are on; parents go to the "Choose your new password" screen.
+  let passwordChangeHandled = false;
+  function passwordChangeRequired() {
+    if (passwordChangeHandled) return;
+    passwordChangeHandled = true;
+    let user = {};
+    try { user = JSON.parse(sessionStorage.getItem('rca_user_data') || '{}'); } catch (e) { user = {}; }
+    user.must_change_password = true;
+    try { sessionStorage.setItem('rca_user_data', JSON.stringify(user)); } catch (e) { /* still redirects */ }
+    const roles = user.roles || [user.primary_role];
+    const parentOnly = roles.length > 0 && roles.every(r => r === 'parent');
+    if (!parentOnly && typeof window.RCA_forcePasswordChange === 'function') {
+      window.RCA_forcePasswordChange();
+      return;
+    }
+    if (/parent-login\.html$/.test(window.location.pathname)) return;
+    window.location.replace(parentOnly ? '/parent-login.html?change=1' : '/admin/dashboard.html');
+  }
+
   async function apiCall(endpoint, options = {}) {
     const token  = getToken();
     const apiUrl = window.RCA_CONFIG?.API_URL || 'http://localhost:3000/api';
@@ -63,6 +84,8 @@
       const err = await res.json().catch(() => ({ error: res.statusText }));
       const e = new Error(err.error || "API error");
       e.status = res.status;
+      e.code = err.code;
+      if (res.status === 403 && err.code === 'PASSWORD_CHANGE_REQUIRED') passwordChangeRequired();
       throw e;
     }
 

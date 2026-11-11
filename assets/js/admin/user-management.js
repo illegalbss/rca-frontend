@@ -482,7 +482,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // written down, with no confirmation to catch it).
     if (wasCreating) {
       const toast = document.createElement('div');
-      toast.textContent = `✅ Account created for ${fullName}. Login: ${email} / ${password}`;
+      toast.textContent = `✅ Account created for ${fullName}. Login: ${email} / ${password}. They will be asked to choose their own password at first login.`;
       toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:14px 20px;border-radius:10px;z-index:9999;font-size:0.85rem;font-weight:600;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
       document.body.appendChild(toast);
       setTimeout(() => toast.remove(), 8000);
@@ -569,7 +569,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       out.innerHTML =
         `<p style="font-size:0.85rem;color:#065f46;background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:12px;margin:0">
            ✅ New password: <strong style="font-size:1rem;letter-spacing:0.03em">${result.temp_password}</strong><br>
-           <span style="font-size:0.78rem">Give it to ${result.email} in person or by private message.</span>
+           <span style="font-size:0.78rem">Give it to ${result.email} in person or by private message. They will be asked to choose their own password when they first log in with it.</span>
          </p>`;
       btn.style.display = 'none';
       document.getElementById('resetModalCancelBtn').textContent = 'Close';
@@ -779,7 +779,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshAll();
 
     const toast = document.createElement('div');
-    toast.textContent = `✅ Parent account created for ${name}. Login: ${email} / ${pass}`;
+    toast.textContent = `✅ Parent account created for ${name}. Login: ${email} / ${pass}. They will be asked to choose their own password at first login.`;
     toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#059669;color:#fff;padding:14px 20px;border-radius:10px;z-index:9999;font-size:0.85rem;font-weight:600;max-width:400px;box-shadow:0 4px 12px rgba(0,0,0,0.2)';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 5000);
