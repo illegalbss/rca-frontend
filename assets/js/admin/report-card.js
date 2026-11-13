@@ -107,11 +107,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function summarize(data) {
     const scores = data?.scores || [];
-    // Subjects whose exam is still pending (CA only) are shown but left out
-    // of the total, average, overall grade and class position.
-    const complete = scores.filter(r => !(window.isExamPending && window.isExamPending(r)));
-    const totalScore = complete.reduce((sum, r) => sum + Number(r.final_score || 0), 0);
-    const average = complete.length ? totalScore / complete.length : 0;
+    const totalScore = scores.reduce((sum, r) => sum + Number(r.final_score || 0), 0);
+    const average = scores.length ? totalScore / scores.length : 0;
     return {
       scores,
       behavior: data?.behavior || [],
@@ -121,9 +118,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       attendance: data?.attendance || null,   // from the attendance register
       average,
       totalScore,
-      overallGrade: complete.length ? scoreToGrade(average) : '—',
-      subjectsCount: scores.length,
-      pendingCount: scores.length - complete.length
+      overallGrade: scoreToGrade(average),
+      subjectsCount: scores.length
     };
   }
 
@@ -536,11 +532,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           <td class="rc-subject-cell">${r.subject_name || r.subject_id}</td>
           <td>${fmt(Number(r.test || 0) + Number(r.assessment || 0))}</td>
           <td>${fmt(Number(r.project || 0) + Number(r.midterm || 0))}</td>
-          ${window.isExamPending && window.isExamPending(r)
-            ? `<td>—</td><td class="rc-total-cell">—</td><td class="rc-grade-cell" style="font-size:0.7em">Exam pending</td>`
-            : `<td>${fmt(r.exam)}</td>
+          <td>${fmt(r.exam)}</td>
           <td class="rc-total-cell">${fmt(r.final_score)}</td>
-          <td class="rc-grade-cell grade-${r.grade}">${r.grade}</td>`}
+          <td class="rc-grade-cell grade-${r.grade}">${r.grade}</td>
         </tr>
       `).join('')
       : `<tr><td colspan="6" class="rc-empty-cell">No scores recorded for this term.</td></tr>`;
@@ -552,9 +546,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       ['Class', className],
       ['Gender', /^m/i.test(student.gender || '') ? 'Male' : /^f/i.test(student.gender || '') ? 'Female' : '—'],
       ...(preNursery ? [] : [['Position in Class', `${ordinal(position)} of ${classSize}`]]),
-      ['Overall Grade', summary.overallGrade === '—'
-        ? (summary.pendingCount ? 'Exam pending' : '—')
-        : `<span class="grade-${summary.overallGrade}">${summary.overallGrade}</span> — ${gradeWord(summary.overallGrade, preNursery)}`]
+      ['Overall Grade', `<span class="grade-${summary.overallGrade}">${summary.overallGrade}</span> — ${gradeWord(summary.overallGrade, preNursery)}`]
     ];
 
     reportCardEl.innerHTML = `

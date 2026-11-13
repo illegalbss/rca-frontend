@@ -174,10 +174,6 @@
 
   // Expose all functions so other scripts can call them directly
   window.computeFinalScore = computeFinalScore;
-
-  // A saved score whose exam hasn't been entered yet ("exam pending") has
-  // its CA but no total or grade; it is left out of averages and positions.
-  window.isExamPending = r => !!r && (r.final_score === null || r.final_score === undefined || r.final_score === '');
   window.scoreToGrade = scoreToGrade;
   window.gradeToLabel = gradeToLabel;
   window.GRADE_BOUNDARIES = GRADE_BOUNDARIES;

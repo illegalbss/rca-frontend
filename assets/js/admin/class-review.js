@@ -221,16 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const commentLocked = window.getApprovalRecord?.(student.class_name, term)?.status === 'approved';
 
     /* --- Academic summary --- */
-    // A subject with only CA entered is "exam pending": no total or grade
-    // yet, and it doesn't count towards the average.
-    const pending = r => window.isExamPending ? window.isExamPending(r) : false;
-    const subjectRows = scores.map(r => pending(r) ? `<tr>
-        <td>${r.subject_name || r.subject_id}</td>
-        <td>${Number(r.ca_total)}</td>
-        <td>—</td>
-        <td>—</td>
-        <td class="rc-grade-cell" style="color:#92400e;font-size:0.72rem;font-weight:600">Exam pending</td>
-      </tr>` : `<tr>
+    const subjectRows = scores.map(r => `<tr>
         <td>${r.subject_name || r.subject_id}</td>
         <td>${Number(r.ca_total)}</td>
         <td>${Number(r.exam)}</td>
@@ -238,9 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <td class="rc-grade-cell ${r.grade}">${r.grade}</td>
       </tr>`).join('');
 
-    const complete = scores.filter(r => !pending(r));
-    const avg = complete.length ? (complete.reduce((a, r) => a + Number(r.final_score || 0), 0) / complete.length) : 0;
-    const pendingCount = scores.length - complete.length;
+    const avg = scores.length ? (scores.reduce((a, r) => a + Number(r.final_score || 0), 0) / scores.length) : 0;
 
     /* --- Behaviour traits grid --- */
     const traitsHTML = traits.map(trait => {
@@ -272,11 +261,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       <div class="academic-mini-summary">
         <div class="mini-summary-stat">
-          <span class="mini-num">${complete.length ? avg.toFixed(1) : '—'}</span>
+          <span class="mini-num">${avg.toFixed(1)}</span>
           <span class="mini-label">Average</span>
         </div>
         <div class="mini-summary-stat">
-          <span class="mini-num">${complete.length && scoreToGrade ? scoreToGrade(avg) : '—'}</span>
+          <span class="mini-num">${scoreToGrade ? scoreToGrade(avg) : '—'}</span>
           <span class="mini-label">Overall Grade</span>
         </div>
         <div class="mini-summary-stat">
@@ -284,7 +273,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           <span class="mini-label">Subjects</span>
         </div>
       </div>
-      ${pendingCount ? `<p style="font-size:0.78rem;color:#92400e;margin:4px 0 0">${pendingCount} subject${pendingCount !== 1 ? 's have' : ' has'} CA only (exam pending), not counted in the average yet.</p>` : ''}
 
       <details class="subject-details">
         <summary>View full subject breakdown</summary>
