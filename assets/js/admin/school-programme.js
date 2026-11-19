@@ -257,6 +257,107 @@
   /* ============================================================
      PROGRAMME TABLE VIEW  (like the image)
   ============================================================ */
+  /* ============================================================
+     WEEKLY SUMMARY STYLE
+     The same programme shown week by week (like a printed school
+     calendar): days in a row with the same activity and time are joined
+     into one line, e.g. "Mon 12th – Wed 14th Jan · Teaching & Learning".
+     The daily table stays available; the choice is remembered on this
+     device only.
+  ============================================================ */
+  const STYLE_KEY = 'rca_sp_style';
+  let _spStyle = 'daily';
+  try { if (localStorage.getItem(STYLE_KEY) === 'weekly') _spStyle = 'weekly'; } catch (e) { /* default */ }
+  window._spSetStyle = s => {
+    _spStyle = s === 'weekly' ? 'weekly' : 'daily';
+    try { localStorage.setItem(STYLE_KEY, _spStyle); } catch (e) { /* remembered for this visit only */ }
+    renderProgramView(_activeProg);
+  };
+
+  const escHtml = s => String(s ?? '').replace(/[&<>"']/g, ch =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const DAY_SHORT = { MONDAY: 'Mon', TUESDAY: 'Tue', WEDNESDAY: 'Wed', THURSDAY: 'Thur', FRIDAY: 'Fri', SATURDAY: 'Sat' };
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+  const ordinal = n => n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th');
+  function parseDmy(s) {
+    const m = String(s || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    return m ? { d: +m[1], m: +m[2] - 1, y: +m[3] } : null;
+  }
+  // "Mon 12th Jan", or "12th Jan" without the weekday
+  function dayLabel(row, withDay) {
+    const p = parseDmy(row.date);
+    const day = withDay && DAY_SHORT[row.day] ? DAY_SHORT[row.day] + ' ' : '';
+    return p ? `${day}${ordinal(p.d)} ${MONTHS_SHORT[p.m]}` : (row.day || '');
+  }
+  // "Mon 12th – Wed 14th Jan" (month written once when it is the same)
+  function rangeLabel(first, last, withDay) {
+    if (first === last) return dayLabel(first, withDay);
+    const a = parseDmy(first.date), b = parseDmy(last.date);
+    if (a && b && a.m === b.m) {
+      const da = withDay && DAY_SHORT[first.day] ? DAY_SHORT[first.day] + ' ' : '';
+      return `${da}${ordinal(a.d)} – ${dayLabel(last, withDay)}`;
+    }
+    return `${dayLabel(first, withDay)} – ${dayLabel(last, withDay)}`;
+  }
+  // Consecutive days with the same activity and time become one group.
+  function groupWeek(week) {
+    const groups = [];
+    (week.rows || []).forEach(row => {
+      const g = groups[groups.length - 1];
+      const same = g && (g.activity || '').trim().toUpperCase() === (row.activity || '').trim().toUpperCase()
+                     && (g.time || '') === (row.time || '');
+      if (same) g.last = row;
+      else groups.push({ first: row, last: row, activity: row.activity || '', time: row.time || '', type: row.type });
+    });
+    return groups;
+  }
+  // One week as summary lines: { weekLabel, range, lines: [{ dates, activity, time, type }] }
+  function summarizeWeek(week) {
+    const rows = week.rows || [];
+    const groups = groupWeek(week);
+    const single = groups.length === 1;
+    return {
+      weekLabel: 'WK ' + (ROMAN[week.week_no] || week.week_no),
+      range: rows.length ? rangeLabel(rows[0], rows[rows.length - 1], false) : '',
+      lines: groups.map(g => ({
+        dates: single ? '' : rangeLabel(g.first, g.last, true),
+        activity: g.activity, time: g.time, type: g.type
+      })),
+      single
+    };
+  }
+  // Weekly table body rows (screen and print share the markup; the
+  // look comes from the class names).
+  function weeklyTableRows(weeks) {
+    return weeks.map(week => {
+      const s = summarizeWeek(week);
+      const lineCell = (l, i) => {
+        const t = ACTIVITY_TYPES[l.type] || ACTIVITY_TYPES.normal;
+        const strong = ['holiday', 'exam', 'closing'].includes(l.type);
+        const act = `<span style="color:${t.color};font-weight:${strong ? 700 : 400}">${escHtml(l.activity)}</span>`;
+        return `<tr class="${i === 0 ? 'wk-first' : ''}">
+          ${i === 0 ? `<td rowspan="${s.lines.length + (s.single ? 0 : 1)}" class="wkcol">${s.weekLabel}</td>` : ''}
+          <td class="datecol">${escHtml(l.dates)}</td>
+          <td class="actcol">${s.single ? act : '• ' + act}</td>
+          <td class="timecol">${escHtml(l.time)}</td>
+        </tr>`;
+      };
+      if (s.single) {
+        const l = s.lines[0] || { activity: '', time: '' };
+        return `<tbody class="week">${lineCell({ ...l, dates: s.range }, 0)}</tbody>`;
+      }
+      // First line: the whole week's dates, then one line per group.
+      return `<tbody class="week">
+        <tr class="wk-first">
+          <td rowspan="${s.lines.length + 1}" class="wkcol">${s.weekLabel}</td>
+          <td class="datecol range">${escHtml(s.range)}</td><td class="actcol"></td><td class="timecol"></td>
+        </tr>
+        ${s.lines.map((l, i) => lineCell(l, i + 1)).join('')}
+      </tbody>`;
+    }).join('');
+  }
+
   function renderProgramView(prog) {
     _view       = 'list'; // keep back button going to list
     _activeProg = prog;
@@ -293,6 +394,30 @@
         </tr>`;
       }).join('');
     }).join('');
+
+    // Weekly style on phones: one card per week with the joined lines.
+    const weeklyCards = weeks.map(week => {
+      const s = summarizeWeek(week);
+      const lines = s.lines.map(l => {
+        const t = ACTIVITY_TYPES[l.type] || ACTIVITY_TYPES.normal;
+        const strong = ['holiday', 'exam', 'closing'].includes(l.type);
+        const tinted = l.type && l.type !== 'normal';
+        return `<div class="sp-day"${tinted ? ` style="background:${t.color}10;border-left:3px solid ${t.color}"` : ''}>
+            ${l.dates ? `<div class="sp-day-top"><span class="sp-day-name">${escHtml(l.dates)}</span></div>` : ''}
+            <div class="sp-day-act" style="color:${t.color};font-weight:${strong ? 700 : tinted ? 600 : 500}">${escHtml(l.activity)}</div>
+            ${l.time ? `<div class="sp-day-time">🕒 ${escHtml(l.time)}</div>` : ''}
+          </div>`;
+      }).join('');
+      return `<div class="sp-week">
+          <div class="sp-week-head"><span>${s.weekLabel}</span>${s.range ? `<small>${escHtml(s.range)}</small>` : ''}</div>
+          ${lines}
+        </div>`;
+    }).join('');
+    const weekly = _spStyle === 'weekly';
+    const styleBtn = (key, label) => `<button onclick="window._spSetStyle('${key}')" aria-pressed="${_spStyle === key}"
+        style="padding:6px 14px;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;cursor:pointer;
+               background:${_spStyle === key ? '#fff' : 'transparent'};color:${_spStyle === key ? '#111827' : '#6b7280'};
+               box-shadow:${_spStyle === key ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'}">${label}</button>`;
 
     // Phones: one card per week, each day on its own line (date · day,
     // activity, time) — the six-column table was squeezed and scrolled
@@ -337,6 +462,9 @@
         <button onclick="window._spBackToList()" style="padding:7px 14px;background:#fff;border:1px solid #d1d5db;border-radius:8px;font-size:0.82rem;cursor:pointer;font-weight:600">← Back to List</button>
         ${canManage ? `<button onclick="window._spEdit('${prog.id}')" style="padding:7px 14px;background:#fff;border:1px solid #d1d5db;border-radius:8px;font-size:0.82rem;cursor:pointer;font-weight:600">✏️ Edit</button>` : ''}
         <button onclick="window._spPrint('${prog.id}')" style="padding:7px 14px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:0.82rem;cursor:pointer;font-weight:600">🖨️ Print Programme</button>
+        <div role="group" aria-label="Programme style" style="display:flex;gap:4px;background:#f3f4f6;border-radius:8px;padding:3px;margin-left:auto">
+          ${styleBtn('daily', '📅 Daily')}${styleBtn('weekly', '🗓 Weekly summary')}
+        </div>
       </div>
 
       <div class="sp-card-view">
@@ -344,8 +472,21 @@
           <h2>School Programme of Events</h2>
           <div>${TERM_LABELS[prog.term]} — ${prog.session}</div>
         </div>
-        ${weekCards || '<p style="text-align:center;color:#6b7280">No weeks in this programme yet.</p>'}
+        ${(weekly ? weeklyCards : weekCards) || '<p style="text-align:center;color:#6b7280">No weeks in this programme yet.</p>'}
       </div>
+
+      ${weekly ? `
+      <style>
+        .sp-weekly { width:100%; border-collapse:collapse; font-family:inherit; }
+        .sp-weekly th { background:#1a3a5c; color:#fff; padding:9px 10px; border:1px solid #374151; font-size:0.82rem; text-align:left; }
+        .sp-weekly td { padding:6px 10px; border-left:1px solid #374151; border-right:1px solid #374151; font-size:0.85rem; vertical-align:top; }
+        .sp-weekly tbody.week tr:last-child td { border-bottom:1px solid #374151; }
+        .sp-weekly tr.wk-first td { border-top:2px solid #374151; }
+        .sp-weekly .wkcol { font-weight:700; white-space:nowrap; text-align:center; border-bottom:1px solid #374151; }
+        .sp-weekly .datecol { white-space:nowrap; }
+        .sp-weekly .datecol.range { font-weight:600; }
+        .sp-weekly .timecol { white-space:nowrap; text-align:center; }
+      </style>` : ''}
 
       <div class="sp-table-view" style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:28px;overflow-x:auto">
         <!-- Header -->
@@ -357,8 +498,13 @@
           <div style="font-size:0.88rem;font-weight:700;color:#374151;text-transform:uppercase">School Programme of Events</div>
         </div>
 
+        ${weekly ? `
+        <table class="sp-weekly">
+          <thead><tr><th style="width:9%;text-align:center">WEEK</th><th style="width:24%">DATES</th><th>ACTIVITIES</th><th style="width:15%;text-align:center">TIME</th></tr></thead>
+          ${weeklyTableRows(weeks)}
+        </table>` : ''}
         <!-- Table -->
-        <table style="width:100%;border-collapse:collapse;font-family:inherit">
+        <table style="width:100%;border-collapse:collapse;font-family:inherit;${weekly ? 'display:none' : ''}">
           <thead>
             <tr style="background:#1a3a5c;color:#fff">
               <th style="padding:9px 10px;border:1px solid #374151;text-align:center;font-size:0.82rem;white-space:nowrap">S/N</th>
@@ -808,6 +954,14 @@
         .c { text-align:center; } .nw { white-space:nowrap; }
         .wk { font-weight:700; color:#13306b; background:#eef3fb; vertical-align:middle; font-size:9.5px; }
         .day { font-weight:700; font-size:9.5px; }
+        /* Weekly summary style */
+        table.weekly td { border-top:none; border-bottom:none; vertical-align:top; padding:3px 7px; }
+        table.weekly tbody.week tr:last-child td { border-bottom:1px solid #b8c3d6; }
+        table.weekly tr.wk-first td { border-top:2px solid #13306b; }
+        table.weekly .wkcol { font-weight:700; color:#13306b; background:#eef3fb; text-align:center; white-space:nowrap; font-size:10px; border-bottom:1px solid #b8c3d6; }
+        table.weekly .datecol { white-space:nowrap; }
+        table.weekly .datecol.range { font-weight:700; }
+        table.weekly .timecol { white-space:nowrap; text-align:center; }
 
         .foot { margin-top:7px; display:flex; justify-content:space-between; align-items:flex-end; gap:12px; break-inside:avoid; }
         .legend { display:flex; flex-wrap:wrap; gap:3px 12px; font-size:9px; color:#374151; }
@@ -831,13 +985,20 @@
           <h1>School Programme of Events</h1>
           <p>${TERM_LABELS[prog.term]} — ${esc(prog.session)} Academic Session</p>
         </div>
+        ${_spStyle === 'weekly' ? `
+        <table class="weekly">
+          <thead><tr>
+            <th style="width:9%">WEEK</th><th style="width:25%">DATES</th><th>ACTIVITIES</th><th style="width:15%">TIME</th>
+          </tr></thead>
+          ${weeklyTableRows(weeks) || '<tbody><tr><td colspan="4" class="c" style="padding:16px;color:#6b7280">No weeks in this programme yet.</td></tr></tbody>'}
+        </table>` : `
         <table>
           <thead><tr>
             <th style="width:6%">S/N</th><th style="width:9%">WEEK</th><th style="width:13%">DATE</th>
             <th style="width:13%">DAY</th><th>ACTIVITIES</th><th style="width:15%">TIME</th>
           </tr></thead>
           ${weekBodies || '<tbody><tr><td colspan="6" class="c" style="padding:16px;color:#6b7280">No weeks in this programme yet.</td></tr></tbody>'}
-        </table>
+        </table>`}
         <div class="foot">
           <div>
             <div class="legend">${legend}</div>
