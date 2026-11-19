@@ -185,7 +185,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="pupil-list-avatar">${s.full_name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase()}</div>
         <div class="pupil-list-info">
           <div class="pupil-list-name">${s.full_name}</div>
-          <div class="pupil-list-meta">${s.admission_no}${totalsOf[s.admission_no]?.subjects ? ` · Total ${fmtNum(totalsOf[s.admission_no].total)} · Avg ${fmtNum(totalsOf[s.admission_no].average)}` : ''}</div>
+          <div class="pupil-list-meta">${s.admission_no}</div>
+          ${totalsOf[s.admission_no]?.subjects ? `<div class="pupil-list-totals">Total ${fmtNum(totalsOf[s.admission_no].total)} · Avg ${fmtNum(totalsOf[s.admission_no].average)}</div>` : ''}
         </div>
         ${reviewed.has(s.admission_no) ? '<span class="reviewed-tick">&#10003;</span>' : ''}
       </div>
