@@ -1041,18 +1041,17 @@
         }
         fitScreen();
         window.addEventListener('resize', fitScreen);
-        // Fit to at most two A4 pages: printable height per page is
-        // 297mm − 2×8mm margins = 281mm ≈ 1062px. Budget a little under
-        // two pages for the repeated table header and for whole weeks
-        // being pushed to page 2 rather than split.
+        // Fit the whole programme on ONE A4 page: printable height is
+        // 297mm − 2×8mm margins = 281mm ≈ 1062px, less a small margin of
+        // safety so nothing spills onto a second page.
         function fit() {
           var root = document.documentElement, doc = document.querySelector('.doc');
           root.style.setProperty('--fit', '1');
           doc.style.padding = '0'; doc.style.width = '194mm';
           var h = doc.getBoundingClientRect().height;
           doc.style.padding = ''; doc.style.width = '';
-          var BUDGET = 2 * 1062 - 170;
-          var s = h > BUDGET ? Math.max(0.55, Math.floor(BUDGET / h * 1000) / 1000) : 1;
+          var BUDGET = 1062 - 30;
+          var s = h > BUDGET ? Math.max(0.4, Math.floor(BUDGET / h * 1000) / 1000) : 1;
           root.style.setProperty('--fit', String(s));
         }
         window.addEventListener('beforeprint', fit);
