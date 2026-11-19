@@ -58,6 +58,7 @@
     const c = data.counts || {};
     const tabs = [
       ['accounts', 'Accounts'],
+      ['slips', '🖨 Login Slips'],
       ['import', 'Import CSV'],
       ['reviews', `Review Queue${data.open_reviews ? ` (${data.open_reviews})` : ''}`],
       ['links', `Link Approvals${data.pending_links ? ` (${data.pending_links})` : ''}`],
@@ -77,7 +78,7 @@
       <div id="paTab"></div>`;
     main().querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', () => { tab = b.dataset.tab; render(); }));
     main().querySelectorAll('[data-statcard]').forEach(b => b.addEventListener('click', () => { tab = 'accounts'; filter.status = b.dataset.statcard; render(); }));
-    ({ accounts: renderAccounts, import: renderImport, reviews: renderReviews, links: renderLinks, audit: renderAudit })[tab]();
+    ({ accounts: renderAccounts, slips: renderSlips, import: renderImport, reviews: renderReviews, links: renderLinks, audit: renderAudit })[tab]();
   }
 
   /* ================================================== ACCOUNTS */
@@ -407,6 +408,192 @@
       <li>Enter your phone number (<strong>${esc(r.phone_display)}</strong>) and this code</li><li>Choose ${r.reset ? "a new" : "your own"} password, then sign in</li></ol>
       <small>Code expires ${fmtDate(r.expires_at)}. Keep it private — do not share it. School staff will never ask for your password.</small></div>
       <script>window.onload=function(){window.print()}<\/script></body></html>`);
+    w.document.close();
+  }
+
+  /* ================================================== LOGIN SLIPS */
+  // Print login slips for many families at once, straight from the pupils'
+  // school records: missing parent accounts are prepared, children linked
+  // and one activation code issued per parent.
+  const SLIP_STATE = {
+    no_account: { label: 'No account yet',     bg: '#e0e7ff', color: '#3730a3' },
+    prepared:   { label: 'Account ready',      bg: '#f3f4f6', color: '#374151' },
+    pending:    { label: 'Code already given', bg: '#fef3c7', color: '#92400e' },
+    active:     { label: 'Already logs in',    bg: '#d1fae5', color: '#065f46' },
+    deactivated:{ label: 'Deactivated',        bg: '#fee2e2', color: '#991b1b' },
+    problem:    { label: 'Needs fixing',       bg: '#fee2e2', color: '#991b1b' }
+  };
+  let slipPupils = null;
+  const slipSel = new Set();
+  const slipFilter = { cls: '', q: '', hideActive: true, newOnly: false };
+  const NEW_DAYS = 150; // "joined recently" = admitted within about one term
+
+  async function renderSlips() {
+    const box = document.getElementById('paTab');
+    if (!slipPupils) {
+      box.innerHTML = card('<p style="margin:0;color:#6b7280">Loading pupils…</p>');
+      try { slipPupils = (await api('/login-slips')).pupils; }
+      catch (e) { box.innerHTML = card(`<p style="color:#dc2626;margin:0">Could not load pupils: ${esc(e.message)}</p>`); slipPupils = null; return; }
+    }
+    const classes = [...new Set(slipPupils.map(p => p.class_name).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const recent = p => p.enrolled_at && (Date.now() - new Date(p.enrolled_at).getTime()) < NEW_DAYS * 864e5;
+    const q = slipFilter.q.toLowerCase();
+    const rows = slipPupils.filter(p =>
+      (!slipFilter.cls || p.class_name === slipFilter.cls) &&
+      (!slipFilter.hideActive || p.state !== 'active') &&
+      (!slipFilter.newOnly || recent(p)) &&
+      (!q || [p.full_name, p.admission_no, p.parent_name, p.phone_display].join(' ').toLowerCase().includes(q)));
+    const selectable = p => p.state !== 'problem' && p.state !== 'active' && p.state !== 'deactivated';
+    const chosen = slipPupils.filter(p => slipSel.has(p.admission_no));
+    const st = s => { const c = SLIP_STATE[s] || SLIP_STATE.prepared; return `<span style="background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:0.68rem;font-weight:700;white-space:nowrap">${c.label}</span>`; };
+
+    box.innerHTML = card(`
+      <h3 style="margin:0 0 4px;font-size:1rem;color:var(--color-primary)">Print parent login slips</h3>
+      <p style="font-size:0.8rem;color:#6b7280;margin:0 0 14px;line-height:1.5">
+        Tick the pupils, then press <strong>Make &amp; print slips</strong>. Each parent gets one slip with their phone number and a login code.
+        Parents without an account get one made from the pupil's record (parent name and phone). Brothers and sisters with the same parent phone share one slip.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+        <select id="slCls" class="form-control" style="width:auto">
+          <option value="">All classes</option>
+          ${classes.map(c => `<option ${slipFilter.cls === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+        </select>
+        <input id="slQ" class="form-control" placeholder="Search pupil, parent or phone…" value="${esc(slipFilter.q)}" style="flex:1;min-width:180px">
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.8rem;margin-bottom:12px">
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slNew" ${slipFilter.newOnly ? 'checked' : ''}> Only new pupils (joined in the last ${Math.round(NEW_DAYS / 30)} months)</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slHide" ${slipFilter.hideActive ? 'checked' : ''}> Hide parents who already log in</label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        ${btn('Tick all shown', 'id="slAll"')} ${btn('Untick all', 'id="slNone"')}
+        <span style="font-size:0.78rem;color:#6b7280">${rows.length} pupil${rows.length !== 1 ? 's' : ''} shown · <strong style="color:#111827">${chosen.length} ticked</strong></span>
+      </div>
+      <div style="overflow-x:auto;max-height:520px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px">
+        <table style="width:100%;font-size:0.8rem;border-collapse:collapse">
+          <thead style="position:sticky;top:0;background:#f9fafb"><tr style="text-align:left;color:#6b7280">
+            <th style="padding:8px;width:28px"></th><th style="padding:8px">Pupil</th><th style="padding:8px">Class</th>
+            <th style="padding:8px">Parent (from records)</th><th style="padding:8px">Phone</th><th style="padding:8px">Login status</th></tr></thead>
+          <tbody>
+          ${rows.map(p => `<tr style="border-top:1px solid #f3f4f6">
+            <td style="padding:7px 8px"><input type="checkbox" data-slp="${esc(p.admission_no)}" ${slipSel.has(p.admission_no) ? 'checked' : ''} ${selectable(p) ? '' : 'disabled'}></td>
+            <td style="padding:7px 8px"><strong>${esc(p.full_name)}</strong><div style="font-size:0.7rem;color:#6b7280">${esc(p.admission_no)}${recent(p) ? ' · <span style="color:#3730a3;font-weight:700">new</span>' : ''}</div></td>
+            <td style="padding:7px 8px;white-space:nowrap">${esc(p.class_name)}</td>
+            <td style="padding:7px 8px">${esc(p.parent_name) || '<span style="color:#9ca3af">—</span>'}</td>
+            <td style="padding:7px 8px;white-space:nowrap">${esc(p.phone_display) || '<span style="color:#9ca3af">—</span>'}</td>
+            <td style="padding:7px 8px">${st(p.state)}${p.problem ? `<div style="font-size:0.7rem;color:#991b1b;margin-top:3px">${esc(p.problem)}</div>` : ''}
+              ${p.state === 'pending' ? `<div style="font-size:0.7rem;color:#92400e;margin-top:3px">given ${fmtDate(p.code_issued_at)}</div>` : ''}</td>
+          </tr>`).join('') || '<tr><td colspan="6" style="padding:18px;text-align:center;color:#6b7280">No pupils match.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
+        <label style="font-size:0.8rem;display:flex;gap:6px;align-items:center">Codes work for
+          <select id="slDays" class="form-control" style="width:auto;padding:4px 8px">
+            <option value="14">2 weeks</option><option value="30" selected>1 month</option><option value="60">2 months</option><option value="90">3 months</option>
+          </select></label>
+        <label style="font-size:0.8rem;display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slReissue"> Give new codes to parents who already have one (their old code stops working)</label>
+        <button class="btn btn-primary" id="slGo" style="margin-left:auto" ${chosen.length ? '' : 'disabled'}>🖨 Make &amp; print slips (${chosen.length})</button>
+      </div>`);
+
+    const again = () => renderSlips();
+    document.getElementById('slCls').onchange = e => { slipFilter.cls = e.target.value; again(); };
+    let t; const qi = document.getElementById('slQ');
+    qi.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { slipFilter.q = qi.value; again().then(() => { const n = document.getElementById('slQ'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }); }, 250); });
+    document.getElementById('slNew').onchange = e => { slipFilter.newOnly = e.target.checked; again(); };
+    document.getElementById('slHide').onchange = e => { slipFilter.hideActive = e.target.checked; again(); };
+    document.getElementById('slAll').onclick = () => { rows.filter(selectable).forEach(p => slipSel.add(p.admission_no)); again(); };
+    document.getElementById('slNone').onclick = () => { slipSel.clear(); again(); };
+    box.querySelectorAll('[data-slp]').forEach(c => c.addEventListener('change', () => { c.checked ? slipSel.add(c.dataset.slp) : slipSel.delete(c.dataset.slp); again(); }));
+    document.getElementById('slGo').onclick = () => makeSlips(chosen);
+  }
+
+  async function makeSlips(chosen) {
+    const reissue = document.getElementById('slReissue').checked;
+    const days = parseInt(document.getElementById('slDays').value, 10);
+    const withCode = chosen.filter(p => p.state === 'pending').length;
+    let msg = `Make login slips for ${chosen.length} pupil${chosen.length !== 1 ? 's' : ''}?`;
+    if (withCode && reissue) msg += `\n\n${withCode} of them already have a code — those old codes will stop working.`;
+    else if (withCode) msg += `\n\n${withCode} of them already have a code, so they are left as they are (tick "Give new codes" to replace them).`;
+    if (!confirm(msg)) return;
+    const go = document.getElementById('slGo');
+    go.disabled = true; go.textContent = 'Making slips…';
+    let r;
+    try { r = await api('/login-slips', { method: 'POST', body: { admission_nos: chosen.map(p => p.admission_no), reissue, days } }); }
+    catch (e) { alert(e.message); go.disabled = false; go.textContent = `🖨 Make & print slips (${chosen.length})`; return; }
+    slipSel.clear(); slipPupils = null;
+    showSlipsResult(r);
+    await reload();
+  }
+
+  function showSlipsResult(r) {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+    const s = r.summary;
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin:0 0 10px;color:var(--color-primary);font-size:1rem">${s.slips} login slip${s.slips !== 1 ? 's' : ''} ready</h3>
+        <div style="font-size:0.82rem;line-height:1.7;margin-bottom:12px">
+          ${s.accounts_created ? `✓ ${s.accounts_created} new parent account${s.accounts_created !== 1 ? 's' : ''} made from pupil records<br>` : ''}
+          ${s.children_linked ? `✓ ${s.children_linked} child${s.children_linked !== 1 ? 'ren' : ''} linked to their parent<br>` : ''}
+          ${s.skipped ? `<span style="color:#92400e">• ${s.skipped} pupil${s.skipped !== 1 ? 's' : ''} got no slip — see below</span>` : ''}
+        </div>
+        ${s.slips ? `<p style="font-size:0.78rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin:0 0 12px">
+          ⚠ The codes are shown <strong>only now</strong>. Print the slips before closing this box. They expire on <strong>${fmtDate(r.slips[0].expires_at)}</strong>.</p>` : ''}
+        ${r.skipped.length ? `<details style="font-size:0.78rem;margin-bottom:12px" ${s.slips ? '' : 'open'}><summary style="cursor:pointer;font-weight:600">Pupils without a slip (${r.skipped.length})</summary>
+          <ul style="margin:8px 0 0;padding-left:18px;line-height:1.5">${r.skipped.map(k => `<li><strong>${esc(k.full_name)}</strong> (${esc(k.class_name)}) — ${esc(k.reason)}</li>`).join('')}</ul></details>` : ''}
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline" style="flex:1" id="slClose">Close</button>
+          ${s.slips ? '<button class="btn btn-primary" style="flex:1" id="slPrint">🖨 Print slips</button>' : ''}
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    let printed = false;
+    m.querySelector('#slClose').onclick = () => {
+      if (s.slips && !printed && !confirm('You haven\'t printed the slips. Once you close this box the codes can\'t be seen again (you would have to give new codes). Close anyway?')) return;
+      m.remove();
+    };
+    const pb = m.querySelector('#slPrint');
+    if (pb) pb.onclick = () => { printed = true; printSlips(r.slips); };
+  }
+
+  // A4 sheet, 2 slips across × 4 down, dashed lines to cut along.
+  function printSlips(slips) {
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) { alert('Please allow pop-ups to print the slips.'); return; }
+    const logo = new URL('../assets/images/logo.png', location.href).href;
+    const site = 'www.royalcrystalacademy.com.ng/parent-login.html';
+    const one = s => `
+      <div class="slip">
+        <div class="h"><img src="${logo}" alt=""><div><div class="n">Royal Crystal Academy</div><div class="t">Parent Portal Login</div></div></div>
+        <div class="row"><span>Parent</span><b>${esc(s.parent_name)}</b></div>
+        <div class="row"><span>${s.children.length > 1 ? 'Children' : 'Child'}</span><b>${s.children.map(c => `${esc(c.full_name)} <i>(${esc(c.class_name)})</i>`).join('<br>')}</b></div>
+        <div class="row"><span>Phone</span><b>${esc(s.phone_display)}</b></div>
+        <div class="code">${esc(s.code)}</div>
+        <ol><li>Go to <b>${site}</b></li><li>Click <b>Use my code</b></li><li>Type the phone number above and this code</li><li>Choose your own password, then log in</li></ol>
+        <div class="f">Code works until ${fmtDate(s.expires_at)}. Keep it private. Help: 08036721390 / 09080061094</div>
+      </div>`;
+    w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Parent Login Slips</title>
+      <style>
+        @page { size: A4; margin: 8mm; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; color: #111827; }
+        .sheet { display: grid; grid-template-columns: 1fr 1fr; }
+        .slip { border: 1.5px dashed #9ca3af; padding: 9px 11px; height: 68mm; overflow: hidden; break-inside: avoid; page-break-inside: avoid; font-size: 10.5px; }
+        .h { display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #c9960c; padding-bottom: 5px; margin-bottom: 6px; }
+        .h img { width: 30px; height: 30px; }
+        .n { font-family: Georgia, serif; font-weight: 700; color: #13306b; font-size: 13px; text-transform: uppercase; }
+        .t { font-size: 9.5px; color: #6b7280; }
+        .row { display: flex; gap: 6px; line-height: 1.35; margin-bottom: 2px; }
+        .row span { width: 46px; flex-shrink: 0; color: #6b7280; }
+        .row i { font-style: normal; color: #6b7280; font-weight: 400; }
+        .code { font-family: 'Courier New', monospace; font-size: 20px; font-weight: 700; letter-spacing: .12em; text-align: center; background: #eef3fb; border-radius: 6px; padding: 5px; margin: 5px 0; }
+        ol { margin: 0; padding-left: 16px; line-height: 1.4; }
+        .f { font-size: 8.5px; color: #6b7280; margin-top: 4px; }
+        .tip { font-size: 11px; color: #6b7280; margin: 0 0 6px; }
+        @media print { .tip { display: none; } }
+      </style></head><body>
+      <p class="tip">${slips.length} slip${slips.length !== 1 ? 's' : ''} · cut along the dashed lines.</p>
+      <div class="sheet">${slips.map(one).join('')}</div>
+      <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`);
     w.document.close();
   }
 
