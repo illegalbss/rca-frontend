@@ -206,6 +206,7 @@
                 ${canManage ? `
                   <button onclick="window._spEdit('${p.id}')" style="padding:7px 14px;background:#fff;border:1px solid #d1d5db;color:#374151;border-radius:8px;font-size:0.8rem;cursor:pointer;font-weight:600">✏️ Edit</button>
                   <button onclick="window._spDelete('${p.id}')" style="padding:7px 14px;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;border-radius:8px;font-size:0.8rem;cursor:pointer;font-weight:600">🗑 Delete</button>
+                  ${preparedUpdateFor(p) ? `<button onclick="window._spApplyPrepared('${p.id}')" style="padding:7px 14px;background:#ecfdf5;border:1px solid #6ee7b7;color:#065f46;border-radius:8px;font-size:0.8rem;cursor:pointer;font-weight:600">⟳ Update to the latest version</button>` : ''}
                 ` : ''}
               </div>
             </div>
@@ -250,6 +251,32 @@
   function preparedFor(session, term) {
     return (window.RCA_PREPARED_PROGRAMMES || []).find(p => p.session === session && p.term === term) || null;
   }
+
+  // A saved programme whose prepared version has since been revised:
+  // offer to replace it (compares the day lines, ignoring key order).
+  function preparedUpdateFor(prog) {
+    const prepared = preparedFor(prog.session, prog.term);
+    if (!prepared) return null;
+    const lines = weeks => JSON.stringify((weeks || []).map(w => (w.rows || []).map(r =>
+      [r.date, r.day, r.activity, r.time, r.type].map(v => v || ''))));
+    return lines(prepared.weeks) === lines(prog.weeks) ? null : prepared;
+  }
+
+  window._spApplyPrepared = async (id) => {
+    const prog = getPrograms().find(p => String(p.id) === String(id));
+    const prepared = prog && preparedUpdateFor(prog);
+    if (!prepared) return;
+    if (!confirm(`Replace the ${TERM_LABELS[prog.term]} ${prog.session} programme with the latest version?\n\nAny changes made to it on this page will be replaced.`)) return;
+    try {
+      await window.RCA_API.updateSchoolProgramme(prog.id, { weeks: prepared.weeks });
+    } catch (err) {
+      alert('Could not update the programme: ' + err.message);
+      return;
+    }
+    await loadProgrammes();
+    renderList();
+    showToast(`${TERM_LABELS[prog.term]} programme updated ✓`);
+  };
 
   window._spSetSession = s => { _fSession = s; renderList(); };
   window._spSetTerm    = t => { _fTerm = t;    renderList(); };
