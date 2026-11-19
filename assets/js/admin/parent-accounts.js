@@ -419,13 +419,13 @@
     no_account: { label: 'No account yet',     bg: '#e0e7ff', color: '#3730a3' },
     prepared:   { label: 'Account ready',      bg: '#f3f4f6', color: '#374151' },
     pending:    { label: 'Code already given', bg: '#fef3c7', color: '#92400e' },
-    active:     { label: 'Already logs in',    bg: '#d1fae5', color: '#065f46' },
+    active:     { label: 'Has an account',     bg: '#d1fae5', color: '#065f46' },
     deactivated:{ label: 'Deactivated',        bg: '#fee2e2', color: '#991b1b' },
     problem:    { label: 'Needs fixing',       bg: '#fee2e2', color: '#991b1b' }
   };
   let slipPupils = null;
   const slipSel = new Set();
-  const slipFilter = { cls: '', q: '', hideActive: true, newOnly: false };
+  const slipFilter = { cls: '', q: '', hideActive: false, newOnly: false };
   const NEW_DAYS = 150; // "joined recently" = admitted within about one term
 
   async function renderSlips() {
@@ -443,7 +443,7 @@
       (!slipFilter.hideActive || p.state !== 'active') &&
       (!slipFilter.newOnly || recent(p)) &&
       (!q || [p.full_name, p.admission_no, p.parent_name, p.phone_display].join(' ').toLowerCase().includes(q)));
-    const selectable = p => p.state !== 'problem' && p.state !== 'active' && p.state !== 'deactivated';
+    const selectable = p => p.state !== 'problem' && p.state !== 'deactivated';
     const chosen = slipPupils.filter(p => slipSel.has(p.admission_no));
     const st = s => { const c = SLIP_STATE[s] || SLIP_STATE.prepared; return `<span style="background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:0.68rem;font-weight:700;white-space:nowrap">${c.label}</span>`; };
 
@@ -451,7 +451,7 @@
       <h3 style="margin:0 0 4px;font-size:1rem;color:var(--color-primary)">Print parent login slips</h3>
       <p style="font-size:0.8rem;color:#6b7280;margin:0 0 14px;line-height:1.5">
         Tick the pupils, then press <strong>Make &amp; print slips</strong>. Each parent gets one slip with their phone number and a login code.
-        Parents without an account get one made from the pupil's record (parent name and phone). Brothers and sisters with the same parent phone share one slip.</p>
+        Parents without an account get one made from the pupil's record (parent name and phone). Brothers and sisters with the same parent phone share one slip. Works for old and new pupils.</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
         <select id="slCls" class="form-control" style="width:auto">
           <option value="">All classes</option>
@@ -461,7 +461,7 @@
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.8rem;margin-bottom:12px">
         <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slNew" ${slipFilter.newOnly ? 'checked' : ''}> Only new pupils (joined in the last ${Math.round(NEW_DAYS / 30)} months)</label>
-        <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slHide" ${slipFilter.hideActive ? 'checked' : ''}> Hide parents who already log in</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slHide" ${slipFilter.hideActive ? 'checked' : ''}> Hide parents who already have an account</label>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
         ${btn('Tick all shown', 'id="slAll"')} ${btn('Untick all', 'id="slNone"')}
@@ -513,11 +513,13 @@
     let msg = `Make login slips for ${chosen.length} pupil${chosen.length !== 1 ? 's' : ''}?`;
     if (withCode && reissue) msg += `\n\n${withCode} of them already have a code — those old codes will stop working.`;
     else if (withCode) msg += `\n\n${withCode} of them already have a code, so they are left as they are (tick "Give new codes" to replace them).`;
+    const withAcct = chosen.filter(p => p.state === 'active').length;
+    if (withAcct) msg += `\n\n${withAcct} of them are old pupils whose parent already has an account. Their slip lets the parent choose a new password; the old password keeps working until they do.`;
     if (!confirm(msg)) return;
     const go = document.getElementById('slGo');
     go.disabled = true; go.textContent = 'Making slips…';
     let r;
-    try { r = await api('/login-slips', { method: 'POST', body: { admission_nos: chosen.map(p => p.admission_no), reissue, days } }); }
+    try { r = await api('/login-slips', { method: 'POST', body: { admission_nos: chosen.map(p => p.admission_no), reissue, days, include_active: true } }); }
     catch (e) { alert(e.message); go.disabled = false; go.textContent = `🖨 Make & print slips (${chosen.length})`; return; }
     slipSel.clear(); slipPupils = null;
     showSlipsResult(r);
@@ -568,7 +570,7 @@
         <div class="row"><span>${s.children.length > 1 ? 'Children' : 'Child'}</span><b>${s.children.map(c => `${esc(c.full_name)} <i>(${esc(c.class_name)})</i>`).join('<br>')}</b></div>
         <div class="row"><span>Phone</span><b>${esc(s.phone_display)}</b></div>
         <div class="code">${esc(s.code)}</div>
-        <ol><li>Go to <b>${site}</b></li><li>Click <b>Use my code</b></li><li>Type the phone number above and this code</li><li>Choose your own password, then log in</li></ol>
+        <ol><li>Go to <b>${site}</b></li><li>Click <b>Use my code</b></li><li>Type the phone number above and this code</li><li>${s.reset ? 'Choose a new password (your old one also works until then)' : 'Choose your own password'}, then log in</li></ol>
         <div class="f">Code works until ${fmtDate(s.expires_at)}. Keep it private. Help: 08036721390 / 09080061094</div>
       </div>`;
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Parent Login Slips</title>
