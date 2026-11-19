@@ -42,13 +42,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     allUsers = (await window.RCA_API.getUsers({ status: 'all' })) || [];
   }
 
+  // A parent who hasn't used their activation code yet is switched off only
+  // until they activate — that is "Not activated yet", not "Deactivated".
+  const shownStatus = u => (u.primary_role === 'parent' && u.status !== 'active' && ['prepared', 'pending'].includes(u.parent_status)) ? 'notactivated' : u.status;
+  const STATUS_TEXT = { active: 'active', deactivated: 'deactivated', notactivated: 'not activated yet' };
+
   function getFilteredUsers() {
     const term   = (document.getElementById('umSearch')?.value || '').trim().toLowerCase();
     const role   = document.getElementById('umRoleFilter')?.value || 'all';
     const status = document.getElementById('umStatusFilter')?.value || 'all';
     return allUsers.filter(u => {
       if (role !== 'all' && u.primary_role !== role) return false;
-      if (status !== 'all' && u.status !== status) return false;
+      if (status !== 'all' && shownStatus(u) !== status) return false;
       if (term) {
         const hay = `${u.full_name} ${u.email} ${u.staff_id || ''}`.toLowerCase();
         if (!hay.includes(term)) return false;
@@ -75,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="um-stat s-total"><span class="um-stat-num">${counts.total}</span><span class="um-stat-label">Total Accounts</span></div>
       <div class="um-stat" role="button" tabindex="0" title="Show deactivated accounts" style="cursor:pointer;border-left:4px solid #dc2626"
            onclick="var s=document.getElementById('umStatusFilter'); s.value='deactivated'; s.dispatchEvent(new Event('change'));">
-        <span class="um-stat-num" style="color:#dc2626">${allUsers.filter(u => u.status === 'deactivated').length}</span><span class="um-stat-label">Deactivated</span></div>
+        <span class="um-stat-num" style="color:#dc2626">${allUsers.filter(u => shownStatus(u) === 'deactivated').length}</span><span class="um-stat-label">Deactivated</span></div>
     `;
   }
 
@@ -101,13 +106,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         <td>${ROLE_LABELS[u.primary_role] || u.primary_role}</td>
         <td>${u.staff_id || '—'}</td>
         <td>—</td>
-        <td><span class="um-status ${u.status}">${u.status}</span></td>
+        <td><span class="um-status ${shownStatus(u)}">${STATUS_TEXT[shownStatus(u)] || u.status}</span></td>
         <td><div class="um-actions">
           <button class="um-action-btn um-btn-view" onclick="UM.view(${u.id})">View</button>
           ${isIctAdmin ? `<button class="um-action-btn um-btn-edit" onclick="UM.edit(${u.id})">Edit</button>` : ''}
           ${isIctAdmin && u.primary_role !== 'parent' ? `<button class="um-action-btn um-btn-reset" onclick="UM.resetPassword(${u.id})">Reset PW</button>` : ''}
           ${isIctAdmin ? `<button class="um-action-btn" onclick="linkChildModal(${u.id})" title="Link one of their children — e.g. a teacher who is also a parent, viewable from their own login">+ Link Child</button>` : ''}
-          ${canManageAccounts ? `<button class="um-action-btn ${u.status === 'active' ? 'um-btn-deact' : 'um-btn-react'}" onclick="UM.toggleStatus(${u.id})">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>` : ''}
+          ${canManageAccounts && shownStatus(u) === 'notactivated' ? `<a class="um-action-btn" href="parent-accounts.html" title="This parent hasn't used their login code yet — manage it on Parent Accounts">Parent Accounts</a>` : ''}
+          ${canManageAccounts && shownStatus(u) !== 'notactivated' ? `<button class="um-action-btn ${u.status === 'active' ? 'um-btn-deact' : 'um-btn-react'}" onclick="UM.toggleStatus(${u.id})">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>` : ''}
         </div></td>
       </tr>
     `).join('');

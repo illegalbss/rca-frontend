@@ -95,6 +95,7 @@
           <option value="">All statuses</option>
           ${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${filter.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
         </select>
+        <button class="btn btn-outline btn-sm" id="paCheck" style="white-space:nowrap" title="Find deactivated parents who still have a child in school, and active parents whose children have all left">✓ Check against pupils</button>
         <button class="btn btn-primary btn-sm" id="paAddParent" style="white-space:nowrap">+ Add Parent</button>
       </div>
       <div style="font-size:0.78rem;color:#6b7280;margin-bottom:10px">${rows.length} parent account${rows.length !== 1 ? 's' : ''}</div>
@@ -141,7 +142,15 @@
     const tab = document.getElementById('paTab');
     tab.querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => issueCode(b.dataset.code)));
     tab.querySelectorAll('[data-revoke]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.revoke}/activation-code/revoke`, {}, 'Revoke this activation code? The parent will not be able to use it.')));
-    tab.querySelectorAll('[data-deact]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.deact}/status`, { action: 'deactivate' }, 'Deactivate this parent account? They will not be able to log in, and any activation code is revoked.')));
+    tab.querySelectorAll('[data-deact]').forEach(b => b.addEventListener('click', () => {
+      const p = data.parents.find(x => String(x.id) === b.dataset.deact);
+      const here = (p?.children || []).filter(c => c.class_name && (!c.status || c.status === 'active'));
+      const warn = here.length
+        ? `⚠ ${p.full_name} still has ${here.length === 1 ? 'a child' : here.length + ' children'} in school (${here.map(c => c.full_name).join(', ')}).\nAccounts should only be deactivated when all their children have left.\n\nDeactivate anyway?`
+        : 'Deactivate this parent account? They will not be able to log in, and any activation code is revoked.';
+      act(`/${b.dataset.deact}/status`, { action: 'deactivate' }, warn);
+    }));
+    document.getElementById('paCheck').addEventListener('click', showSchoolCheck);
     tab.querySelectorAll('[data-react]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.react}/status`, { action: 'reactivate' })));
     tab.querySelectorAll('[data-link]').forEach(b => b.addEventListener('click', () => showLinkChildModal(b.dataset.link)));
     tab.querySelectorAll('[data-unlink]').forEach(a => a.addEventListener('click', async e => {
@@ -409,6 +418,53 @@
       <small>Code expires ${fmtDate(r.expires_at)}. Keep it private — do not share it. School staff will never ask for your password.</small></div>
       <script>window.onload=function(){window.print()}<\/script></body></html>`);
     w.document.close();
+  }
+
+  /* ================================================== CHECK AGAINST PUPILS */
+  // Rule: deactivate a parent only when all their children have left.
+  async function showSchoolCheck() {
+    let r;
+    try { r = await api('/school-check'); } catch (e) { alert(e.message); return; }
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+    const kids = l => l.map(k => `${esc(k.full_name)} <span style="color:#6b7280">(${esc(k.class_name || '')}${k.status ? ' · ' + esc(k.status) : ''})</span>`).join(', ');
+    const section = (key, title, note, list, btnLabel, color, childrenOf) => `
+      <div style="margin-bottom:18px">
+        <h4 style="margin:0 0 4px;font-size:0.9rem;color:${color}">${title} (${list.length})</h4>
+        <p style="font-size:0.76rem;color:#6b7280;margin:0 0 8px">${note}</p>
+        ${list.length ? `
+          <label style="font-size:0.76rem;display:flex;gap:6px;align-items:center;margin-bottom:6px;cursor:pointer"><input type="checkbox" data-allof="${key}" checked> Tick all</label>
+          <div style="max-height:220px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px">
+          ${list.map(p => `<label style="display:flex;gap:8px;padding:7px 10px;border-bottom:1px solid #f3f4f6;font-size:0.8rem;cursor:pointer">
+            <input type="checkbox" data-${key}="${p.id}" checked style="margin-top:3px">
+            <span><strong>${esc(p.full_name)}</strong> <span style="color:#6b7280">${esc(p.phone_display)}</span><br>${childrenOf(p)}</span></label>`).join('')}
+          </div>
+          <button class="btn btn-sm" data-do="${key}" style="margin-top:8px;background:${color};color:#fff;border:none">${btnLabel}</button>`
+        : '<div style="font-size:0.8rem;color:#059669">✓ None — all good.</div>'}
+      </div>`;
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:640px;max-height:90vh;overflow:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin:0 0 4px;color:var(--color-primary);font-size:1rem">Check parent accounts against pupils</h3>
+        <p style="font-size:0.8rem;color:#6b7280;margin:0 0 16px">A parent account should be switched off only when <strong>all</strong> their children have left the school.
+          Parents who haven't used their login code yet are not counted as deactivated.</p>
+        ${section('reactivate', 'Deactivated, but still has a child in school', 'These should be switched back on.', r.reactivate, 'Reactivate ticked parents', '#059669', p => 'In school: ' + kids(p.in_school))}
+        ${section('deactivate', 'Active, but all their children have left', 'Optional — switch these off only if you want to.', r.deactivate, 'Deactivate ticked parents', '#dc2626', p => 'Left: ' + kids(p.left))}
+        <div style="text-align:right"><button class="btn btn-outline" id="scClose">Close</button></div>
+      </div>`;
+    document.body.appendChild(m);
+    m.querySelector('#scClose').onclick = () => m.remove();
+    m.querySelectorAll('[data-allof]').forEach(a => a.addEventListener('change', () =>
+      m.querySelectorAll(`[data-${a.dataset.allof}]`).forEach(c => { c.checked = a.checked; })));
+    m.querySelectorAll('[data-do]').forEach(b => b.addEventListener('click', async () => {
+      const key = b.dataset.do;
+      const ids = [...m.querySelectorAll(`input[data-${key}]`)].filter(c => c.checked).map(c => c.getAttribute('data-' + key));
+      if (!ids.length) { alert('Tick at least one parent.'); return; }
+      if (!confirm(`${key === 'reactivate' ? 'Reactivate' : 'Deactivate'} ${ids.length} parent account${ids.length !== 1 ? 's' : ''}?`)) return;
+      b.disabled = true;
+      try { const res = await api('/school-check', { method: 'POST', body: { action: key, ids } }); showToast(res.message); }
+      catch (e) { alert(e.message); b.disabled = false; return; }
+      m.remove(); await reload(); showSchoolCheck();
+    }));
   }
 
   /* ================================================== LOGIN SLIPS */

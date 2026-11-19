@@ -197,6 +197,8 @@
 .um-status.active::before { background: #10b981; }
 .um-status.deactivated  { background: #fee2e2; color: #991b1b; }
 .um-status.deactivated::before { background: #ef4444; }
+.um-status.notactivated { background: #e0e7ff; color: #3730a3; }
+.um-status.notactivated::before { background: #6366f1; }
 .um-status.suspended    { background: #fef3c7; color: #92400e; }
 .um-status.suspended::before { background: #f59e0b; }
 

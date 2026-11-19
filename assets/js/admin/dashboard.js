@@ -102,7 +102,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const activeStaff  = staffUsers.filter(u => u.status === 'active').length;
   const deactStaff   = staffUsers.filter(u => u.status === 'deactivated').length;
   // Every deactivated account, staff AND parents (parents were left out before).
-  const deactAll     = allUsers.filter(u => u.status === 'deactivated').length;
+  // Parents still waiting to use their login code are not "deactivated".
+  const deactAll     = allUsers.filter(u => u.status === 'deactivated' && !(u.roles.includes('parent') && ['prepared', 'pending'].includes(u.parent_status))).length;
 
   // Role breakdown for donut charts
   const roleCount = {};
