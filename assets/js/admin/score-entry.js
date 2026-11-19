@@ -126,6 +126,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       return subjectsPool;
     }
 
+    // "Who records scores" set to form teachers: a form teacher records
+    // every subject for their own form class (linked_classes[0]).
+    if (isFormTeacherOf(className)) return subjectsPool;
+
     const assignments = user.assignments || [];
     if (assignments.length > 0) {
       const codes = className
@@ -612,6 +616,56 @@ document.addEventListener('DOMContentLoaded', async () => {
       event.returnValue = '';
     }
   });
+
+  /* --------------------------------------------
+     WHO RECORDS SCORES — subject teachers, or form teachers (every
+     subject for their own class). The server enforces the same rule.
+     -------------------------------------------- */
+  let scoreEntryMode = 'subject';
+  try { scoreEntryMode = (await window.RCA_API.call('/settings/score-entry')).mode || 'subject'; } catch (e) { /* default */ }
+
+  function isFormTeacherOf(className) {
+    if (scoreEntryMode !== 'form' || !className) return false;
+    const user = window.CURRENT_USER;
+    const roles = user ? (user.roles || [user.role]) : [];
+    const formClass = user && (user.linked_classes || [])[0];
+    if (!roles.includes('class_teacher') || !formClass) return false;
+    return armsOf(className).every(c => c === formClass || levelOf(c) === formClass);
+  }
+
+  (function renderScoreModeSwitch() {
+    const user = window.CURRENT_USER;
+    const roles = user ? (user.roles || [user.role]) : [];
+    if (!roles.some(r => r === 'ict_admin' || r === 'head_teacher')) return;
+    const anchor = document.getElementById('roleAccessNotice');
+    if (!anchor) return;
+    const box = document.createElement('div');
+    box.id = 'scoreModeSwitch';
+    box.style.cssText = 'background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:0.85rem';
+    const draw = () => {
+      box.innerHTML = `
+        <strong style="color:#111827">Who records scores this term:</strong>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="radio" name="scoreMode" value="subject" ${scoreEntryMode === 'subject' ? 'checked' : ''}> Subject teachers</label>
+        <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="radio" name="scoreMode" value="form" ${scoreEntryMode === 'form' ? 'checked' : ''}> Form teachers (every subject for their own class)</label>
+        <span id="scoreModeStatus" style="color:#6b7280;font-size:0.78rem">${scoreEntryMode === 'form'
+          ? 'Each form teacher can record all subjects for their class. Subject teachers can still record their own subjects.'
+          : 'Each subject teacher records the subjects and classes on their account.'}</span>`;
+      box.querySelectorAll('input[name="scoreMode"]').forEach(inp => inp.addEventListener('change', async () => {
+        const status = box.querySelector('#scoreModeStatus');
+        status.textContent = 'Saving…';
+        try {
+          scoreEntryMode = (await window.RCA_API.call('/settings/score-entry', { method: 'PUT', body: { mode: inp.value } })).mode;
+          draw();
+        } catch (e) {
+          draw();
+          box.querySelector('#scoreModeStatus').textContent = 'Not saved: ' + e.message;
+          box.querySelector('#scoreModeStatus').style.color = '#dc2626';
+        }
+      }));
+    };
+    draw();
+    anchor.parentNode.insertBefore(box, anchor);
+  })();
 
   /* --------------------------------------------
      INITIALIZE

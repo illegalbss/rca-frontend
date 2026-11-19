@@ -44,6 +44,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     return reviewCache[key];
   }
 
+  // A pupil's total (sum of subject totals), subject count and average —
+  // the figures form teachers copy onto the manual result sheet.
+  function pupilTotals(data) {
+    const scores = data?.scores || [];
+    const total = scores.reduce((a, r) => a + Number(r.final_score || 0), 0);
+    return { subjects: scores.length, total, average: scores.length ? total / scores.length : 0 };
+  }
+  const fmtNum = n => (Math.round(n * 10) / 10).toLocaleString('en-GB', { maximumFractionDigits: 1 });
+
   // Loads the whole class in ONE request (GET /students/class-results)
   // and fills the cache, instead of one request per pupil. If that fails
   // (e.g. the backend hasn't been updated yet) pupils are loaded one by
@@ -157,13 +166,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       flags = await Promise.all(studentsInClass.map(async s => {
         const data = await getReview(s.admission_no, term);
-        return { admissionNo: s.admission_no, hasComment: !!(data?.comment && data.comment.length > 0) };
+        return { admissionNo: s.admission_no, hasComment: !!(data?.comment && data.comment.length > 0), totals: pupilTotals(data) };
       }));
     } catch (e) {
       pupilList.innerHTML = `<p style="padding:16px;color:#dc2626;font-size:0.85rem">Could not load this class's results: ${e.message}<br>Please wait a moment and refresh the page.</p>`;
       return;
     }
     const reviewed = new Set(flags.filter(f => f.hasComment).map(f => f.admissionNo));
+    const totalsOf = Object.fromEntries(flags.map(f => [f.admissionNo, f.totals]));
 
     const total = studentsInClass.length;
     const doneCount = reviewed.size;
@@ -175,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="pupil-list-avatar">${s.full_name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase()}</div>
         <div class="pupil-list-info">
           <div class="pupil-list-name">${s.full_name}</div>
-          <div class="pupil-list-meta">${s.admission_no}</div>
+          <div class="pupil-list-meta">${s.admission_no}${totalsOf[s.admission_no]?.subjects ? ` · Total ${fmtNum(totalsOf[s.admission_no].total)} · Avg ${fmtNum(totalsOf[s.admission_no].average)}` : ''}</div>
         </div>
         ${reviewed.has(s.admission_no) ? '<span class="reviewed-tick">&#10003;</span>' : ''}
       </div>
@@ -185,6 +195,80 @@ document.addEventListener('DOMContentLoaded', async () => {
       item.addEventListener('click', () => openPupilReview(item.getAttribute('data-admission')));
     });
   }
+
+  /* ---- Class totals & averages: every pupil's total, average and
+     position on one table, for copying onto the manual result sheets ---- */
+  async function classTotalsRows() {
+    const className = classSelect.value;
+    const term = termSelect.value;
+    const pupils = allStudents.filter(s => s.class_name === className);
+    if (pupils.some(s => !reviewCache[`${s.admission_no}|${term}`])) await prefetchClass(className, term);
+    const rows = await Promise.all(pupils.map(async s => ({ s, t: pupilTotals(await getReview(s.admission_no, term)) })));
+    // Position by average, the same rule as the report card (ties share a place)
+    rows.forEach(r => { r.position = r.t.subjects ? 1 + rows.filter(o => o.t.subjects && o.t.average > r.t.average).length : null; });
+    return rows.sort((a, b) => a.s.full_name.localeCompare(b.s.full_name));
+  }
+  const ordinalOf = n => n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th');
+  const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function classTotalsTable(rows) {
+    return `<table class="totals-table">
+      <thead><tr><th>S/N</th><th style="text-align:left">Pupil</th><th>Subjects</th><th>Total</th><th>Average</th><th>Position</th></tr></thead>
+      <tbody>${rows.map((r, i) => `<tr>
+        <td>${i + 1}</td>
+        <td style="text-align:left">${escHtml(r.s.full_name)}<br><small style="color:#6b7280">${escHtml(r.s.admission_no)}</small></td>
+        <td>${r.t.subjects}</td>
+        <td><strong>${r.t.subjects ? fmtNum(r.t.total) : '—'}</strong></td>
+        <td>${r.t.subjects ? r.t.average.toFixed(1) : '—'}</td>
+        <td>${r.position ? ordinalOf(r.position) : '—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  }
+  const TOTALS_CSS = `
+    .totals-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+    .totals-table th, .totals-table td { border:1px solid #d1d5db; padding:6px 8px; text-align:center; }
+    .totals-table th { background:#6B0F1A; color:#fff; font-size:0.72rem; text-transform:uppercase; letter-spacing:.03em; }
+    .totals-table tbody tr:nth-child(even) td { background:#f9fafb; }`;
+
+  document.getElementById('classTotalsBtn')?.addEventListener('click', async () => {
+    const className = classSelect.value, term = termSelect.value;
+    const termLabel = termSelect.options[termSelect.selectedIndex]?.text || term;
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px';
+    modal.innerHTML = `<div style="background:#fff;border-radius:14px;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+        <div style="padding:14px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <strong>${escHtml(className)} — ${escHtml(termLabel)}: totals &amp; averages</strong>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" id="totalsPrint">🖨 Print</button>
+            <button class="btn btn-outline btn-sm" id="totalsClose">Close</button>
+          </div>
+        </div>
+        <div id="totalsBody" style="overflow:auto;padding:14px 18px"><p style="color:#9ca3af">Loading…</p></div>
+      </div><style>${TOTALS_CSS}</style>`;
+    document.body.appendChild(modal);
+    const close = () => modal.remove();
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    modal.querySelector('#totalsClose').addEventListener('click', close);
+    let rows;
+    try { rows = await classTotalsRows(); }
+    catch (e) { modal.querySelector('#totalsBody').innerHTML = `<p style="color:#dc2626">Could not load the class results: ${escHtml(e.message)}</p>`; return; }
+    modal.querySelector('#totalsBody').innerHTML = rows.length ? classTotalsTable(rows) : '<p style="color:#9ca3af">No pupils in this class.</p>';
+    modal.querySelector('#totalsPrint').addEventListener('click', () => {
+      const win = window.RCA_PWA?.openDocWindow ? window.RCA_PWA.openDocWindow() : window.open('', '_blank');
+      if (!win) { alert('Please allow pop-ups for this site to print.'); return; }
+      win.document.open();
+      win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>${escHtml(className)} totals — ${escHtml(termLabel)}</title>
+        <style>body{font-family:Arial,sans-serif;margin:16px;color:#111827} h1{font-size:18px;margin:0 0 4px;color:#6B0F1A} p{margin:0 0 12px;font-size:12px;color:#374151}
+        ${TOTALS_CSS} .totals-table{font-size:12px} *{-webkit-print-color-adjust:exact;print-color-adjust:exact} @page{size:A4;margin:12mm}
+        .bar{margin-bottom:12px} @media print{.bar{display:none}}</style></head><body>
+        <div class="bar"><button onclick="window.print()">🖨 Print</button> <button onclick="window.close()">Close</button></div>
+        <h1>Royal Crystal Academy</h1><p><strong>${escHtml(className)}</strong> — ${escHtml(termLabel)} · Totals &amp; averages</p>
+        ${classTotalsTable(rows)}
+        <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},300)})<\/script>
+        </body></html>`);
+      win.document.close();
+    });
+  });
 
   /* ---- Open one pupil's review ---- */
   async function openPupilReview(admissionNo) {
@@ -260,6 +344,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="academic-mini-summary">
+        <div class="mini-summary-stat">
+          <span class="mini-num">${fmtNum(pupilTotals(data).total)}</span>
+          <span class="mini-label">Total</span>
+        </div>
         <div class="mini-summary-stat">
           <span class="mini-num">${avg.toFixed(1)}</span>
           <span class="mini-label">Average</span>
