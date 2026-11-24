@@ -301,27 +301,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     const wrap = document.getElementById('dashStats');
     if (!wrap) return;
 
+    const hero = document.getElementById('dashHeroLine');
+    if (hero) hero.textContent = `${TERM_LABELS[CURRENT_TERM]} · ${myChildren.length} ${myChildren.length === 1 ? 'child' : 'children'} at Royal Crystal Academy`;
+
     wrap.innerHTML = `
-      <div class="pp-stat">
-        <div class="pp-stat-label">My Children</div>
+      <div class="pp-stat" data-tone="purple">
+        <div class="pp-stat-icon">👨‍👩‍👧</div>
         <span class="pp-stat-value">${myChildren.length}</span>
-        <button class="pp-stat-link" onclick="showPage('children', document.querySelector('[data-page=children]'))">View Details</button>
+        <div class="pp-stat-label">My Children</div>
+        <button class="pp-stat-link" onclick="showPage('children', document.querySelector('[data-page=children]'))">View details</button>
       </div>
-      <div class="pp-stat">
-        <div class="pp-stat-label">Outstanding Balance — <strong>${TERM_LABELS[CURRENT_TERM]}</strong></div>
+      <div class="pp-stat" data-tone="rose">
+        <div class="pp-stat-icon">💳</div>
         <span class="pp-stat-value" id="dashBalanceValue">…</span>
-        <span class="pp-stat-label" id="dashBalanceNote" style="font-size:0.72rem"></span>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <button class="pp-stat-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">View Payments</button>
-          <button class="pp-stat-link" onclick="window._ppPrintStatement(this)">&#128424; Print Statement</button>
+        <div class="pp-stat-label">Balance — ${TERM_LABELS[CURRENT_TERM]}</div>
+        <span class="pp-stat-note" id="dashBalanceNote"></span>
+        <div class="pp-stat-links">
+          <button class="pp-stat-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">Payments</button>
+          <button class="pp-stat-link" onclick="window._ppPrintStatement(this)">&#128424; Statement</button>
         </div>
       </div>
-      <div class="pp-stat">
-        <div class="pp-stat-label">Recent Payment</div>
+      <div class="pp-stat" data-tone="green">
+        <div class="pp-stat-icon">🧾</div>
         <span class="pp-stat-value" id="dashRecentValue">…</span>
-        <span class="pp-stat-label" id="dashRecentDate"></span>
+        <div class="pp-stat-label">Last Payment</div>
+        <span class="pp-stat-note" id="dashRecentDate"></span>
+      </div>
+      <div class="pp-stat" data-tone="teal">
+        <div class="pp-stat-icon">📅</div>
+        <span class="pp-stat-value" id="dashAttValue">…</span>
+        <div class="pp-stat-label">In School This Term</div>
+        <button class="pp-stat-link" onclick="showPage('attendance', document.querySelector('[data-page=attendance]'))">View attendance</button>
       </div>
     `;
+    fillAttendanceTile();
 
     if (myChildren.length === 0) {
       document.getElementById('dashBalanceValue').textContent = fmt(0);
@@ -379,13 +392,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     wrap.innerHTML = myChildren.length
       ? myChildren.map(c => `
           <div class="pp-child-dash-card" style="cursor:pointer" onclick="window._openChildDetail('${c.admission_no}')">
-            <div class="pp-child-avatar-lg">${c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase()}</div>
-            <div class="pp-child-dash-name">${c.full_name}</div>
-            <div class="pp-child-dash-meta">${c.class_name}</div>
+            <div class="pp-child-dash-top">
+              <div class="pp-child-avatar-lg">${c.full_name.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase()}</div>
+              <div style="min-width:0">
+                <div class="pp-child-dash-name">${escText(c.full_name)}</div>
+                <div class="pp-child-dash-meta">${escText(c.class_name)} · ${escText(c.admission_no)}</div>
+              </div>
+            </div>
+            <div class="pp-child-att" data-att-for="${c.admission_no}"></div>
             <div class="pp-fee-status" data-fee-for="${c.admission_no}"></div>
-            <button class="pp-view-profile-btn" onclick="event.stopPropagation();window._openChildDetail('${c.admission_no}')">View Profile</button>
+            <button class="pp-view-profile-btn" onclick="event.stopPropagation();window._openChildDetail('${c.admission_no}')">View Profile →</button>
           </div>`).join('')
       : '<p style="color:#9ca3af;font-size:0.82rem">No children linked to your account yet.</p>';
+    fillChildAttendance();
   }
 
   /* ============================================
@@ -935,34 +954,112 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ============================================
      ATTENDANCE PAGE
      ============================================ */
+  // One request per child, shared by the dashboard tile, the child cards
+  // and the Attendance page. "In school" = present or late (the child came).
+  const attCache = {};
+  function getAttendance(child) {
+    if (!attCache[child.admission_no]) {
+      attCache[child.admission_no] = window.RCA_API.call(`/attendance/summary/${encodeURIComponent(child.admission_no)}`)
+        .then(d => {
+          const t = (d.summary || []).find(r => r.term === CURRENT_TERM) || null;
+          const days = (d.days || []).filter(x => !x.term || x.term === CURRENT_TERM);
+          if (!t) return { term: null, days };
+          const n = k => Number(t[k] || 0);
+          const total = n('total_school_days') || (n('present') + n('absent') + n('late'));
+          const came = n('present') + n('late');
+          return { term: { present: n('present'), absent: n('absent'), late: n('late'), total, came, rate: total ? Math.round(came / total * 100) : 0 }, days };
+        });
+      attCache[child.admission_no].catch(() => { delete attCache[child.admission_no]; });
+    }
+    return attCache[child.admission_no];
+  }
+  const rateTone = r => r >= 90 ? 'good' : r >= 75 ? 'ok' : 'low';
+
+  async function fillAttendanceTile() {
+    const el = document.getElementById('dashAttValue');
+    if (!el) return;
+    if (!myChildren.length) { el.textContent = '—'; return; }
+    const res = await Promise.all(myChildren.map(c => getAttendance(c).catch(() => null)));
+    const terms = res.filter(r => r && r.term).map(r => r.term);
+    if (!terms.length) { el.textContent = '—'; el.title = 'No attendance marked yet this term'; return; }
+    const total = terms.reduce((s, t) => s + t.total, 0), came = terms.reduce((s, t) => s + t.came, 0);
+    el.textContent = (total ? Math.round(came / total * 100) : 0) + '%';
+  }
+
+  function fillChildAttendance() {
+    myChildren.forEach(c => {
+      getAttendance(c).then(a => {
+        document.querySelectorAll(`[data-att-for="${CSS.escape(c.admission_no)}"]`).forEach(el => {
+          if (!a.term) { el.innerHTML = '<span class="pp-child-att-label">No attendance marked yet this term</span>'; return; }
+          el.innerHTML = `<div class="pp-child-att-row"><span class="pp-child-att-label">In school ${a.term.came} of ${a.term.total} days</span><strong class="tone-${rateTone(a.term.rate)}">${a.term.rate}%</strong></div>
+            <div class="pp-bar"><span class="tone-${rateTone(a.term.rate)}" style="width:${a.term.rate}%"></span></div>`;
+        });
+      }).catch(() => {});
+    });
+  }
+
+  let attChild = null;
   async function renderAttendance() {
     const content = document.getElementById('attendanceContent');
     if (!content) return;
-    if (myChildren.length === 0) { content.innerHTML = ''; return; }
+    if (myChildren.length === 0) { content.innerHTML = '<div class="pp-empty"><div class="pp-empty-icon">👨‍👩‍👧</div>No children are linked to your account yet.</div>'; return; }
+    if (!attChild || !myChildren.includes(attChild)) attChild = myChildren[0];
+    const child = attChild;
 
-    content.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">Loading…</p>';
+    const tabs = myChildren.length > 1 ? `<div class="pp-att-tabs">${myChildren.map(c =>
+      `<button class="pp-att-tab ${c === child ? 'active' : ''}" data-att-tab="${escText(c.admission_no)}">${escText(c.full_name.split(' ')[0])}</button>`).join('')}</div>` : '';
+    content.innerHTML = tabs + '<div class="pp-card" style="padding:28px;text-align:center;color:#9ca3af">Loading…</div>';
+    const bindTabs = () => content.querySelectorAll('[data-att-tab]').forEach(b => b.addEventListener('click', () => {
+      attChild = myChildren.find(c => c.admission_no === b.dataset.attTab); renderAttendance();
+    }));
+    bindTabs();
 
-    const child = myChildren[0];
-    try {
-      const data = await window.RCA_API.call(`/attendance/summary/${encodeURIComponent(child.admission_no)}`);
-      const rows = data.summary || [];
-      const thisTerm = rows.find(r => r.term === CURRENT_TERM);
+    let a;
+    try { a = await getAttendance(child); }
+    catch (e) { content.innerHTML = tabs + '<div class="pp-empty"><div class="pp-empty-icon">📡</div>Attendance could not load right now. Check your connection and tap Refresh.</div>'; bindTabs(); return; }
+    if (attChild !== child) return; // another tab was chosen meanwhile
 
-      if (!thisTerm) {
-        content.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem">No attendance recorded yet this term.</p>';
-        return;
-      }
-
-      content.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center">
-          <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#059669;font-size:1.3rem">${thisTerm.present}</div><div style="font-size:0.75rem;color:#6b7280">Present</div></div>
-          <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#dc2626;font-size:1.3rem">${thisTerm.absent}</div><div style="font-size:0.75rem;color:#6b7280">Absent</div></div>
-          <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:#d97706;font-size:1.3rem">${thisTerm.late}</div><div style="font-size:0.75rem;color:#6b7280">Late</div></div>
-          <div class="pp-card" style="padding:16px"><div style="font-weight:700;color:var(--color-primary);font-size:1.3rem">${thisTerm.pct}%</div><div style="font-size:0.75rem;color:#6b7280">Attendance Rate</div></div>
-        </div>`;
-    } catch (e) {
-      content.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem">Attendance data not available yet.</p>`;
+    if (!a.term) {
+      content.innerHTML = tabs + `<div class="pp-empty"><div class="pp-empty-icon">📅</div><strong>${escText(child.full_name)}</strong><br>No attendance has been marked yet for ${TERM_LABELS[CURRENT_TERM]}.</div>`;
+      bindTabs(); return;
     }
+    const t = a.term, tone = rateTone(t.rate);
+    const R = 52, C = 2 * Math.PI * R;
+    const msg = tone === 'good' ? '🌟 Excellent attendance — well done!'
+      : tone === 'ok' ? '👍 Good, but a few days were missed.'
+      : '⚠️ Many days missed. Please talk to the class teacher if you need help.';
+    const fmtDay = d => new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const LABEL = { present: 'Present', absent: 'Absent', late: 'Late', excused: 'Excused' };
+
+    content.innerHTML = tabs + `
+      <div class="pp-att-hero">
+        <div class="pp-ring tone-${tone}">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="${R}" class="pp-ring-track"/>
+            <circle cx="60" cy="60" r="${R}" class="pp-ring-fill" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - t.rate / 100)}"/>
+          </svg>
+          <div class="pp-ring-text"><strong>${t.rate}%</strong><span>in school</span></div>
+        </div>
+        <div class="pp-att-hero-text">
+          <div class="pp-att-child">${escText(child.full_name)}</div>
+          <div class="pp-att-meta">${escText(child.class_name)} · ${TERM_LABELS[CURRENT_TERM]}</div>
+          <div class="pp-att-big">In school <strong>${t.came}</strong> of <strong>${t.total}</strong> school days</div>
+          <div class="pp-att-msg tone-${tone}">${msg}</div>
+        </div>
+      </div>
+      <div class="pp-stats pp-att-stats">
+        <div class="pp-stat" data-tone="green"><div class="pp-stat-icon">✅</div><span class="pp-stat-value">${t.present}</span><div class="pp-stat-label">Present</div></div>
+        <div class="pp-stat" data-tone="rose"><div class="pp-stat-icon">❌</div><span class="pp-stat-value">${t.absent}</span><div class="pp-stat-label">Absent</div></div>
+        <div class="pp-stat" data-tone="gold"><div class="pp-stat-icon">⏰</div><span class="pp-stat-value">${t.late}</span><div class="pp-stat-label">Late</div></div>
+      </div>
+      ${a.days.length ? `
+      <div class="pp-card">
+        <div class="pp-card-header"><span class="pp-card-title">Recent school days</span></div>
+        <div class="pp-card-body pp-day-list">
+          ${a.days.slice(0, 15).map(d => `<div class="pp-day"><span>${fmtDay(d.date)}</span><span class="pp-day-pill st-${escText(d.status)}">${LABEL[d.status] || escText(d.status)}</span></div>`).join('')}
+        </div>
+      </div>` : ''}`;
+    bindTabs();
   }
 
   /* ============================================

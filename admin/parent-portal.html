@@ -122,9 +122,13 @@
 
       <!-- ===== DASHBOARD PAGE ===== -->
       <section class="pp-page active" id="page-dashboard">
-        <div class="pp-welcome">
-          <h2>Welcome back, <span id="dashWelcomeName">Parent</span>! 👋</h2>
-          <p>Here's an overview of your children's activity at Royal Crystal Academy.</p>
+        <div class="pp-hero">
+          <div class="pp-hero-text">
+            <div class="pp-hero-kicker">Parent Portal</div>
+            <h2>Welcome back, <span id="dashWelcomeName">Parent</span>! 👋</h2>
+            <p id="dashHeroLine">Here's an overview of your children's activity at Royal Crystal Academy.</p>
+          </div>
+          <div class="pp-hero-art" aria-hidden="true">🏫</div>
         </div>
 
         <!-- Stat cards -->
@@ -151,20 +155,21 @@
         <!-- My Children cards + Quick Links -->
         <div class="pp-children-quicklinks-grid">
           <div>
-            <div style="font-family:var(--font-heading);font-weight:700;font-size:0.95rem;color:#1a3a5c;margin-bottom:12px">My Children</div>
+            <div class="pp-section-title">My Children</div>
             <div class="pp-children-row" id="dashChildCards"></div>
           </div>
           <div class="pp-card" style="min-width:180px;padding:0">
             <div class="pp-card-header"><span class="pp-card-title">Quick Links</span></div>
             <div class="pp-card-body">
               <div class="pp-quick-links">
-                <button class="pp-quick-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">&#128179; Make a Payment</button>
-                <button class="pp-quick-link" onclick="showPage('results', document.querySelector('[data-page=results]'))">&#128220; View Results</button>
-                <button class="pp-quick-link" onclick="showPage('payments', document.querySelector('[data-page=payments]'))">&#129534; Download Receipts</button>
-                <button class="pp-quick-link" onclick="window._ppPrintStatement(this)">&#128424; Print Fee Statement</button>
-                <button class="pp-quick-link" onclick="showPage('profile', document.querySelector('[data-page=profile]'))">&#9999; Update Profile</button>
-                <button class="pp-quick-link" onclick="showPage('contact-admin', document.querySelector('[data-page=contact-admin]'))">&#9993; Request a Correction</button>
-                <button class="pp-quick-link" onclick="RCA_CALENDAR_PRINT.open()">&#128197; Download School Calendar</button>
+                <button class="pp-quick-link" data-tone="blue" onclick="showPage('payments', document.querySelector('[data-page=payments]'))"><span class="pp-ql-icon">&#128179;</span>Make a Payment</button>
+                <button class="pp-quick-link" data-tone="purple" onclick="showPage('results', document.querySelector('[data-page=results]'))"><span class="pp-ql-icon">&#128220;</span>View Results</button>
+                <button class="pp-quick-link" data-tone="green" onclick="showPage('payments', document.querySelector('[data-page=payments]'))"><span class="pp-ql-icon">&#129534;</span>Download Receipts</button>
+                <button class="pp-quick-link" data-tone="gold" onclick="window._ppPrintStatement(this)"><span class="pp-ql-icon">&#128424;</span>Print Fee Statement</button>
+                <button class="pp-quick-link" data-tone="teal" onclick="showPage('attendance', document.querySelector('[data-page=attendance]'))"><span class="pp-ql-icon">&#128197;</span>Attendance</button>
+                <button class="pp-quick-link" data-tone="maroon" onclick="showPage('profile', document.querySelector('[data-page=profile]'))"><span class="pp-ql-icon">&#9999;&#65039;</span>Update Profile</button>
+                <button class="pp-quick-link" data-tone="rose" onclick="showPage('contact-admin', document.querySelector('[data-page=contact-admin]'))"><span class="pp-ql-icon">&#9993;&#65039;</span>Request a Correction</button>
+                <button class="pp-quick-link" data-tone="indigo" onclick="RCA_CALENDAR_PRINT.open()"><span class="pp-ql-icon">&#128467;&#65039;</span>School Calendar</button>
               </div>
             </div>
           </div>
@@ -307,7 +312,7 @@
       <section class="pp-page" id="page-attendance">
         <div class="pp-welcome">
           <h2>Attendance</h2>
-          <p>Your child's attendance record for this term.</p>
+          <p>How often your child has been in school this term.</p>
         </div>
         <div id="attendanceContent"></div>
       </section>
