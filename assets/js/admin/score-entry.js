@@ -131,7 +131,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isFormTeacherOf(className)) return subjectsPool;
 
     const assignments = user.assignments || [];
-    if (assignments.length > 0) {
+    // A class added later in User Management (e.g. Basic 3B for a Basic 3A
+    // teacher) has no precise pairs yet — it follows linked subjects below.
+    const hasPairsHere = !className || assignments.some(a => a.class_name === className || a.class_name === levelOf(className));
+    if (assignments.length > 0 && hasPairsHere) {
       const codes = className
         ? assignments.filter(a => a.class_name === className || a.class_name === levelOf(className)).map(a => a.subject_code)
         : [...new Set(assignments.map(a => a.subject_code))];

@@ -325,7 +325,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const isClassTeacher   = role === 'class_teacher';
     const isSubjectTeacher = role === 'subject_teacher';
 
-    if (classesGroup)  classesGroup.style.display  = isSubjectTeacher ? 'block' : 'none';
+    // Form teachers can also teach subjects in other classes (e.g. both
+    // Basic 3A and 3B), so they get the class list too.
+    if (classesGroup)  classesGroup.style.display  = (isClassTeacher || isSubjectTeacher) ? 'block' : 'none';
+    const lbl = classesGroup && classesGroup.querySelector('.um-form-label');
+    const hint = classesGroup && classesGroup.querySelector('.um-form-hint');
+    if (lbl) lbl.textContent = isClassTeacher ? 'Other Classes They Teach (as subject teacher)' : 'Assigned Classes';
+    if (hint) hint.textContent = isClassTeacher
+      ? 'Optional. Tick any other class where this form teacher records scores for the subjects ticked below (e.g. Basic 3B as well as 3A).'
+      : 'Select all classes this teacher teaches in';
     if (subjectsGroup) subjectsGroup.style.display = (isClassTeacher || isSubjectTeacher) ? 'block' : 'none';
     if (alsoFTGroup)   alsoFTGroup.style.display    = isSubjectTeacher ? 'block' : 'none';
     if (formClassGroup) formClassGroup.style.display =
@@ -392,7 +400,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const alsoFT = u.primary_role === 'subject_teacher' && !!formClass;
     document.getElementById('fAlsoFormTeacher').checked = alsoFT;
 
-    populateClassCheckboxes('fClassesCheckboxes', linkedClasses);
+    populateClassCheckboxes('fClassesCheckboxes', u.primary_role === 'class_teacher' ? linkedClasses.slice(1) : linkedClasses);
     populateSubjectCheckboxes('fSubjectsCheckboxes', linkedSubjects);
     populateFormClassSelect(formClass);
     updateRoleFieldVisibility(u.primary_role, alsoFT);
@@ -443,7 +451,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let linkedSubjects = [];
     if (role === 'class_teacher') {
       const formClass = document.getElementById('fFormClass').value;
-      if (formClass) linkedClasses = [formClass];
+      const others = [...document.querySelectorAll('#fClassesCheckboxes input:checked')].map(i => i.value);
+      // The form class always comes first (linked_classes[0] = form class).
+      if (formClass) linkedClasses = [formClass, ...others.filter(c => c !== formClass)];
       linkedSubjects = [...document.querySelectorAll('#fSubjectsCheckboxes input:checked')].map(i => i.value);
     } else if (role === 'subject_teacher') {
       linkedClasses  = [...document.querySelectorAll('#fClassesCheckboxes input:checked')].map(i => i.value);
