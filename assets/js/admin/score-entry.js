@@ -67,8 +67,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // level ("Basic 3") covers each of its arms (Basic 3A, Basic 3B).
     const linked = (user.linked_classes || []).map(lc => lc.trim().toLowerCase());
     if (linked.length === 0) return allClasses;
+    // Arms of a Basic class share subject teachers: linked to Basic 3A
+    // means Basic 3B too (scores only; comments stay with the form class).
+    const linkedLevels = (user.linked_classes || []).filter(isBasicArm).map(c => levelOf(c).trim().toLowerCase());
     return allClasses.filter(cls =>
-      linked.includes(cls.trim().toLowerCase()) || linked.includes(levelOf(cls).trim().toLowerCase())
+      linked.includes(cls.trim().toLowerCase()) || linked.includes(levelOf(cls).trim().toLowerCase()) ||
+      (isBasicArm(cls) && linkedLevels.includes(levelOf(cls).trim().toLowerCase()))
     );
   }
 
@@ -81,6 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
      their own class, and submitting sends each arm for review.
   */
   const levelOf = window.classLevel || (c => c);
+  const isBasicArm = name => /^Basic \d+[A-Z]$/.test(String(name || ''));
   const COMBINED = 'level:';
   function armsOf(value) {
     if (!value || !value.startsWith(COMBINED)) return value ? [value] : [];
@@ -133,10 +138,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const assignments = user.assignments || [];
     // A class added later in User Management (e.g. Basic 3B for a Basic 3A
     // teacher) has no precise pairs yet — it follows linked subjects below.
-    const hasPairsHere = !className || assignments.some(a => a.class_name === className || a.class_name === levelOf(className));
+    const pairFits = a => a.class_name === className || a.class_name === levelOf(className) ||
+      (isBasicArm(a.class_name) && isBasicArm(className) && levelOf(a.class_name) === levelOf(className));
+    const hasPairsHere = !className || assignments.some(pairFits);
     if (assignments.length > 0 && hasPairsHere) {
       const codes = className
-        ? assignments.filter(a => a.class_name === className || a.class_name === levelOf(className)).map(a => a.subject_code)
+        ? assignments.filter(pairFits).map(a => a.subject_code)
         : [...new Set(assignments.map(a => a.subject_code))];
       return subjectsPool.filter(s => codes.includes(s.id));
     }
