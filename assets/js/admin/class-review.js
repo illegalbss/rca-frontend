@@ -212,30 +212,41 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ordinalOf = n => n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th');
   const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   function classTotalsTable(rows) {
+    // Four simple columns so it fits a phone without sideways scrolling;
+    // the number and subject count sit small with the pupil's name.
     return `<table class="totals-table">
-      <thead><tr><th>S/N</th><th style="text-align:left">Pupil</th><th>Subjects</th><th>Total</th><th>Average</th><th>Position</th></tr></thead>
+      <thead><tr><th class="tt-name">Pupil</th><th>Total</th><th>Average</th><th>Position</th></tr></thead>
       <tbody>${rows.map((r, i) => `<tr>
-        <td>${i + 1}</td>
-        <td style="text-align:left">${escHtml(r.s.full_name)}<br><small style="color:#6b7280">${escHtml(r.s.admission_no)}</small></td>
-        <td>${r.t.subjects}</td>
-        <td><strong>${r.t.subjects ? fmtNum(r.t.total) : '—'}</strong></td>
-        <td>${r.t.subjects ? r.t.average.toFixed(1) : '—'}</td>
-        <td>${r.position ? ordinalOf(r.position) : '—'}</td>
+        <td class="tt-name"><span class="tt-sn">${i + 1}.</span> <strong>${escHtml(r.s.full_name)}</strong>
+          <small>${escHtml(r.s.admission_no)} · ${r.t.subjects} subject${r.t.subjects !== 1 ? 's' : ''}</small></td>
+        <td class="tt-num"><strong>${r.t.subjects ? fmtNum(r.t.total) : '—'}</strong></td>
+        <td class="tt-num">${r.t.subjects ? r.t.average.toFixed(1) : '—'}</td>
+        <td class="tt-num">${r.position ? ordinalOf(r.position) : '—'}</td>
       </tr>`).join('')}</tbody>
     </table>`;
   }
   const TOTALS_CSS = `
-    .totals-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
-    .totals-table th, .totals-table td { border:1px solid #d1d5db; padding:6px 8px; text-align:center; }
-    .totals-table th { background:#6B0F1A; color:#fff; font-size:0.72rem; text-transform:uppercase; letter-spacing:.03em; }
-    .totals-table tbody tr:nth-child(even) td { background:#f9fafb; }`;
+    .totals-table { width:100%; border-collapse:collapse; font-size:0.85rem; table-layout:auto; }
+    .totals-table th, .totals-table td { border:1px solid #d1d5db; padding:7px 8px; text-align:center; vertical-align:middle; }
+    .totals-table th { background:#6B0F1A; color:#fff; font-size:0.72rem; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; }
+    .totals-table tbody tr:nth-child(even) td { background:#f9fafb; }
+    .totals-table .tt-name { text-align:left; overflow-wrap:break-word; }
+    .totals-table td.tt-name small { display:block; color:#6b7280; font-size:0.72rem; margin-top:2px; }
+    .totals-table .tt-sn { color:#9ca3af; font-size:0.75rem; }
+    .totals-table .tt-num { white-space:nowrap; width:1%; font-size:0.95rem; }
+    @media (max-width: 480px) {
+      .totals-table { font-size:0.78rem; }
+      .totals-table th, .totals-table td { padding:6px 5px; }
+      .totals-table th { font-size:0.62rem; letter-spacing:0; }
+      .totals-table .tt-num { font-size:0.85rem; }
+    }`;
 
   document.getElementById('classTotalsBtn')?.addEventListener('click', async () => {
     const className = classSelect.value, term = termSelect.value;
     const termLabel = termSelect.options[termSelect.selectedIndex]?.text || term;
     const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px';
-    modal.innerHTML = `<div style="background:#fff;border-radius:14px;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;padding:' + (window.innerWidth < 480 ? '8px' : '16px');
+    modal.innerHTML = `<div style="background:#fff;border-radius:14px;width:100%;max-width:720px;max-height:94vh;display:flex;flex-direction:column;overflow:hidden">
         <div style="padding:14px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
           <strong>${escHtml(className)} — ${escHtml(termLabel)}: totals &amp; averages</strong>
           <div style="display:flex;gap:8px">
@@ -243,7 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <button class="btn btn-outline btn-sm" id="totalsClose">Close</button>
           </div>
         </div>
-        <div id="totalsBody" style="overflow:auto;padding:14px 18px"><p style="color:#9ca3af">Loading…</p></div>
+        <div id="totalsBody" style="overflow-y:auto;overflow-x:hidden;padding:${window.innerWidth < 480 ? '8px' : '14px 18px'}"><p style="color:#9ca3af">Loading…</p></div>
       </div><style>${TOTALS_CSS}</style>`;
     document.body.appendChild(modal);
     const close = () => modal.remove();
