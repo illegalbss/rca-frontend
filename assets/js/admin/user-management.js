@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <button class="um-action-btn um-btn-view" onclick="UM.view(${u.id})">View</button>
           ${isIctAdmin ? `<button class="um-action-btn um-btn-edit" onclick="UM.edit(${u.id})">Edit</button>` : ''}
           ${isIctAdmin && u.primary_role !== 'parent' ? `<button class="um-action-btn um-btn-reset" onclick="UM.resetPassword(${u.id})">Reset PW</button>` : ''}
+          ${isIctAdmin && u.primary_role === 'parent' ? `<button class="um-action-btn um-btn-reset" onclick="UM.resetParentLogin(${u.id})" title="Unlock and give a new one-time code">Reset parent login</button>` : ''}
           ${isIctAdmin ? `<button class="um-action-btn" onclick="linkChildModal(${u.id})" title="Link one of their children — e.g. a teacher who is also a parent, viewable from their own login">+ Link Child</button>` : ''}
           ${canManageAccounts && shownStatus(u) === 'notactivated' ? `<a class="um-action-btn" href="parent-accounts.html" title="This parent hasn't used their login code yet — manage it on Parent Accounts">Parent Accounts</a>` : ''}
           ${canManageAccounts && shownStatus(u) !== 'notactivated' ? `<button class="um-action-btn ${u.status === 'active' ? 'um-btn-deact' : 'um-btn-react'}" onclick="UM.toggleStatus(${u.id})">${u.status === 'active' ? 'Deactivate' : 'Activate'}</button>` : ''}
@@ -640,8 +641,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshAll();
   });
 
+  /* ---- Reset parent login: clears the lockout and gives the parent a
+     fresh one-time code (shown once, printable). Never a shared password. ---- */
+  const escH = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  async function resetParentLogin(userId) {
+    const u = allUsers.find(x => x.id === userId);
+    if (!confirm(`Reset ${u ? u.full_name : 'this parent'}'s login?\n\nThis unlocks the account and gives a new one-time code to print. The parent taps "Use my code" on the Parent Login page and chooses their own password. Any older code stops working.`)) return;
+    let r;
+    try { r = await window.RCA_API.call(`/parent-accounts/${userId}/reset-login`, { method: 'POST', body: {} }); }
+    catch (e) { alert(e.message); return; }
+    const when = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin:0 0 4px;color:var(--color-primary);font-size:1rem">Parent login reset</h3>
+        <p style="font-size:0.82rem;color:#6b7280;margin:0 0 12px">For <strong>${escH(r.full_name)}</strong> · phone ${escH(r.phone_display)}</p>
+        <div style="font-family:monospace;font-size:1.8rem;font-weight:700;letter-spacing:0.12em;text-align:center;background:#f3f4f6;border-radius:10px;padding:12px">${escH(r.code)}</div>
+        <p style="font-size:0.78rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin:12px 0">
+          ⚠ This code is shown <strong>only now</strong>. Print it or write it down and give it to the parent. It works until <strong>${when(r.expires_at)}</strong>.</p>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-outline" style="flex:1" id="rplClose">Close</button>
+          <button class="btn btn-primary" style="flex:1" id="rplPrint">🖨 Print Slip</button>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+    m.querySelector('#rplClose').onclick = () => m.remove();
+    m.querySelector('#rplPrint').onclick = () => {
+      const w = window.RCA_PWA?.openDocWindow ? window.RCA_PWA.openDocWindow() : window.open('', '_blank');
+      if (!w) { alert('Please allow pop-ups to print the slip.'); return; }
+      const logo = new URL('../assets/images/logo.png', location.href).href;
+      w.document.open();
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Parent Portal Login</title>
+        <style>body{font-family:Arial,sans-serif;margin:0;padding:24px;color:#111827}.slip{border:2px dashed #13306b;border-radius:10px;padding:20px;max-width:480px;margin:auto}
+        .h{display:flex;align-items:center;gap:10px;border-bottom:2px solid #c9960c;padding-bottom:8px;margin-bottom:12px}.h img{width:48px;height:48px}
+        .n{font-family:Georgia,serif;font-weight:700;color:#13306b;font-size:18px;text-transform:uppercase}.code{font-family:monospace;font-size:28px;font-weight:700;letter-spacing:.15em;text-align:center;background:#eef3fb;border-radius:8px;padding:10px;margin:10px 0}
+        ol{font-size:13px;padding-left:18px;line-height:1.6}small{color:#6b7280;font-size:11px}</style></head><body>
+        <div class="slip"><div class="h"><img src="${logo}" alt=""><div><div class="n">Royal Crystal Academy</div><small>Parent Portal Login</small></div></div>
+        <p style="font-size:13px;margin:0">Dear <strong>${escH(r.full_name)}</strong>, your one-time code is:</p>
+        <div class="code">${escH(r.code)}</div>
+        <ol><li>Go to <strong>www.royalcrystalacademy.com.ng/parent-login.html</strong></li><li>Tap <strong>Use my code</strong></li>
+        <li>Type your phone number (<strong>${escH(r.phone_display)}</strong>) and this code</li><li>Choose your own password, then log in</li></ol>
+        <small>Code works until ${when(r.expires_at)}. Keep it private. Help: 08036721390 / 09080061094</small></div>
+        <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`);
+      w.document.close();
+    };
+  }
+
   /* Exposed for row-button onclick handlers */
   window.UM = {
+    resetParentLogin,
     view: openViewModal,
     edit: openEditModal,
     resetPassword: openResetModal,
