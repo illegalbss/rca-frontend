@@ -82,15 +82,27 @@
   }
 
   /* ================================================== ACCOUNTS */
-  function renderAccounts() {
-    const q = filter.q.toLowerCase();
-    const rows = data.parents.filter(p =>
-      (!filter.status || p.status === filter.status) &&
-      (!q || [p.full_name, p.email, p.phone, p.phone_display, ...p.children.map(c => c.full_name + ' ' + c.admission_no)].join(' ').toLowerCase().includes(q)));
+  // Search: every word typed must appear somewhere (name, phone, email,
+  // child, admission no.), so "mrs odoh" or "odoh basic 4" both work. Phone
+  // numbers match with or without spaces, and +234 / 0 at the start.
+  const digitsOf = s => String(s || '').replace(/\D/g, '');
+  const phoneKey = s => { const d = digitsOf(s); return d.startsWith('234') ? '0' + d.slice(3) : d; };
+  function matchesSearch(text, phones, q) {
+    const hay = text.toLowerCase();
+    const phoneHay = phones.map(phoneKey).join(' ');
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every(w => {
+      if (hay.includes(w)) return true;
+      const d = phoneKey(w);
+      return d.length >= 3 && phoneHay.includes(d);
+    });
+  }
 
+  function renderAccounts() {
+    // The toolbar (search box) is drawn once; typing only redraws the list
+    // below it, so the keyboard stays open and no letters are lost.
     document.getElementById('paTab').innerHTML = card(`
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-        <input id="paSearch" class="form-control" placeholder="Search parent, phone, email or child…" value="${esc(filter.q)}" style="flex:1;min-width:200px">
+        <input id="paSearch" type="search" class="form-control" placeholder="Search parent, phone, email or child…" value="${esc(filter.q)}" style="flex:1;min-width:200px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         <select id="paStatus" class="form-control" style="width:auto">
           <option value="">All statuses</option>
           ${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${filter.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
@@ -98,7 +110,29 @@
         <button class="btn btn-outline btn-sm" id="paCheck" style="white-space:nowrap" title="Find deactivated parents who still have a child in school, and active parents whose children have all left">✓ Check against pupils</button>
         <button class="btn btn-primary btn-sm" id="paAddParent" style="white-space:nowrap">+ Add Parent</button>
       </div>
-      <div style="font-size:0.78rem;color:#6b7280;margin-bottom:10px">${rows.length} parent account${rows.length !== 1 ? 's' : ''}</div>
+      <div id="paList"></div>`);
+
+    const s = document.getElementById('paSearch');
+    let t;
+    s.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { filter.q = s.value; renderAccountRows(); }, 200); });
+    s.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(t); filter.q = s.value; renderAccountRows(); } });
+    document.getElementById('paStatus').addEventListener('change', e => { filter.status = e.target.value; renderAccountRows(); });
+    document.getElementById('paAddParent').addEventListener('click', showAddParentModal);
+    document.getElementById('paCheck').addEventListener('click', showSchoolCheck);
+    renderAccountRows();
+  }
+
+  function renderAccountRows() {
+    const list = document.getElementById('paList');
+    if (!list) return;
+    const rows = data.parents.filter(p =>
+      (!filter.status || p.status === filter.status) &&
+      (!filter.q.trim() || matchesSearch(
+        [p.full_name, p.email, ...p.children.map(c => `${c.full_name} ${c.admission_no} ${c.class_name || ''}`)].join(' '),
+        [p.phone, p.phone_display], filter.q)));
+
+    list.innerHTML = `
+      <div style="font-size:0.78rem;color:#6b7280;margin-bottom:10px">${rows.length} parent account${rows.length !== 1 ? 's' : ''}${filter.q.trim() ? ` matching “${esc(filter.q.trim())}”` : ''}</div>
       <div style="overflow-x:auto">
         <table class="finance-table" style="width:100%;font-size:0.82rem;border-collapse:collapse">
           <thead><tr style="text-align:left;border-bottom:2px solid #e5e7eb">
@@ -110,6 +144,7 @@
                 <td style="padding:8px">
                   <div style="font-weight:700;color:#111827">${esc(p.full_name)}</div>
                   <div style="font-size:0.75rem;color:#6b7280">${esc(p.phone_display || p.phone || 'no phone')}${p.email ? ' · ' + esc(p.email) : ''}</div>
+                  ${(p.same_phone_as || []).length ? `<div style="font-size:0.72rem;color:#991b1b;background:#fee2e2;border-radius:6px;padding:4px 8px;margin-top:5px;line-height:1.4">⚠ Same phone as <strong>${esc(p.same_phone_as.join(', '))}</strong>. Codes and phone login won't work until one of them gets their own number — press 📞 Change phone.</div>` : ''}
                 </td>
                 <td style="padding:8px;font-size:0.78rem">
                   ${p.children.map(c => `<div>${esc(c.full_name)} <span style="color:#9ca3af">${esc(c.admission_no)}${c.class_name ? ' · ' + esc(c.class_name) : ''}</span>
@@ -125,6 +160,7 @@
                     ${p.status === 'prepared' || p.status === 'pending' ? btn(p.status === 'pending' ? 'New Code' : 'Issue Code', `data-code="${p.id}"`, 'color:#1d4ed8;border-color:#93c5fd') : ''}
                     ${p.status === 'pending' ? btn('Revoke Code', `data-revoke="${p.id}"`) : ''}
                     ${p.status === 'active' ? btn('Reset Code', `data-code="${p.id}" title="Parent forgot their password: give them a code to choose a new one"`, 'color:#92400e;border-color:#fcd34d') : ''}
+                    ${btn('📞 Change phone', `data-phone="${p.id}"`, (p.same_phone_as || []).length ? 'color:#991b1b;border-color:#fca5a5;font-weight:700' : '')}
                     ${btn('+ Link Child', `data-link="${p.id}"`)}
                     ${p.status === 'deactivated' ? btn('Reactivate', `data-react="${p.id}"`) : btn('Deactivate', `data-deact="${p.id}"`, 'color:#dc2626;border-color:#fca5a5')}
                   </div>
@@ -132,14 +168,9 @@
               </tr>`).join('') || '<tr><td colspan="4" style="padding:24px;text-align:center;color:#9ca3af">No parent accounts match.</td></tr>'}
           </tbody>
         </table>
-      </div>`);
+      </div>`;
 
-    const s = document.getElementById('paSearch');
-    let t; s.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { filter.q = s.value; renderAccounts(); document.getElementById('paSearch').focus(); }, 250); });
-    document.getElementById('paStatus').addEventListener('change', e => { filter.status = e.target.value; renderAccounts(); });
-    document.getElementById('paAddParent').addEventListener('click', showAddParentModal);
-
-    const tab = document.getElementById('paTab');
+    const tab = list;
     tab.querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => issueCode(b.dataset.code)));
     tab.querySelectorAll('[data-revoke]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.revoke}/activation-code/revoke`, {}, 'Revoke this activation code? The parent will not be able to use it.')));
     tab.querySelectorAll('[data-deact]').forEach(b => b.addEventListener('click', () => {
@@ -150,9 +181,20 @@
         : 'Deactivate this parent account? They will not be able to log in, and any activation code is revoked.';
       act(`/${b.dataset.deact}/status`, { action: 'deactivate' }, warn);
     }));
-    document.getElementById('paCheck').addEventListener('click', showSchoolCheck);
     tab.querySelectorAll('[data-react]').forEach(b => b.addEventListener('click', () => act(`/${b.dataset.react}/status`, { action: 'reactivate' })));
     tab.querySelectorAll('[data-link]').forEach(b => b.addEventListener('click', () => showLinkChildModal(b.dataset.link)));
+    tab.querySelectorAll('[data-phone]').forEach(b => b.addEventListener('click', async () => {
+      const p = data.parents.find(x => String(x.id) === b.dataset.phone);
+      const now = p?.phone_display || p?.phone || 'none';
+      const typed = prompt(`New phone number for ${p?.full_name}\n(now: ${now})\n\nThis is the number they will type with their code and to log in. Any unused code is cancelled.`, '');
+      if (typed === null || !typed.trim()) return;
+      try {
+        const r = await api(`/${b.dataset.phone}/phone`, { method: 'POST', body: { phone: typed.trim() } });
+        showToast(r.message);
+        if (r.code_cancelled) alert(r.message);
+      } catch (e) { alert(e.message); return; }
+      await reload();
+    }));
     tab.querySelectorAll('[data-unlink]').forEach(a => a.addEventListener('click', async e => {
       e.preventDefault();
       const [id, adm] = a.dataset.unlink.split('|');
@@ -492,17 +534,9 @@
       catch (e) { box.innerHTML = card(`<p style="color:#dc2626;margin:0">Could not load pupils: ${esc(e.message)}</p>`); slipPupils = null; return; }
     }
     const classes = [...new Set(slipPupils.map(p => p.class_name).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    const recent = p => p.enrolled_at && (Date.now() - new Date(p.enrolled_at).getTime()) < NEW_DAYS * 864e5;
-    const q = slipFilter.q.toLowerCase();
-    const rows = slipPupils.filter(p =>
-      (!slipFilter.cls || p.class_name === slipFilter.cls) &&
-      (!slipFilter.hideActive || p.state !== 'active') &&
-      (!slipFilter.newOnly || recent(p)) &&
-      (!q || [p.full_name, p.admission_no, p.parent_name, p.phone_display].join(' ').toLowerCase().includes(q)));
-    const selectable = p => p.state !== 'problem' && p.state !== 'deactivated';
-    const chosen = slipPupils.filter(p => slipSel.has(p.admission_no));
-    const st = s => { const c = SLIP_STATE[s] || SLIP_STATE.prepared; return `<span style="background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:0.68rem;font-weight:700;white-space:nowrap">${c.label}</span>`; };
 
+    // The toolbar (search box, filters) is drawn once; typing, ticking and
+    // filtering only redraw the list, so the keyboard stays open on phones.
     box.innerHTML = card(`
       <h3 style="margin:0 0 4px;font-size:1rem;color:var(--color-primary)">Print parent login slips</h3>
       <p style="font-size:0.8rem;color:#6b7280;margin:0 0 14px;line-height:1.5">
@@ -513,7 +547,7 @@
           <option value="">All classes</option>
           ${classes.map(c => `<option ${slipFilter.cls === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
         </select>
-        <input id="slQ" class="form-control" placeholder="Search pupil, parent or phone…" value="${esc(slipFilter.q)}" style="flex:1;min-width:180px">
+        <input id="slQ" type="search" class="form-control" placeholder="Search pupil, parent or phone…" value="${esc(slipFilter.q)}" style="flex:1;min-width:180px" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:0.8rem;margin-bottom:12px">
         <label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slNew" ${slipFilter.newOnly ? 'checked' : ''}> Only new pupils (joined in the last ${Math.round(NEW_DAYS / 30)} months)</label>
@@ -521,24 +555,14 @@
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
         ${btn('Tick all shown', 'id="slAll"')} ${btn('Untick all', 'id="slNone"')}
-        <span style="font-size:0.78rem;color:#6b7280">${rows.length} pupil${rows.length !== 1 ? 's' : ''} shown · <strong style="color:#111827">${chosen.length} ticked</strong></span>
+        <span style="font-size:0.78rem;color:#6b7280" id="slCount"></span>
       </div>
       <div style="overflow-x:auto;max-height:520px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px">
         <table style="width:100%;font-size:0.8rem;border-collapse:collapse">
           <thead style="position:sticky;top:0;background:#f9fafb"><tr style="text-align:left;color:#6b7280">
             <th style="padding:8px;width:28px"></th><th style="padding:8px">Pupil</th><th style="padding:8px">Class</th>
             <th style="padding:8px">Parent (from records)</th><th style="padding:8px">Phone</th><th style="padding:8px">Login status</th></tr></thead>
-          <tbody>
-          ${rows.map(p => `<tr style="border-top:1px solid #f3f4f6">
-            <td style="padding:7px 8px"><input type="checkbox" data-slp="${esc(p.admission_no)}" ${slipSel.has(p.admission_no) ? 'checked' : ''} ${selectable(p) ? '' : 'disabled'}></td>
-            <td style="padding:7px 8px"><strong>${esc(p.full_name)}</strong><div style="font-size:0.7rem;color:#6b7280">${esc(p.admission_no)}${recent(p) ? ' · <span style="color:#3730a3;font-weight:700">new</span>' : ''}</div></td>
-            <td style="padding:7px 8px;white-space:nowrap">${esc(p.class_name)}</td>
-            <td style="padding:7px 8px">${esc(p.parent_name) || '<span style="color:#9ca3af">—</span>'}</td>
-            <td style="padding:7px 8px;white-space:nowrap">${esc(p.phone_display) || '<span style="color:#9ca3af">—</span>'}</td>
-            <td style="padding:7px 8px">${st(p.state)}${p.problem ? `<div style="font-size:0.7rem;color:#991b1b;margin-top:3px">${esc(p.problem)}</div>` : ''}
-              ${p.state === 'pending' ? `<div style="font-size:0.7rem;color:#92400e;margin-top:3px">given ${fmtDate(p.code_issued_at)}</div>` : ''}</td>
-          </tr>`).join('') || '<tr><td colspan="6" style="padding:18px;text-align:center;color:#6b7280">No pupils match.</td></tr>'}
-          </tbody>
+          <tbody id="slBody"></tbody>
         </table>
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6">
@@ -547,19 +571,58 @@
             <option value="14">2 weeks</option><option value="30" selected>1 month</option><option value="60">2 months</option><option value="90">3 months</option>
           </select></label>
         <label style="font-size:0.8rem;display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="slReissue"> Give new codes to parents who already have one (their old code stops working)</label>
-        <button class="btn btn-primary" id="slGo" style="margin-left:auto" ${chosen.length ? '' : 'disabled'}>🖨 Make &amp; print slips (${chosen.length})</button>
+        <button class="btn btn-primary" id="slGo" style="margin-left:auto" disabled>🖨 Make &amp; print slips (0)</button>
       </div>`);
 
-    const again = () => renderSlips();
-    document.getElementById('slCls').onchange = e => { slipFilter.cls = e.target.value; again(); };
+    document.getElementById('slCls').onchange = e => { slipFilter.cls = e.target.value; drawSlipRows(); };
     let t; const qi = document.getElementById('slQ');
-    qi.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { slipFilter.q = qi.value; again().then(() => { const n = document.getElementById('slQ'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }); }, 250); });
-    document.getElementById('slNew').onchange = e => { slipFilter.newOnly = e.target.checked; again(); };
-    document.getElementById('slHide').onchange = e => { slipFilter.hideActive = e.target.checked; again(); };
-    document.getElementById('slAll').onclick = () => { rows.filter(selectable).forEach(p => slipSel.add(p.admission_no)); again(); };
-    document.getElementById('slNone').onclick = () => { slipSel.clear(); again(); };
-    box.querySelectorAll('[data-slp]').forEach(c => c.addEventListener('change', () => { c.checked ? slipSel.add(c.dataset.slp) : slipSel.delete(c.dataset.slp); again(); }));
-    document.getElementById('slGo').onclick = () => makeSlips(chosen);
+    qi.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { slipFilter.q = qi.value; drawSlipRows(); }, 200); });
+    qi.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(t); slipFilter.q = qi.value; drawSlipRows(); } });
+    document.getElementById('slNew').onchange = e => { slipFilter.newOnly = e.target.checked; drawSlipRows(); };
+    document.getElementById('slHide').onchange = e => { slipFilter.hideActive = e.target.checked; drawSlipRows(); };
+    document.getElementById('slAll').onclick = () => { visibleSlipRows().filter(slipSelectable).forEach(p => slipSel.add(p.admission_no)); drawSlipRows(); };
+    document.getElementById('slNone').onclick = () => { slipSel.clear(); drawSlipRows(); };
+    document.getElementById('slGo').onclick = () => makeSlips(slipPupils.filter(p => slipSel.has(p.admission_no)));
+    // One listener for every tick box, so redrawing rows needs no re-binding.
+    document.getElementById('slBody').addEventListener('change', e => {
+      const c = e.target.closest('[data-slp]'); if (!c) return;
+      c.checked ? slipSel.add(c.dataset.slp) : slipSel.delete(c.dataset.slp);
+      updateSlipCounts();
+    });
+    drawSlipRows();
+  }
+
+  const slipRecent = p => p.enrolled_at && (Date.now() - new Date(p.enrolled_at).getTime()) < NEW_DAYS * 864e5;
+  const slipSelectable = p => p.state !== 'problem' && p.state !== 'deactivated';
+  function visibleSlipRows() {
+    return (slipPupils || []).filter(p =>
+      (!slipFilter.cls || p.class_name === slipFilter.cls) &&
+      (!slipFilter.hideActive || p.state !== 'active') &&
+      (!slipFilter.newOnly || slipRecent(p)) &&
+      (!slipFilter.q.trim() || matchesSearch(`${p.full_name} ${p.admission_no} ${p.parent_name} ${p.class_name}`, [p.phone_display], slipFilter.q)));
+  }
+  function updateSlipCounts() {
+    const rows = visibleSlipRows();
+    const n = slipPupils.filter(p => slipSel.has(p.admission_no)).length;
+    const cnt = document.getElementById('slCount');
+    if (cnt) cnt.innerHTML = `${rows.length} pupil${rows.length !== 1 ? 's' : ''} shown · <strong style="color:#111827">${n} ticked</strong>`;
+    const go = document.getElementById('slGo');
+    if (go) { go.disabled = !n; go.textContent = `🖨 Make & print slips (${n})`; }
+  }
+  function drawSlipRows() {
+    const body = document.getElementById('slBody');
+    if (!body) return;
+    const st = s => { const c = SLIP_STATE[s] || SLIP_STATE.prepared; return `<span style="background:${c.bg};color:${c.color};padding:2px 9px;border-radius:20px;font-size:0.68rem;font-weight:700;white-space:nowrap">${c.label}</span>`; };
+    body.innerHTML = visibleSlipRows().map(p => `<tr style="border-top:1px solid #f3f4f6">
+            <td style="padding:7px 8px"><input type="checkbox" data-slp="${esc(p.admission_no)}" ${slipSel.has(p.admission_no) ? 'checked' : ''} ${slipSelectable(p) ? '' : 'disabled'}></td>
+            <td style="padding:7px 8px"><strong>${esc(p.full_name)}</strong><div style="font-size:0.7rem;color:#6b7280">${esc(p.admission_no)}${slipRecent(p) ? ' · <span style="color:#3730a3;font-weight:700">new</span>' : ''}</div></td>
+            <td style="padding:7px 8px;white-space:nowrap">${esc(p.class_name)}</td>
+            <td style="padding:7px 8px">${esc(p.parent_name) || '<span style="color:#9ca3af">—</span>'}</td>
+            <td style="padding:7px 8px;white-space:nowrap">${esc(p.phone_display) || '<span style="color:#9ca3af">—</span>'}</td>
+            <td style="padding:7px 8px">${st(p.state)}${p.problem ? `<div style="font-size:0.7rem;color:#991b1b;margin-top:3px">${esc(p.problem)}</div>` : ''}
+              ${p.state === 'pending' ? `<div style="font-size:0.7rem;color:#92400e;margin-top:3px">given ${fmtDate(p.code_issued_at)}</div>` : ''}</td>
+          </tr>`).join('') || '<tr><td colspan="6" style="padding:18px;text-align:center;color:#6b7280">No pupils match.</td></tr>';
+    updateSlipCounts();
   }
 
   async function makeSlips(chosen) {
