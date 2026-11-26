@@ -446,6 +446,9 @@
     <p style="text-align:center;font-size:0.75rem;color:#9ca3af;margin-top:16px">
       Need help? Call <a href="tel:08036721390" style="color:#1d4ed8">08036 721390</a>
     </p>
+    <p style="text-align:center;margin-top:8px">
+      <a href="#" id="waHelpLink" style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:700;font-size:0.85rem;text-decoration:none">💬 Can't log in? WhatsApp the school</a>
+    </p>
     <p style="text-align:center;margin-top:10px">
       <a href="#" class="rca-install-link" style="display:inline-block;padding:10px 16px;border-radius:999px;background:#f5eef0;color:#6B0F1A;font-weight:700;font-size:0.85rem;text-decoration:none">&#128241; Install the School App on this phone</a>
     </p>
@@ -474,6 +477,60 @@ document.addEventListener('DOMContentLoaded', () => {
     errorBox.style.display = 'none';
     successBox.style.display = 'none';
   }
+
+  /* ---- "Can't log in?" — WhatsApp the school. Shown as a pop-up when a
+     login, code or reset request fails. The message is written for the
+     parent (problem + the phone/email they typed); it never contains the
+     password or the code. ---- */
+  const WA_NUMBER = window.RCA_CONFIG?.SCHOOL_WHATSAPP || '2348036721390';
+  function whatsappLink(problem, typed) {
+    const lines = [
+      'Hello Royal Crystal Academy 👋',
+      "I'm a parent and I can't log in to the Parent Portal.",
+      '',
+      problem ? `Problem: ${problem}` : '',
+      typed ? `Phone/email I used: ${typed}` : '',
+      'My name: ',
+      "My child's name and class: "
+    ].filter((l, i) => l !== '' || i === 2);
+    return `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`;
+  }
+  function needHelp(problem, typed) {
+    document.getElementById('waHelpModal')?.remove();
+    const m = document.createElement('div');
+    m.id = 'waHelpModal';
+    m.setAttribute('role', 'dialog');
+    m.setAttribute('aria-modal', 'true');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(17,24,39,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:18px;width:100%;max-width:380px;padding:22px 20px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,0.3);font-family:inherit">
+        <div style="width:56px;height:56px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+          <svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path fill="#16a34a" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 2s.8 2.3.9 2.5c.1.2 1.6 2.5 4 3.5 1.5.6 2.1.7 2.8.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2l-.5-.4z"/></svg>
+        </div>
+        <h3 style="margin:0 0 6px;font-size:1.1rem;color:#111827">Having trouble logging in?</h3>
+        <p style="margin:0 0 6px;font-size:0.85rem;color:#4b5563;line-height:1.5">${problem ? escHtml(problem) : "We're happy to help."}</p>
+        <p style="margin:0 0 16px;font-size:0.82rem;color:#6b7280;line-height:1.5">Send the school a WhatsApp message and we'll sort it out for you. Please add your name and your child's name and class.</p>
+        <a id="waHelpGo" href="${whatsappLink(problem, typed)}" target="_blank" rel="noopener"
+           style="display:flex;align-items:center;justify-content:center;gap:8px;background:#16a34a;color:#fff;text-decoration:none;font-weight:700;font-size:0.95rem;padding:12px;border-radius:12px">
+          💬 Message the school on WhatsApp</a>
+        <button type="button" id="waHelpClose" style="margin-top:10px;width:100%;background:none;border:1px solid #e5e7eb;color:#374151;font-weight:600;font-size:0.88rem;padding:10px;border-radius:12px;cursor:pointer;font-family:inherit">Try again</button>
+        <p style="margin:10px 0 0;font-size:0.72rem;color:#9ca3af">Never send your password or code to anyone.</p>
+      </div>`;
+    document.body.appendChild(m);
+    const close = () => m.remove();
+    m.querySelector('#waHelpClose').onclick = close;
+    m.querySelector('#waHelpGo').addEventListener('click', () => setTimeout(close, 300));
+    m.addEventListener('click', e => { if (e.target === m) close(); });
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+  }
+  function escHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+  // Error message + WhatsApp pop-up, for failures the parent can't fix by retyping alone.
+  function failWithHelp(msg, typed) { showError(msg); needHelp(msg, typed); }
+  document.getElementById('waHelpLink')?.addEventListener('click', e => {
+    e.preventDefault();
+    const typed = document.getElementById('parent_email')?.value.trim() || document.getElementById('act_phone')?.value.trim() || '';
+    needHelp(errorBox.style.display === 'block' ? errorBox.textContent : '', typed);
+  });
   async function post(path, body) {
     const res = await fetch(apiUrl + path, {
       method: 'POST',
@@ -512,10 +569,10 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'admin/parent-portal.html';
         return;
       }
-      showError(ok ? 'This account is not a parent account. Staff should use the Staff Portal.'
-                   : (data.error || 'Could not sign in. Please try again.'));
+      failWithHelp(ok ? 'This account is not a parent account. Staff should use the Staff Portal.'
+                   : (data.error || 'Could not sign in. Please try again.'), identifier);
     } catch (err) {
-      showError('Could not reach the school server. Please check your internet connection and try again.');
+      failWithHelp('Could not reach the school server. Please check your internet connection and try again.', identifier);
     }
     btn.textContent = 'Sign In to Parent Portal →';
     btn.disabled = false;
@@ -623,6 +680,7 @@ document.addEventListener('DOMContentLoaded', () => {
     msgEl.textContent = r.ok
       ? '✅ The school office has been told. When they give you your reset code, tap "Use my code" above.'
       : (r.data.error || 'Something went wrong. Please try again.');
+    if (!r.ok) needHelp(r.data.error || 'Could not ask for a reset code.', phone);
     b.disabled = false; b.textContent = 'Ask the school for a reset code';
   });
   document.getElementById('backToLoginLink').addEventListener('click', e => { e.preventDefault(); showActivation(false); });
@@ -637,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
     b.disabled = true;
     try {
       const { ok, data } = await post('/parent-activation/verify', { phone, code });
-      if (!ok) { showError(data.error || 'Could not verify. Please try again.'); return; }
+      if (!ok) { failWithHelp(data.error || 'Could not verify. Please try again.', phone); return; }
       activationToken = data.token;
       document.getElementById('actWelcome').textContent =
         `Welcome${data.first_name ? ', ' + data.first_name : ''}! Your code is accepted — now choose your own password.`;
@@ -645,7 +703,7 @@ document.addEventListener('DOMContentLoaded', () => {
       step1.style.display = 'none';
       step2.style.display = '';
     } catch (err) {
-      showError('Could not reach the school server. Please try again.');
+      failWithHelp('Could not reach the school server. Please try again.', phone);
     } finally {
       b.disabled = false;
     }
@@ -663,7 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
     b.disabled = true;
     try {
       const { ok, data } = await post('/parent-activation/complete', { token: activationToken, password: p1, email });
-      if (!ok) { showError(data.error || 'Could not activate the account.'); return; }
+      if (!ok) { failWithHelp(data.error || 'Could not activate the account.', document.getElementById('act_phone').value.trim()); return; }
       const phone = document.getElementById('act_phone').value.trim();
       showActivation(false);
       document.getElementById('parent_email').value = phone;
@@ -671,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
       successBox.textContent = '✔ Your account is active. Sign in with your phone number (or email) and your new password.';
       successBox.style.display = 'block';
     } catch (err) {
-      showError('Could not reach the school server. Please try again.');
+      failWithHelp('Could not reach the school server. Please try again.', document.getElementById('act_phone').value.trim());
     } finally {
       b.disabled = false;
       document.getElementById('act_password').value = '';

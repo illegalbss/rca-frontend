@@ -20,6 +20,8 @@
   : 'https://rca-backend-five.vercel.app/api',
 
     SCHOOL_NAME:   'Royal Crystal Academy',
+    // WhatsApp number parents message when they can't log in (country code, no +).
+    SCHOOL_WHATSAPP: '2348036721390',
     SCHOOL_DOMAIN: 'royalcrystalacademy.com.ng',
     // A starting guess from today's date (a school year runs Sept–July);
     // staff pages replace it with the server's current school year
