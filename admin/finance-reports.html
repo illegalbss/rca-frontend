@@ -120,7 +120,7 @@
           </select>
         </div>
         <button class="btn btn-primary" id="applyReportFilter">Apply Filter</button>
-        <button class="btn btn-outline" onclick="window.print()">&#128424; Print Report</button>
+        <button class="btn btn-outline" id="printTermSummary">&#128424; Print Term Account</button>
       </div>
 
       <!-- Top stat cards -->
@@ -861,6 +861,40 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   ['paidClass', 'paidFeeType', 'paidStatus', 'paidTerm'].forEach(id => {
     document.getElementById(id).addEventListener('change', renderPaidList);
+  });
+
+  /* ── Term Account Summary: the whole term on one branded A4 page ── */
+  document.getElementById('printTermSummary').addEventListener('click', async () => {
+    const win = window.RCA_PRINT.prepare();
+    if (!win) return;
+    const term = document.getElementById('reportTerm').value;
+    const cls = document.getElementById('reportClass').value;
+    const terms = term === 'all' ? ['term1', 'term2', 'term3'] : [term];
+    const reports = (await Promise.all(terms.map(t => fetchReport(t, cls)))).filter(Boolean);
+    if (!reports.length) { win.close(); alert('Could not load the term account. Check your connection and try again.'); return; }
+    // Add up every term (for "All Terms") and merge class arms (Basic 3A + 3B = Basic 3).
+    const byCls = {};
+    const keys = ['pupils', 'expected', 'paid', 'outstanding', 'paid_count', 'partial_count', 'unpaid_count'];
+    reports.forEach(r => (r.by_class || []).forEach(c => {
+      const k = feeClass(c.class_name);
+      const o = byCls[k] = byCls[k] || { class_name: k, pupils: 0, expected: 0, paid: 0, outstanding: 0, paid_count: 0, partial_count: 0, unpaid_count: 0 };
+      keys.forEach(f => { o[f] += Number(c[f] || 0); });
+    }));
+    // "All Terms": a pupil is counted once per class, not three times.
+    if (terms.length > 1) Object.values(byCls).forEach(o => { o.pupils = Math.round(o.pupils / reports.length); });
+    const classes = Object.values(byCls).filter(c => !cls || c.class_name === cls);
+    const sum = k => reports.reduce((s, r) => s + Number(r[k] || 0), 0);
+    const totals = {
+      expected: sum('total_expected'), paid: sum('total_paid'), outstanding: sum('total_outstanding'),
+      paid_count: classes.reduce((s, c) => s + c.paid_count, 0),
+      partial_count: classes.reduce((s, c) => s + c.partial_count, 0),
+      unpaid_count: classes.reduce((s, c) => s + c.unpaid_count, 0)
+    };
+    window.RCA_PRINT.termSummary({
+      termLabel: term === 'all' ? 'All Terms' : TERM_LABELS[term],
+      session: reports.find(r => r.session)?.session || '',
+      classFilter: cls, totals, classes, win, showStatus: terms.length === 1
+    });
   });
 
   /* ── Branded A4 printouts (see finance-print.js) ── */

@@ -494,5 +494,78 @@
       </div>`, win);
   }
 
-  window.RCA_PRINT = { prepare, outstanding, paid, statement, newPupils };
+  /* ================= TERM ACCOUNT SUMMARY =================
+     The whole term on one A4 page: totals, how many pupils have paid,
+     and a class-by-class table (expected, collected, outstanding).
+     classes: [{ class_name, pupils, expected, paid, outstanding,
+                 paid_count, partial_count, unpaid_count }]            */
+  function termSummary({ termLabel, session, classFilter, totals, classes, win, showStatus = true }) {
+    const S = showStatus; // paid / part / not-paid counts only make sense for one term
+    const order = window.SCHOOL_CLASSES || [];
+    const lvl = c => (window.classLevel ? window.classLevel(c) : c);
+    const pos = c => { const i = order.findIndex(o => o === c || lvl(o) === c); return i < 0 ? 999 : i; };
+    const rows = [...classes].sort((a, b) => pos(a.class_name) - pos(b.class_name) || a.class_name.localeCompare(b.class_name));
+    const t = totals;
+    const pct = (a, b) => (b > 0 ? Math.round(a / b * 100) : 0);
+    const pupils = t.paid_count + t.partial_count + t.unpaid_count;
+    const rate = pct(t.paid, t.expected);
+    const bar = p => `<div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin-top:3px"><div style="height:100%;width:${Math.min(100, p)}%;background:${p >= 80 ? '#16a34a' : p >= 50 ? '#d97706' : '#dc2626'}"></div></div>`;
+
+    const table = rows.length ? `
+      <table class="grid">
+        <thead><tr>
+          <th style="width:26px">S/N</th><th class="l">Class</th><th>Pupils</th>
+          <th class="r">Expected (₦)</th><th class="r">Collected (₦)</th><th class="r">Outstanding (₦)</th>
+          <th style="width:70px">Collected</th>${S ? '<th>Fully paid</th><th>Part paid</th><th>Not paid</th>' : ''}
+        </tr></thead>
+        <tbody>${rows.map((c, i) => { const p = pct(c.paid, c.expected); return `<tr>
+          <td>${i + 1}</td><td class="l"><b>${esc(c.class_name)}</b></td><td>${c.pupils}</td>
+          <td class="r">${money(c.expected)}</td><td class="r">${money(c.paid)}</td>
+          <td class="r" style="color:${c.outstanding > 0 ? '#b91c1c' : 'inherit'};font-weight:700">${money(Math.max(c.outstanding, 0))}</td>
+          <td><b>${p}%</b>${bar(p)}</td>
+          ${S ? `<td>${c.paid_count}</td><td>${c.partial_count}</td><td>${c.unpaid_count}</td>` : ''}</tr>`; }).join('')}
+        </tbody>
+        <tfoot><tr style="font-weight:700;background:#eef3fb;color:#13306b">
+          <td colspan="2" class="l" style="padding:7px 5px;border:1px solid #d6deeb">TOTAL</td>
+          <td style="border:1px solid #d6deeb">${S ? pupils : rows.reduce((a, c) => a + c.pupils, 0)}</td>
+          <td class="r" style="border:1px solid #d6deeb">${money(t.expected)}</td>
+          <td class="r" style="border:1px solid #d6deeb">${money(t.paid)}</td>
+          <td class="r" style="border:1px solid #d6deeb;color:#b91c1c">${money(Math.max(t.outstanding, 0))}</td>
+          <td style="border:1px solid #d6deeb">${rate}%</td>
+          ${S ? `<td style="border:1px solid #d6deeb">${t.paid_count}</td><td style="border:1px solid #d6deeb">${t.partial_count}</td><td style="border:1px solid #d6deeb">${t.unpaid_count}</td>` : ''}
+        </tr></tfoot>
+      </table>` : '<div class="empty">No fee records for this term yet.</div>';
+
+    open(`Term Account Summary — ${termLabel}`, `
+      <div class="sheet">
+        ${header()}
+        ${banner('Term Account Summary', classFilter ? `${classFilter} · fees expected, collected and outstanding` : 'Fees expected, collected and outstanding — all classes')}
+        ${meta(session, termLabel)}
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          ${kpi('k-blue', 'coins', 'Total Expected', naira(t.expected))}
+          ${kpi('k-green', 'check', 'Total Collected', naira(t.paid))}
+          ${kpi('k-red', 'alert', 'Outstanding', naira(Math.max(t.outstanding, 0)))}
+          ${kpi('k-amber', 'users', 'Collection Rate', rate + '%')}
+        </div>
+        ${table}
+        <div class="grow"></div>
+        <div class="lower">
+          ${S ? `<div class="box">
+            <div class="box-title">Payment Status of Pupils</div>
+            <table class="mini">
+              <tr><th>Status</th><th class="r">Pupils</th><th class="r">Share</th></tr>
+              <tr><td>${pill('paid')} Fully paid</td><td class="r">${t.paid_count}</td><td class="r">${pct(t.paid_count, pupils)}%</td></tr>
+              <tr><td>${pill('partial')} Part payment</td><td class="r">${t.partial_count}</td><td class="r">${pct(t.partial_count, pupils)}%</td></tr>
+              <tr><td>${pill('unpaid')} Not paid</td><td class="r">${t.unpaid_count}</td><td class="r">${pct(t.unpaid_count, pupils)}%</td></tr>
+              <tr class="total"><td>Total pupils</td><td class="r">${pupils}</td><td class="r">100%</td></tr>
+            </table>
+          </div>` : '<div></div>'}
+          ${signBlock('Accountant / Bursar')}
+        </div>
+        <p class="note">Amounts are this term's fees after any discounts, and payments recorded on the school system up to the date printed.</p>
+        ${footer()}
+      </div>`, win);
+  }
+
+  window.RCA_PRINT = { prepare, outstanding, paid, statement, newPupils, termSummary };
 })();
