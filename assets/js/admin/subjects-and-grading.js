@@ -32,16 +32,18 @@
     { id: 'igbo', name: 'Asusu Igbo' },
     { id: 'mth', name: 'Mathematics' },
     { id: 'sci', name: 'Basic Science' },
-    { id: 'hec', name: 'Home Economics' },
-    { id: 'soc', name: 'Social Studies' },
+    { id: 'hec', name: 'Home Economics', until: '2026/2027|term1' },
+    { id: 'prevoc', name: 'Prevocational Studies', from: '2026/2027|term2' },
+    { id: 'soc', name: 'Social Studies', until: '2026/2027|term1' },
+    { id: 'scs', name: 'Social and Citizenship Studies', from: '2026/2027|term2' },
     { id: 'crk', name: 'C.R.K' },
-    { id: 'agric', name: 'Agric Science' },
+    { id: 'agric', name: 'Agric Science', until: '2026/2027|term1' },
     { id: 'phe', name: 'Health Education' },
     { id: 'vr', name: 'Verbal Reasoning' },
     { id: 'qr', name: 'Quantitative Reasoning' },
     { id: 'writ', name: 'Writing' },
     { id: 'cre', name: 'Creative Arts' },
-    { id: 'civ', name: 'Civic Education' },
+    { id: 'civ', name: 'Civic Education', until: '2026/2027|term1' },
     { id: 'ict', name: 'Computer' },
     { id: 'hist', name: 'History' }
   ];
@@ -82,9 +84,30 @@
   // className is optional — pass none to get the combined, deduplicated
   // list (used where no specific class is selected yet, e.g. assigning a
   // teacher's linked_subjects before they've picked a class).
-  window.getSubjectsForClass = function (className) {
+  // Subjects can start or stop at a given term ('from' / 'until', written
+  // 'SESSION|term'). From Second Term 2026/2027, Basic 1-6 take Prevocational
+  // Studies (replacing Agric Science + Home Economics) and Social and
+  // Citizenship Studies (replacing Social Studies + Civic Education). Older
+  // terms keep the old four exactly as recorded. Nursery is unchanged.
+  // The server applies the same rule (rca-backend src/utils/curriculum.js).
+  const TERM_NO = { term1: 1, term2: 2, term3: 3 };
+  window.termKey = function (session, term) {
+    const y = parseInt(String(session || (window.RCA_CONFIG && window.RCA_CONFIG.SESSION) || ''), 10) || 0;
+    return y * 10 + (TERM_NO[term || (window.RCA_CONFIG && window.RCA_CONFIG.CURRENT_TERM)] || 1);
+  };
+  const keyOf = st => { const parts = String(st).split('|'); return window.termKey(parts[0], parts[1]); };
+  window.isSubjectActive = function (subject, term, session) {
+    const k = window.termKey(session, term);
+    if (subject.from && k < keyOf(subject.from)) return false;
+    if (subject.until && k > keyOf(subject.until)) return false;
+    return true;
+  };
+
+  // term / session are optional (default: the current term and session).
+  window.getSubjectsForClass = function (className, term, session) {
     if (!className) return window.ALL_SUBJECTS_COMBINED;
-    return window.isNurseryClass(className) ? window.NURSERY_SUBJECTS : window.SCHOOL_SUBJECTS;
+    if (window.isNurseryClass(className)) return window.NURSERY_SUBJECTS;
+    return window.SCHOOL_SUBJECTS.filter(s => window.isSubjectActive(s, term, session));
   };
 
   window.ALL_SUBJECTS_COMBINED = (function () {
@@ -173,6 +196,34 @@
   }
 
   // Expose all functions so other scripts can call them directly
+  // End of Year (annual) result table — used by the Third Term report card
+  // and the parent portal. `a` is GET /students/:adm/annual.
+  window.annualResultHtml = function (a, opts) {
+    opts = opts || {};
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const n = v => (v === null || v === undefined) ? '—' : (Math.round(v * 10) / 10).toString();
+    const ord = k => k + (k % 10 === 1 && k % 100 !== 11 ? 'st' : k % 10 === 2 && k % 100 !== 12 ? 'nd' : k % 10 === 3 && k % 100 !== 13 ? 'rd' : 'th');
+    if (!a || !a.subjects || !a.subjects.length) return '<p style="font-size:0.8rem;color:#6b7280;margin:0">No scores recorded for this session yet.</p>';
+    const notes = a.subjects.filter(s => s.note);
+    const th = 'style="padding:5px 6px;border:1px solid #d1d5db;background:#6B0F1A;color:#fff;font-size:0.7rem;text-transform:uppercase"';
+    const td = 'style="padding:5px 6px;border:1px solid #e5e7eb;text-align:center"';
+    return `
+      <table class="rc-table rc-annual-table" style="width:100%;border-collapse:collapse;font-size:0.8rem">
+        <thead><tr><th ${th} style="text-align:left">Subject</th><th ${th}>1st Term</th><th ${th}>2nd Term</th><th ${th}>3rd Term</th><th ${th}>Annual Avg</th><th ${th}>Grade</th></tr></thead>
+        <tbody>${a.subjects.map(s => `<tr>
+          <td style="padding:5px 6px;border:1px solid #e5e7eb;text-align:left">${esc(s.name)}${s.note ? '<sup style="color:#b45309">*</sup>' : ''}</td>
+          <td ${td}>${n(s.term1)}</td><td ${td}>${n(s.term2)}</td><td ${td}>${n(s.term3)}</td>
+          <td ${td}><strong>${n(s.annual)}</strong></td><td ${td}>${window.scoreToGrade ? window.scoreToGrade(s.annual) : ''}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      ${notes.length ? `<p style="font-size:0.7rem;color:#92400e;margin:4px 0 0">* ${notes.map(s => `${esc(s.name)}: ${esc(s.note)}`).join('; ')}.</p>` : ''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:0.82rem">
+        <span style="background:#f3f4f6;border-radius:8px;padding:6px 10px">Annual Total: <strong>${n(a.total)}</strong></span>
+        <span style="background:#f3f4f6;border-radius:8px;padding:6px 10px">Annual Average: <strong>${n(a.average)}%</strong></span>
+        ${opts.showPosition !== false && a.position ? `<span style="background:#f3f4f6;border-radius:8px;padding:6px 10px">Annual Position: <strong>${ord(a.position)}</strong> of ${a.class_size}</span>` : ''}
+      </div>`;
+  };
+
   window.computeFinalScore = computeFinalScore;
   window.scoreToGrade = scoreToGrade;
   window.gradeToLabel = gradeToLabel;

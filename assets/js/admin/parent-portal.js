@@ -941,7 +941,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         </table>
         ${resultsData.comment ? `<p style="margin-top:14px;font-size:0.82rem;color:#374151"><strong>Class Teacher's Remark:</strong> "${escText(resultsData.comment)}"</p>` : ''}
         ${resultsData.ht_comment ? `<p style="margin-top:8px;font-size:0.82rem;color:#374151"><strong>Head Teacher's Comment:</strong> "${escText(resultsData.ht_comment)}"</p>` : ''}
+        ${term === 'term3' ? `<div id="ppAnnual" style="margin-top:18px"><h4 style="margin:0 0 8px;font-family:var(--font-heading);color:var(--color-primary-dark)">End of Year Result</h4><p style="color:#9ca3af;font-size:0.82rem">Loading…</p></div>` : ''}
       `;
+      // Third Term: the End of Year (cumulative) result as well.
+      if (term === 'term3') {
+        const box = document.getElementById('ppAnnual');
+        try {
+          const a = await window.RCA_API.call(`/students/${encodeURIComponent(child.admission_no)}/annual`);
+          if (box) box.innerHTML = `<h4 style="margin:0 0 8px;font-family:var(--font-heading);color:var(--color-primary-dark)">End of Year Result</h4><div style="overflow-x:auto">${window.annualResultHtml(a, { showPosition: !/pre-?\s*nursery/i.test(child.class_name || '') })}</div>`;
+        } catch (err) {
+          if (box) box.innerHTML = `<h4 style="margin:0 0 8px">End of Year Result</h4><p style="color:#9ca3af;font-size:0.82rem">${escText(err.message)}</p>`;
+        }
+      }
     } catch (e) {
       content.innerHTML = `<p style="color:#dc2626;font-size:0.85rem">Could not check results access: ${e.message}</p>`;
     }

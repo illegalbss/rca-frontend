@@ -688,6 +688,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
   }
 
+  /* ---- Second Term 2026/2027 subject change: preview which teachers get
+     Prevocational Studies / Social and Citizenship Studies, then confirm.
+     Nothing changes until "Give new subjects" is pressed; old subjects are kept. ---- */
+  const newSubjBtn = document.getElementById('umNewSubjectsBtn');
+  if (newSubjBtn && isIctAdmin) {
+    newSubjBtn.style.display = '';
+    newSubjBtn.addEventListener('click', showNewSubjects);
+  }
+  async function showNewSubjects() {
+    let r;
+    try { r = await window.RCA_API.call('/users/new-subjects'); } catch (e) { alert(e.message); return; }
+    const list = r.teachers || [];
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow:auto;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <h3 style="margin:0 0 6px;color:var(--color-primary);font-size:1rem">New subjects from Second Term 2026/2027 (Basic 1–6)</h3>
+        <p style="font-size:0.8rem;color:#4b5563;margin:0 0 12px;line-height:1.5">
+          Agric Science + Home Economics → <strong>Prevocational Studies</strong><br>
+          Social Studies + Civic Education → <strong>Social and Citizenship Studies</strong><br>
+          Teachers keep their old subjects for First Term records. Form teachers don't need this when "Who records scores" is set to Form teachers — they get every subject automatically.
+          Untick anyone who won't teach the new subject; you can also tick subjects for any teacher with <em>Edit</em>.</p>
+        ${list.length ? `
+          <div style="border:1px solid #e5e7eb;border-radius:10px;max-height:320px;overflow:auto">
+            ${list.map(t => `<label style="display:flex;gap:10px;padding:9px 12px;border-bottom:1px solid #f3f4f6;cursor:pointer;font-size:0.82rem">
+              <input type="checkbox" data-nst="${t.id}" checked style="margin-top:3px">
+              <span><strong>${escH(t.full_name)}</strong> <span style="color:#6b7280">(now teaches ${escH(t.old_subjects.map(c => ({ agric: 'Agric Science', hec: 'Home Economics', soc: 'Social Studies', civ: 'Civic Education' })[c] || c).join(', ') || 'these subjects in some classes')})</span><br>
+              Gets: <strong style="color:#065f46">${escH([...new Set([...t.add_subjects.map(s => s.name), ...t.add_pairs.map(p => p.name)])].join(', '))}</strong>
+              ${t.add_pairs.length ? `<span style="color:#6b7280"> · in ${escH([...new Set(t.add_pairs.map(p => p.class_name))].join(', '))}</span>` : ''}</span></label>`).join('')}
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn btn-outline" style="flex:1" id="nsClose">Cancel</button>
+            <button class="btn btn-primary" style="flex:1" id="nsApply">Give new subjects</button>
+          </div>`
+        : `<p style="font-size:0.85rem;color:#065f46;background:#ecfdf5;border-radius:8px;padding:12px">✓ Nothing to do — no teacher with the old subjects is missing the new ones.</p>
+           <div style="text-align:right;margin-top:12px"><button class="btn btn-outline" id="nsClose">Close</button></div>`}
+      </div>`;
+    document.body.appendChild(m);
+    m.querySelector('#nsClose').onclick = () => m.remove();
+    const apply = m.querySelector('#nsApply');
+    if (apply) apply.onclick = async () => {
+      const ids = [...m.querySelectorAll('[data-nst]')].filter(c => c.checked).map(c => c.dataset.nst);
+      if (!ids.length) { alert('Tick at least one teacher.'); return; }
+      if (!confirm(`Give the new subjects to ${ids.length} teacher${ids.length !== 1 ? 's' : ''}?`)) return;
+      apply.disabled = true;
+      try { const res = await window.RCA_API.call('/users/new-subjects', { method: 'POST', body: { ids } }); alert(res.message); }
+      catch (e) { alert(e.message); apply.disabled = false; return; }
+      m.remove();
+      await refreshAll();
+    };
+  }
+
   /* Exposed for row-button onclick handlers */
   window.UM = {
     resetParentLogin,

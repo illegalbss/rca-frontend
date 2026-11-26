@@ -120,7 +120,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // top of it, so a Nursery class never offers Basic-only subjects
     // (or vice versa) regardless of what the teacher is assigned to.
     if (className && className.startsWith('level:')) className = armsOf(className)[0];
-    const subjectsPool = window.getSubjectsForClass ? window.getSubjectsForClass(className) : allSubjects;
+    // The subject list depends on the term too (e.g. Prevocational Studies
+    // from Second Term 2026/2027 — see subjects-and-grading.js).
+    const subjectsPool = window.getSubjectsForClass ? window.getSubjectsForClass(className, termSelect.value) : allSubjects;
 
     const user = window.CURRENT_USER;
     if (!user) return subjectsPool;
@@ -604,20 +606,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderApprovalBanner();
   }
 
-  classSelect.addEventListener('change', () => {
-    searchInput.value = '';
-    // Re-scope the subject list to the newly-selected class, for teachers
-    // with precise per-class subject assignments (see getPermittedSubjects).
+  // Re-scope the subject list to the selected class AND term: teachers with
+  // precise per-class subject assignments (see getPermittedSubjects), and
+  // subjects that start or stop at a term (Second Term 2026/2027 changes).
+  function refreshSubjectOptions() {
     const prevSubject = subjectSelect.value;
     const subjectsForClass = getPermittedSubjects(classSelect.value);
     subjectSelect.innerHTML = subjectsForClass.length > 0
       ? subjectsForClass.map(s => `<option value="${s.id}">${s.name}</option>`).join('')
       : '<option value="">No subjects assigned</option>';
     if (subjectsForClass.some(s => s.id === prevSubject)) subjectSelect.value = prevSubject;
+  }
+  classSelect.addEventListener('change', () => {
+    searchInput.value = '';
+    refreshSubjectOptions();
     refreshApprovalAndRender();
   });
   subjectSelect.addEventListener('change', renderTable);
-  termSelect.addEventListener('change', refreshApprovalAndRender);
+  termSelect.addEventListener('change', () => { refreshSubjectOptions(); refreshApprovalAndRender(); });
   searchInput.addEventListener('input', renderTable);
 
   window.addEventListener('beforeunload', (event) => {

@@ -606,6 +606,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div>`}
       </div>
 
+      ${term === 'term3' ? '<div id="rcAnnual" class="rc-section"></div>' : ''}
+
       <div class="rc-remarks-grid">
         <div class="rc-remark-box">
           <span class="rc-remarks-label">Class Teacher's Remark:</span>
@@ -691,6 +693,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (isNursery) wireNurseryEditButton(admissionNo, term, summary, className, classSize);
     wireAttendanceEdit(admissionNo, term, summary, className);
+
+    // Third Term: the End of Year (cumulative) result below the term's own.
+    const annualBox = document.getElementById('rcAnnual');
+    if (annualBox) {
+      annualBox.innerHTML = '<div class="rc-section-title">End of Year Result</div><p style="font-size:0.8rem;color:#6b7280">Loading…</p>';
+      try {
+        const a = await window.RCA_API.call(`/students/${encodeURIComponent(admissionNo)}/annual`);
+        annualBox.innerHTML = '<div class="rc-section-title">End of Year Result</div>' + window.annualResultHtml(a, { showPosition: !preNursery });
+      } catch (e) {
+        annualBox.innerHTML = `<div class="rc-section-title">End of Year Result</div><p style="font-size:0.8rem;color:#dc2626">Could not load the end of year result: ${escText(e.message)}</p>`;
+      }
+      if (typeof fitReportCardToOnePage === 'function') fitReportCardToOnePage();
+    }
   }
 
   /* --------------------------------------------
