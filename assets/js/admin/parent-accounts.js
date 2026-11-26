@@ -107,6 +107,7 @@
           <option value="">All statuses</option>
           ${Object.entries(STATUS).map(([k, v]) => `<option value="${k}" ${filter.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
         </select>
+        <button class="btn btn-primary btn-sm" id="paDiagnose" style="white-space:nowrap;background:#16a34a;border-color:#16a34a" title="A parent can't log in? Find out why and how to fix it">🔍 Why can't they log in?</button>
         <button class="btn btn-outline btn-sm" id="paCheck" style="white-space:nowrap" title="Find deactivated parents who still have a child in school, and active parents whose children have all left">✓ Check against pupils</button>
         <button class="btn btn-primary btn-sm" id="paAddParent" style="white-space:nowrap">+ Add Parent</button>
       </div>
@@ -119,7 +120,61 @@
     document.getElementById('paStatus').addEventListener('change', e => { filter.status = e.target.value; renderAccountRows(); });
     document.getElementById('paAddParent').addEventListener('click', showAddParentModal);
     document.getElementById('paCheck').addEventListener('click', showSchoolCheck);
+    document.getElementById('paDiagnose').addEventListener('click', () => showDiagnose(filter.q));
     renderAccountRows();
+  }
+
+  /* ---- Why can't this parent log in? Plain-English answer + the fix. ---- */
+  function showDiagnose(prefill) {
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px';
+    m.innerHTML = `
+      <div style="background:#fff;border-radius:16px;width:100%;max-width:620px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+        <div style="padding:18px 20px 12px;border-bottom:1px solid #f3f4f6">
+          <h3 style="margin:0 0 4px;color:var(--color-primary);font-size:1rem">🔍 Why can't this parent log in?</h3>
+          <p style="margin:0 0 10px;font-size:0.8rem;color:#6b7280">Type the child's name, the parent's name, or the phone number.</p>
+          <form id="dgForm" style="display:flex;gap:8px">
+            <input id="dgQ" type="search" class="form-control" placeholder="e.g. Izuchukwu Anabel or 0803 123 4567" value="${esc(prefill || '')}" style="flex:1" autocomplete="off" enterkeyhint="search">
+            <button class="btn btn-primary btn-sm" type="submit">Check</button>
+          </form>
+        </div>
+        <div id="dgOut" style="padding:14px 20px;overflow:auto;font-size:0.84rem"></div>
+        <div style="padding:10px 20px;border-top:1px solid #f3f4f6;text-align:right"><button class="btn btn-outline btn-sm" id="dgClose">Close</button></div>
+      </div>`;
+    document.body.appendChild(m);
+    m.querySelector('#dgClose').onclick = () => m.remove();
+    const out = m.querySelector('#dgOut');
+    const run = async () => {
+      const q = m.querySelector('#dgQ').value.trim();
+      if (q.length < 3) { out.innerHTML = '<p style="color:#6b7280">Type at least 3 letters.</p>'; return; }
+      out.innerHTML = '<p style="color:#6b7280">Checking…</p>';
+      let r;
+      try { r = await api('/diagnose?q=' + encodeURIComponent(q)); } catch (e) { out.innerHTML = `<p style="color:#dc2626">${esc(e.message)}</p>`; return; }
+      const list = (items, color, icon) => items.map(t => `<div style="display:flex;gap:6px;margin:4px 0;color:${color}"><span>${icon}</span><span>${esc(t)}</span></div>`).join('');
+      const accounts = (r.results || []).map(a => `
+        <div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap">
+            <div><strong style="font-size:0.95rem">${esc(a.full_name)}</strong>
+              <div style="font-size:0.76rem;color:#6b7280">${esc(a.phone || 'no phone')}${a.email ? ' · ' + esc(a.email) : ''}${a.children.length ? ' · ' + esc(a.children.join(', ')) : ''}</div></div>
+            ${pill(a.status)}
+          </div>
+          <div style="margin-top:8px">
+            ${list(a.good, '#065f46', '✓')}
+            ${list(a.problems, '#991b1b', '✗')}
+          </div>
+          ${a.fixes.length ? `<div style="margin-top:8px;background:#eff6ff;border-radius:8px;padding:8px 10px"><strong style="color:#1d4ed8;font-size:0.78rem">WHAT TO DO</strong>${list(a.fixes, '#1e3a8a', '→')}</div>` : ''}
+        </div>`).join('');
+      const orphans = (r.pupils_without_account || []).map(s => `
+        <div style="border:1px dashed #fca5a5;border-radius:12px;padding:12px 14px;margin-bottom:10px">
+          <strong>${esc(s.full_name)}</strong> <span style="color:#6b7280">(${esc(s.class_name)} · ${esc(s.admission_no)})</span>
+          <div style="font-size:0.76rem;color:#6b7280">Parent on record: ${esc(s.parent_name || '—')} · ${esc(s.parent_phone || 'no phone')}</div>
+          ${list([s.problem], '#991b1b', '✗')}
+          <div style="margin-top:6px;background:#eff6ff;border-radius:8px;padding:8px 10px">${list([s.fix], '#1e3a8a', '→')}</div>
+        </div>`).join('');
+      out.innerHTML = accounts + orphans || `<p style="color:#6b7280">${esc(r.message || 'Nothing found.')}</p>`;
+    };
+    m.querySelector('#dgForm').addEventListener('submit', e => { e.preventDefault(); run(); });
+    if ((prefill || '').trim().length >= 3) run(); else m.querySelector('#dgQ').focus();
   }
 
   function renderAccountRows() {
