@@ -176,7 +176,14 @@
     tab.querySelectorAll('[data-deact]').forEach(b => b.addEventListener('click', () => {
       const p = data.parents.find(x => String(x.id) === b.dataset.deact);
       const here = (p?.children || []).filter(c => c.class_name && (!c.status || c.status === 'active'));
-      const warn = here.length
+      // Children also on another account that isn't deactivated (e.g. an old
+      // duplicate being replaced): deactivating this one is fine.
+      const others = data.parents.filter(o => o.id !== p.id && o.status !== 'deactivated');
+      const onOther = c => others.find(o => o.children.some(k => k.admission_no === c.admission_no));
+      const covered = here.length && here.every(onOther);
+      const warn = covered
+        ? `Deactivate ${p.full_name}?\n\nTheir children are also on another account (${[...new Set(here.map(c => onOther(c).full_name))].join(', ')}), so they will still be followed there. Do this when this account is an old duplicate.`
+        : here.length
         ? `⚠ ${p.full_name} still has ${here.length === 1 ? 'a child' : here.length + ' children'} in school (${here.map(c => c.full_name).join(', ')}).\nAccounts should only be deactivated when all their children have left.\n\nDeactivate anyway?`
         : 'Deactivate this parent account? They will not be able to log in, and any activation code is revoked.';
       act(`/${b.dataset.deact}/status`, { action: 'deactivate' }, warn);
