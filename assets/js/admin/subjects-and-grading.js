@@ -58,22 +58,51 @@
   // Knowledge, Social Habit, English Studies, Fine Art, Reading Skills) get
   // their own ids so they don't collide with the Basic-only equivalents
   // (e.g. 'nsci' vs Basic Science's 'sci').
-  window.NURSERY_SUBJECTS = [
-    { id: 'engst', name: 'English Studies' },
-    { id: 'phon', name: 'Phonics' },
-    { id: 'read', name: 'Reading Skills' },
-    { id: 'spell', name: 'Spelling' },
-    { id: 'writ', name: 'Writing' },
-    { id: 'mth', name: 'Mathematics' },
-    { id: 'qr', name: 'Quantitative Reasoning' },
-    { id: 'vr', name: 'Verbal Reasoning' },
-    { id: 'nsci', name: 'Nursery Science' },
-    { id: 'rhyme', name: 'Rhymes and Moral Instruction' },
-    { id: 'bible', name: 'Bible Knowledge' },
-    { id: 'schab', name: 'Social Habit' },
-    { id: 'finart', name: 'Fine Art' },
-    { id: 'igbo', name: 'Asusu Igbo' }
-  ];
+  // Each nursery class has its own list (the school's corrected lists,
+  // November 2026), for every term. The same subject keeps one id across
+  // classes so scores never move: e.g. 'engst' is shown as "English
+  // Language" in Pre-Nursery and Nursery 2 and "English Studies" in
+  // Nursery 1 and 3; 'writ' is "Handwriting" in Pre-Nursery. The server
+  // uses the same lists (rca-backend src/utils/curriculum.js).
+  const S = (id, name) => ({ id, name });
+  window.NURSERY_CLASS_SUBJECTS = {
+    pre: [ // Pre-Nursery 1 and 2 — 11 subjects
+      S('engst', 'English Language'), S('phon', 'Phonics'), S('spell', 'Spelling'), S('writ', 'Handwriting'),
+      S('rhyme', 'Rhymes'), S('igbo', 'Asusu Igbo'), S('nsci', 'Nursery Science'), S('hhab', 'Health Habit'),
+      S('schab', 'Social Habit'), S('bible', 'Bible Knowledge'), S('finart', 'Fine Art')
+    ],
+    n1: [ // Nursery 1 (1A and 1B) — 14 subjects
+      S('engst', 'English Studies'), S('mth', 'Mathematics'), S('phon', 'Phonics'), S('read', 'Reading Skill'),
+      S('rhyme', 'Rhymes'), S('igbo', 'Asusu Igbo'), S('nsci', 'Nursery Science'), S('hhab', 'Health Habit'),
+      S('schab', 'Social Habit'), S('bible', 'Bible Knowledge'), S('finart', 'Fine Art'),
+      S('qr', 'Quantitative Reasoning'), S('vr', 'Verbal Reasoning'), S('spell', 'Spelling')
+    ],
+    n2: [ // Nursery 2 — 15 subjects
+      S('engst', 'English Language'), S('mth', 'Mathematics'), S('phon', 'Phonics'), S('read', 'Reading Skill'),
+      S('rhyme', 'Rhymes'), S('igbo', 'Asusu Igbo'), S('nsci', 'Nursery Science'), S('hhab', 'Health Habit'),
+      S('schab', 'Social Habit'), S('bible', 'Bible Knowledge'), S('finart', 'Fine Art'),
+      S('qr', 'Quantitative Reasoning'), S('vr', 'Verbal Reasoning'), S('spell', 'Spelling'), S('civ', 'Civic Education')
+    ],
+    n3: [ // Nursery 3 — 15 subjects
+      S('engst', 'English Studies'), S('mth', 'Mathematics'), S('numth', 'Numeracy Thinking'), S('litth', 'Literacy Thinking'),
+      S('read', 'Reading Skill'), S('igbo', 'Asusu Igbo'), S('nsci', 'Nursery Science'), S('hhab', 'Health Habit'),
+      S('schab', 'Social Habit'), S('bible', 'Bible Knowledge'), S('finart', 'Fine Art'), S('moral', 'Moral Instruction'),
+      S('civ', 'Civic Education'), S('phe', 'Physical and Health Education'), S('spell', 'Spelling')
+    ]
+  };
+  window.nurseryLevel = function (className) {
+    const c = String(className || '');
+    if (/^pre-?\s*nursery/i.test(c)) return 'pre';
+    const m = c.match(/nursery\s*(\d)/i);
+    return m ? ({ 1: 'n1', 2: 'n2', 3: 'n3' })[m[1]] || null : null;
+  };
+
+  // Every nursery subject once (for teacher subject checkboxes etc.).
+  window.NURSERY_SUBJECTS = (function () {
+    const seen = new Set(), out = [];
+    ['n1', 'n3', 'pre', 'n2'].forEach(k => window.NURSERY_CLASS_SUBJECTS[k].forEach(s => { if (!seen.has(s.id)) { seen.add(s.id); out.push(s); } }));
+    return out;
+  })();
 
   // "Nursery" substring catches Pre-Nursery 1/2 too — same heuristic
   // already used elsewhere in the codebase (e.g. classes.js).
@@ -106,7 +135,7 @@
   // term / session are optional (default: the current term and session).
   window.getSubjectsForClass = function (className, term, session) {
     if (!className) return window.ALL_SUBJECTS_COMBINED;
-    if (window.isNurseryClass(className)) return window.NURSERY_SUBJECTS;
+    if (window.isNurseryClass(className)) return window.NURSERY_CLASS_SUBJECTS[window.nurseryLevel(className)] || window.NURSERY_SUBJECTS;
     return window.SCHOOL_SUBJECTS.filter(s => window.isSubjectActive(s, term, session));
   };
 
